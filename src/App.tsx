@@ -4,60 +4,17 @@ import PostsPage from "./pages/PostsPage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import NotFoundPage from "./pages/NotFoundPage";
-import useOnlineStatus from "./hooks/useOnlineStatus";
-import usePWAInstallPrompt from "./hooks/usePWAInstallPrompt";
-import { useTranslation } from "react-i18next";
+
+import OfflineBanner from "./components/OfflineBanner";
+import InstallBanner from "./components/InstallBanner";
+import LanguageToggle from "./components/LanguageToggle";
 
 export default function App() {
-  const isOnline = useOnlineStatus();
-  const { isInstallable, promptInstall } = usePWAInstallPrompt();
-  const { t, i18n } = useTranslation();
-
-  const toggleLanguage = () => {
-    i18n.changeLanguage(i18n.language === "en" ? "hi" : "en");
-  };
-
   return (
     <BrowserRouter>
-      {/* Offline banner */}
-      {!isOnline && (
-        <div style={{ background: "orange", padding: "8px", textAlign: "center" }}>
-          ⚠️ {t("offline")}
-        </div>
-      )}
-
-      {/* Install App button */}
-      {isInstallable && (
-        <div style={{ background: "#4CAF50", padding: "8px", textAlign: "center" }}>
-          <button
-            onClick={promptInstall}
-            style={{
-              background: "white",
-              color: "#4CAF50",
-              padding: "8px 16px",
-              borderRadius: "6px",
-              border: "none",
-              cursor: "pointer",
-              fontWeight: "bold"
-            }}
-          >
-            📲 Install App
-          </button>
-        </div>
-      )}
-
-      {/* Top Controls */}
-      <div style={{ display: "flex", justifyContent: "space-between", padding: "8px" }}>
-        {/* Theme Toggle */}
-        
-
-        {/* Language Toggle */}
-        <button onClick={toggleLanguage}>
-          {i18n.language === "en" ? "हिन्दी" : "English"}
-        </button>
-      </div>
-
-      {/* Routes */}
+      <OfflineBanner />
+      <InstallBanner />
+      <LanguageToggle />
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/posts" element={<PostsPage />} />
