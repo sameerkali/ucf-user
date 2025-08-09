@@ -1,32 +1,35 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import { VitePWA } from 'vite-plugin-pwa'
+import tailwindcss from '@tailwindcss/vite'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { VitePWA } from 'vite-plugin-pwa';
+import iconsData from './public/icons.json';
 
 export default defineConfig({
   plugins: [
     react(),
+    tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
+      includeAssets: [
+        'favicon.ico',
+        'offline.html',
+        ...iconsData.icons.map(icon => icon.src)
+      ],
       manifest: {
-        name: 'My Vite React PWA',
-        short_name: 'MyPWA',
-        start_url: '/',
-        display: 'standalone',
+        name: 'UCF Field',
+        short_name: 'UCF',
+        description: 'Kisaan + POS PWA',
+        theme_color: '#1a73e8',
         background_color: '#ffffff',
-        theme_color: '#3367D6',
-        icons: [
-          {
-            src: 'icons/icon-192x192.png',
-            sizes: '192x192',
-            type: 'image/png',
-          },
-          {
-            src: 'icons/icon-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
-          },
-        ],
-      },
-    }),
-  ],
-})
+        display: 'standalone',
+        start_url: '/',
+        scope: '/',
+        icons: iconsData.icons.map(icon => ({
+          src: `/${icon.src}`,
+          sizes: icon.sizes,
+          type: 'image/png'
+        }))
+      }
+    })
+  ]
+});

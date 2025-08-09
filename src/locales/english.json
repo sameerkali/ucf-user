@@ -1,0 +1,10 @@
+{
+  "welcome": "Welcome to the app",
+  "login": "Login",
+  "signup": "Sign Up",
+  "posts": "Posts",
+  "offline": "You are offline. Showing cached data.",
+  "darkMode": "🌙 Dark Mode",
+  "lightMode": "☀️ Light Mode",
+  "selectOption": "Select an option:"
+}
