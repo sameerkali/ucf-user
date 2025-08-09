@@ -13,9 +13,12 @@ i18n
       en: { translation: en },
       hi: { translation: hi },
     },
-    lng: "en",
-    fallbackLng: "en",
+    fallbackLng: "en", // fallback if nothing found
     interpolation: { escapeValue: false },
+    detection: {
+      order: ["localStorage", "navigator"], // check localStorage first
+      caches: ["localStorage"], // store language in localStorage
+    },
   });
 
 export default i18n;
