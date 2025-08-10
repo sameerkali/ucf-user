@@ -25,9 +25,9 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/404" element={<NotFoundPage />} />
-                    <Route path="/settings" element={<SettingsPage />} />
-                    <Route path="/post" element={<PostsPage />} />
-                    <Route path="/help" element={<HelpAndSupportPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/post" element={<PostsPage />} />
+          <Route path="/help" element={<HelpAndSupportPage />} />
 
           <Route path="*" element={<Navigate to="/404" replace />} />
         </Routes>
