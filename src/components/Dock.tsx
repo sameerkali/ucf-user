@@ -1,10 +1,9 @@
-// src/components/Dock.jsx
 import { NavLink } from "react-router-dom";
-import { Home, Pencil, HelpCircle, Settings } from "lucide-react";
+import { Home, HelpCircle, Settings, StickyNote } from "lucide-react";
 
 const DOCK_ITEMS = [
   { label: "Home", to: "/", icon: Home },
-  { label: "Post", to: "/post", icon: Pencil },
+  { label: "Post", to: "/post", icon: StickyNote },
   { label: "Help & Support", to: "/help", icon: HelpCircle },
   { label: "Settings", to: "/settings", icon: Settings }
 ];
@@ -17,10 +16,10 @@ export default function Dock() {
           key={item.to}
           to={item.to}
           className={({ isActive }) =>
-            "flex flex-col items-center justify-center text-xs transition-colors duration-150 " +
+            "flex flex-col items-center justify-center text-xs transition-colors duration-150 py-1 px-2 border-b-2 " +
             (isActive
-              ? "text-blue-600"
-              : "text-gray-500 hover:text-blue-500")
+              ? "text-gray-800 border-gray-800"
+              : "text-gray-500 hover:text-gray-700 border-transparent hover:border-gray-400")
           }
         >
           <item.icon className="h-6 w-6 mb-0.5" />
