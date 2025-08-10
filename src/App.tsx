@@ -7,7 +7,6 @@ import NotFoundPage from "./pages/NotFoundPage";
 
 import OfflineBanner from "./components/OfflineBanner";
 import InstallBanner from "./components/InstallBanner";
-import LanguageToggle from "./components/LanguageToggle";
 import Header from "./components/Headr";
 import Dock from "./components/Dock";
 import SettingsPage from "./pages/SettingsPage";
@@ -17,7 +16,6 @@ export default function App() {
     <BrowserRouter>
       <OfflineBanner />
       <InstallBanner />
-      {/* <LanguageToggle /> */}
       <Header />
       <div className="min-h-screen pb-16 md:pb-0">
         <Routes>
