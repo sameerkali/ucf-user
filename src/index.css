@@ -1,19 +1,60 @@
 @import "tailwindcss";
 
-
 @layer base {
   html {
     font-family: 'Nunito', sans-serif;
   }
 }
-/* src/index.css */
+
 body {
   background-color: #FAF9F6;
   margin: 0;
   padding: 0;
 }
 
-/* Ensure it covers the full viewport */
 html {
   background-color: #FAF9F6;
+}
+
+/* Hide scrollbars in ALL browsers while keeping scroll functionality */
+* {
+  /* Firefox */
+  scrollbar-width: none;
+  /* Internet Explorer 10+ */
+  -ms-overflow-style: none;
+}
+
+/* WebKit browsers (Chrome, Safari, Edge, Opera) */
+*::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+*::-webkit-scrollbar-track {
+  display: none;
+}
+
+*::-webkit-scrollbar-thumb {
+  display: none;
+}
+
+*::-webkit-scrollbar-corner {
+  display: none;
+}
+
+*::-webkit-scrollbar-button {
+  display: none;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+body, html {
+  overflow-y: auto;
 }

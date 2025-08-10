@@ -1,16 +1,19 @@
 import { NavLink } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const MENU_ITEMS = [
-  { label: "Home", to: "/" },
-  { label: "Post", to: "/post" },
-  { label: "Help & Support", to: "/help" },
-  { label: "Settings", to: "/settings" }
+  { labelKey: "home", to: "/" },
+  { labelKey: "post", to: "/post" },
+  { labelKey: "helpSupport", to: "/help" },
+  { labelKey: "settings", to: "/settings" }
 ];
 
 export default function Header() {
+  const { t } = useTranslation();
+
   return (
     <header className="hidden md:flex w-full items-center justify-between px-6 py-4 bg-white border-b border-gray-200 shadow z-50">
-      <div className="font-bold text-xl text-gray-900">MyApp</div>
+      <div className="font-bold text-xl text-gray-900">{t("appName")}</div>
       <nav className="flex gap-8">
         {MENU_ITEMS.map(item => (
           <NavLink
@@ -23,7 +26,7 @@ export default function Header() {
                 : "text-gray-600 hover:text-blue-500 border-transparent hover:border-blue-300")
             }
           >
-            {item.label}
+            {t(item.labelKey)}
           </NavLink>
         ))}
       </nav>

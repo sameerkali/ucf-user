@@ -1,14 +1,17 @@
 import { NavLink } from "react-router-dom";
 import { Home, HelpCircle, Settings, StickyNote } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const DOCK_ITEMS = [
-  { label: "Home", to: "/", icon: Home },
-  { label: "Post", to: "/post", icon: StickyNote },
-  { label: "Help & Support", to: "/help", icon: HelpCircle },
-  { label: "Settings", to: "/settings", icon: Settings }
+  { labelKey: "home", to: "/", icon: Home },
+  { labelKey: "post", to: "/post", icon: StickyNote },
+  { labelKey: "helpSupport", to: "/help", icon: HelpCircle },
+  { labelKey: "settings", to: "/settings", icon: Settings }
 ];
 
 export default function Dock() {
+  const { t } = useTranslation();
+
   return (
     <nav className="fixed bottom-0 left-0 z-50 w-full bg-white border-t border-gray-200 shadow-sm flex items-center justify-around px-1 py-2 md:hidden">
       {DOCK_ITEMS.map(item => (
@@ -23,7 +26,7 @@ export default function Dock() {
           }
         >
           <item.icon className="h-6 w-6 mb-0.5" />
-          <span>{item.label}</span>
+          <span>{t(item.labelKey)}</span>
         </NavLink>
       ))}
     </nav>
