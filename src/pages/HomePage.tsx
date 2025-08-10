@@ -5,12 +5,12 @@ export default function HomePage() {
   const { t } = useTranslation();
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-blue-50 to-blue-100 dark:from-gray-900 dark:to-gray-800 px-4 transition-colors duration-300">
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg dark:shadow-gray-900/50 p-8 w-full max-w-md transition-colors duration-300">
-        <h1 className="text-3xl font-bold mb-4 text-blue-700 dark:text-blue-400 text-center transition-colors duration-300">
+    <div className="min-h-screen flex flex-col justify-center items-center  px-4">
+      <div className=" rounded-xl shadow-lg p-8 w-full max-w-md">
+        <h1 className="text-3xl font-bold mb-4 text-blue-700 text-center">
           {t("welcome")}
         </h1>
-        <p className="mb-8 text-gray-600 dark:text-gray-300 text-center transition-colors duration-300">
+        <p className="mb-8 text-gray-600 text-center">
           {t("selectOption")}
         </p>
         <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
@@ -25,7 +25,7 @@ export default function HomePage() {
             </button>
           </Link>
           <Link to="/posts" className="flex-1">
-            <button className="w-full py-2 px-4 bg-gray-800 text-white rounded-lg font-semibold hover:bg-gray-900 dark:bg-gray-600 dark:hover:bg-gray-700 transition-colors duration-300">
+            <button className="w-full py-2 px-4 bg-gray-800 text-white rounded-lg font-semibold hover:bg-gray-900 transition-colors duration-300">
               {t("posts")}
             </button>
           </Link>

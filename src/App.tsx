@@ -10,13 +10,14 @@ import InstallBanner from "./components/InstallBanner";
 import LanguageToggle from "./components/LanguageToggle";
 import Header from "./components/Headr";
 import Dock from "./components/Dock";
+import SettingsPage from "./pages/SettingsPage";
 
 export default function App() {
   return (
     <BrowserRouter>
       <OfflineBanner />
       <InstallBanner />
-      <LanguageToggle />
+      {/* <LanguageToggle /> */}
       <Header />
       <div className="min-h-screen pb-16 md:pb-0">
         <Routes>
@@ -25,6 +26,8 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/404" element={<NotFoundPage />} />
+                    <Route path="/settings" element={<SettingsPage />} />
+
           <Route path="*" element={<Navigate to="/404" replace />} />
         </Routes>
       </div>

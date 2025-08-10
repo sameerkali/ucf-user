@@ -6,3 +6,14 @@
     font-family: 'Nunito', sans-serif;
   }
 }
+/* src/index.css */
+body {
+  background-color: #FAF9F6;
+  margin: 0;
+  padding: 0;
+}
+
+/* Ensure it covers the full viewport */
+html {
+  background-color: #FAF9F6;
+}
