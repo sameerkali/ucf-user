@@ -10,6 +10,7 @@ import InstallBanner from "./components/InstallBanner";
 import Header from "./components/Headr";
 import Dock from "./components/Dock";
 import SettingsPage from "./pages/SettingsPage";
+import HelpAndSupportPage from "./pages/HelpAndSupportPage";
 
 export default function App() {
   return (
@@ -25,6 +26,8 @@ export default function App() {
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/404" element={<NotFoundPage />} />
                     <Route path="/settings" element={<SettingsPage />} />
+                    <Route path="/post" element={<PostsPage />} />
+                    <Route path="/help" element={<HelpAndSupportPage />} />
 
           <Route path="*" element={<Navigate to="/404" replace />} />
         </Routes>
