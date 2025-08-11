@@ -1,14 +1,15 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, User, Phone, MapPin, Mail, FileText, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, User, Phone, MapPin, Mail, FileText } from "lucide-react";
+
+type UserRole = "kisaan" | "pos";
 
 export default function SignupPage() {
   const navigate = useNavigate();
   
-  const role = "pos"; // or "kisaan"
+  const role: UserRole = "kisaan"; // Change this to "pos" to test POS signup
   
   const [step, setStep] = useState<"signup" | "otp">("signup");
-  const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({
     fullName: "",
     fatherName: "",

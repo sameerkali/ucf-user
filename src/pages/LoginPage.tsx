@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Phone, User, Lock, Shield, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, Phone, User, Lock, Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
   const navigate = useNavigate();

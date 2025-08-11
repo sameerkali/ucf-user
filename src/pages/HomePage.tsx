@@ -29,6 +29,11 @@ export default function HomePage() {
               {t("posts")}
             </button>
           </Link>
+           <Link to="/landing" className="flex-1">
+            <button className="w-full py-2 px-4 bg-gray-800 text-white rounded-lg font-semibold hover:bg-gray-900 transition-colors duration-300">
+              {t("landingPage")}
+            </button>
+          </Link>
         </div>
       </div>
     </div>
