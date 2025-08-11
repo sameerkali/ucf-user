@@ -11,6 +11,7 @@ import Header from "./components/Headr";
 import Dock from "./components/Dock";
 import SettingsPage from "./pages/SettingsPage";
 import HelpAndSupportPage from "./pages/HelpAndSupportPage";
+import LandingPage from "./pages/LandingPage";
 
 export default function App() {
   return (
@@ -21,6 +22,7 @@ export default function App() {
       <div className="min-h-screen pb-16 md:pb-0">
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/landing" element={<LandingPage />} />
           <Route path="/posts" element={<PostsPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
