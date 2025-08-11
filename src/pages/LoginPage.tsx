@@ -1,14 +1,20 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Phone, User, Lock, Shield } from "lucide-react";
+import { ArrowLeft, Phone, User, Lock, Shield, Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
   const navigate = useNavigate();
   
-  // Mock role - you can change this to test different UI
-  const role = "pos"; // or "pos"
+  const role = "kisaan"; // or "kisaan"
   
   const [step, setStep] = useState<"credentials" | "otp">("credentials");
+  const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState({
+    phone: "",
+    userId: "",
+    password: "",
+    otp: ""
+  });
   const [formData, setFormData] = useState({
     phone: "",
     userId: "",
@@ -16,22 +22,71 @@ export default function LoginPage() {
     otp: ""
   });
 
+  // Input sanitization to prevent XSS
+  const sanitizeInput = (value: string) => {
+    return value.replace(/[<>\"'&]/g, '');
+  };
+
+  // Phone validation (only numbers, max 10 digits)
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+    setFormData(prev => ({ ...prev, phone: value }));
+    
+    if (value.length > 0 && value.length < 10) {
+      setErrors(prev => ({ ...prev, phone: "Phone number must be 10 digits" }));
+    } else {
+      setErrors(prev => ({ ...prev, phone: "" }));
+    }
+  };
+
+  // User ID validation
+  const handleUserIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = sanitizeInput(e.target.value);
+    setFormData(prev => ({ ...prev, userId: value }));
+    
+    if (value.length > 0 && value.length < 3) {
+      setErrors(prev => ({ ...prev, userId: "User ID must be at least 3 characters" }));
+    } else {
+      setErrors(prev => ({ ...prev, userId: "" }));
+    }
+  };
+
+  // Password validation (max 16 chars)
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = sanitizeInput(e.target.value).slice(0, 16);
+    setFormData(prev => ({ ...prev, password: value }));
+    
+    if (value.length > 0 && value.length < 6) {
+      setErrors(prev => ({ ...prev, password: "Password must be at least 6 characters" }));
+    } else {
+      setErrors(prev => ({ ...prev, password: "" }));
+    }
+  };
+
+  // OTP validation (only numbers, max 6 digits)
+  const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+    setFormData(prev => ({ ...prev, otp: value }));
+  };
+
   const handleCredentialsSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Simple validation - just check if fields have values
-    if (role === "kisaan" && formData.phone) {
-      setStep("otp");
-    } else if (role === "pos" && formData.userId && formData.password) {
-      setStep("otp");
+    if (role === "kisaan") {
+      if (formData.phone.length === 10 && !errors.phone) {
+        setStep("otp");
+      }
+    } else if (role === "pos") {
+      if (formData.userId.length >= 3 && formData.password.length >= 6 && !errors.userId && !errors.password) {
+        setStep("otp");
+      }
     }
   };
 
   const handleOtpSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (formData.otp) {
-      // For now, just show alert and navigate
+    if (formData.otp.length === 6) {
       alert(`${role === "kisaan" ? "Kisaan" : "POS"} Login Successful!`);
       navigate("/");
     }
@@ -51,7 +106,7 @@ export default function LoginPage() {
         <div className="flex items-center mb-6">
           <button
             onClick={handleBack}
-            className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-1 hover:bg-gray-100 rounded-full transition-colors focus:outline-none"
           >
             <ArrowLeft className="w-5 h-5 text-gray-600" />
           </button>
@@ -65,13 +120,6 @@ export default function LoginPage() {
         {step === "credentials" ? (
           <>
             <div className="text-center mb-6">
-              <div className="p-3 bg-gray-100 rounded-full inline-block mb-3">
-                {role === "kisaan" ? (
-                  <Phone className="w-6 h-6 text-gray-600" />
-                ) : (
-                  <User className="w-6 h-6 text-gray-600" />
-                )}
-              </div>
               <p className="text-sm text-gray-600">
                 {role === "kisaan" 
                   ? "Enter your phone number to continue" 
@@ -88,10 +136,11 @@ export default function LoginPage() {
                     type="tel"
                     placeholder="Phone Number"
                     value={formData.phone}
-                    onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                    onChange={handlePhoneChange}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none transition bg-white text-gray-900"
                     required
                   />
+                  {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
                 </div>
               ) : (
                 <>
@@ -101,28 +150,41 @@ export default function LoginPage() {
                       type="text"
                       placeholder="User ID"
                       value={formData.userId}
-                      onChange={(e) => setFormData(prev => ({ ...prev, userId: e.target.value }))}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                      onChange={handleUserIdChange}
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none transition bg-white text-gray-900"
                       required
                     />
+                    {errors.userId && <p className="text-red-500 text-xs mt-1">{errors.userId}</p>}
                   </div>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <input
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       placeholder="Password"
                       value={formData.password}
-                      onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                      onChange={handlePasswordChange}
+                      className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none transition bg-white text-gray-900"
                       required
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 focus:outline-none"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="w-4 h-4 text-gray-400" />
+                      ) : (
+                        <Eye className="w-4 h-4 text-gray-400" />
+                      )}
+                    </button>
+                    {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
                   </div>
                 </>
               )}
 
               <button
                 type="submit"
-                className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition"
+                className="w-full py-3 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 focus:outline-none transition"
               >
                 Send OTP
               </button>
@@ -131,14 +193,11 @@ export default function LoginPage() {
         ) : (
           <>
             <div className="text-center mb-6">
-              <div className="p-3 bg-green-100 rounded-full inline-block mb-3">
-                <Shield className="w-6 h-6 text-green-600" />
-              </div>
               <p className="text-sm text-gray-600 mb-2">
                 Enter the 6-digit code sent to
               </p>
               <p className="text-sm font-medium text-gray-900">
-                {role === "kisaan" ? formData.phone : "your registered number"}
+                {role === "kisaan" ? `+91 ${formData.phone}` : "your registered number"}
               </p>
             </div>
 
@@ -147,15 +206,15 @@ export default function LoginPage() {
                 type="text"
                 placeholder="Enter OTP"
                 value={formData.otp}
-                onChange={(e) => setFormData(prev => ({ ...prev, otp: e.target.value }))}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-center text-lg font-mono tracking-wider focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                onChange={handleOtpChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-center text-lg font-mono tracking-wider focus:outline-none transition bg-white text-gray-900"
                 maxLength={6}
                 required
               />
 
               <button
                 type="submit"
-                className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition"
+                className="w-full py-3 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 focus:outline-none transition"
               >
                 Verify & Login
               </button>
@@ -163,7 +222,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => setStep("credentials")}
-                className="text-sm text-blue-600 hover:text-blue-700 transition-colors"
+                className="text-sm text-gray-600 hover:text-gray-800 transition-colors focus:outline-none"
               >
                 Resend OTP
               </button>
@@ -176,7 +235,7 @@ export default function LoginPage() {
             Don't have an account?{" "}
             <button
               onClick={() => navigate("/signup")}
-              className="text-blue-600 hover:text-blue-700 font-medium"
+              className="text-gray-900 hover:text-gray-700 font-medium focus:outline-none"
             >
               Sign up
             </button>
