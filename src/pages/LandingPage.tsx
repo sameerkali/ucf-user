@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { User, Store, ChevronRight } from "lucide-react";
+import { User, Store } from "lucide-react";
 
 export default function LandingPage() {
   const navigate = useNavigate();
