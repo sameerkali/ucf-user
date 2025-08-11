@@ -17,13 +17,7 @@ export default function LandingPage() {
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-3">Kisaan Login</h2>
           <p className="text-gray-700 mb-6">Access your farming dashboard and agricultural tools</p>
-          <div className="bg-white rounded-lg p-4 shadow-sm">
-            <p className="text-sm text-gray-600">
-              <strong>New User?</strong><br />
-              Sign up → Complete your profile → Start farming!
-            </p>
-          </div>
-          <ChevronRight className="w-6 h-6 text-green-600 mx-auto mt-4" />
+         
         </div>
       </div>
 
@@ -38,13 +32,7 @@ export default function LandingPage() {
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-3">POS Login</h2>
           <p className="text-gray-700 mb-6">Manage your retail operations and point of sale system</p>
-          <div className="bg-white rounded-lg p-4 shadow-sm">
-            <p className="text-sm text-gray-600">
-              <strong>New User?</strong><br />
-              Sign up → Wait for admin verification → Get started!
-            </p>
-          </div>
-          <ChevronRight className="w-6 h-6 text-blue-600 mx-auto mt-4" />
+          
         </div>
       </div>
     </div>
