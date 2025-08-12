@@ -34,6 +34,11 @@ export default function HomePage() {
               {t("landingPage")}
             </button>
           </Link>
+          <Link to="/complete-profile" className="flex-1">
+            <button className="w-full py-2 px-4 bg-gray-800 text-white rounded-lg font-semibold hover:bg-gray-900 transition-colors duration-300">
+              {t("profile details")}
+            </button>
+          </Link>
         </div>
       </div>
     </div>

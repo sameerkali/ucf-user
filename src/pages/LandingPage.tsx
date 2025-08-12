@@ -8,7 +8,7 @@ export default function LandingPage() {
     <div className="min-h-screen flex flex-col md:flex-row" style={{ backgroundColor: '#FAF9F6' }}>
       {/* Kisaan Section */}
       <div
-        onClick={() => navigate("/kisaan-auth")}
+        onClick={() => navigate("/login")}
         className="flex-1 bg-gradient-to-br from-green-50 to-green-100 p-8 flex flex-col justify-center items-center cursor-pointer hover:from-green-100 hover:to-green-200 transition-all"
       >
         <div className="text-center max-w-sm">
@@ -23,7 +23,7 @@ export default function LandingPage() {
 
       {/* POS Section */}
       <div
-        onClick={() => navigate("/pos-auth")}
+        onClick={() => navigate("/login")}
         className="flex-1 bg-gradient-to-br from-blue-50 to-blue-100 p-8 flex flex-col justify-center items-center cursor-pointer hover:from-blue-100 hover:to-blue-200 transition-all"
       >
         <div className="text-center max-w-sm">
