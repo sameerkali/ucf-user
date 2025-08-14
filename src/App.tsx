@@ -13,8 +13,15 @@ import SettingsPage from "./pages/SettingsPage";
 import HelpAndSupportPage from "./pages/HelpAndSupportPage";
 import LandingPage from "./pages/LandingPage";
 import ProfileComplete from "./pages/ProfileCompletePage";
+import LoadingScreen from "./components/LoadingScreen";
+import { useAppLoading } from "./hooks/useAppLoading";
+
 
 export default function App() {
+    const isLoading = useAppLoading();
+    if (isLoading) {
+    return <LoadingScreen />;
+  }
   return (
     <BrowserRouter>
       <OfflineBanner />
