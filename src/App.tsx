@@ -12,6 +12,7 @@ import Dock from "./components/Dock";
 import SettingsPage from "./pages/SettingsPage";
 import HelpAndSupportPage from "./pages/HelpAndSupportPage";
 import LandingPage from "./pages/LandingPage";
+import ProfileComplete from "./pages/ProfileCompletePage";
 
 export default function App() {
   return (
@@ -30,6 +31,9 @@ export default function App() {
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/post" element={<PostsPage />} />
           <Route path="/help" element={<HelpAndSupportPage />} />
+          <Route path="/complete-profile" element={<ProfileComplete />} />
+
+          
 
           <Route path="*" element={<Navigate to="/404" replace />} />
         </Routes>
