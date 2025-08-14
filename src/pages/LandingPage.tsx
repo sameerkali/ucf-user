@@ -5,8 +5,10 @@ export default function HomePage() {
 
   return (
     <div
-      className="min-h-screen flex flex-col justify-center items-center p-4 antialiased bg-cover bg-center"
-      style={{ backgroundImage: `url(${BGS.home_bg})` }}
+  className="min-h-screen flex flex-col justify-center items-center p-4 antialiased bg-cover bg-center"
+  style={{ 
+    backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url(${BGS.home_bg})`
+  }}
     >
       <div className="relative z-10 max-w-4xl w-full mx-auto text-center px-4">
         <h1 className="text-5xl md:text-6xl font-bold text-white mb-4" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
