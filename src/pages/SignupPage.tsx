@@ -1,13 +1,14 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { BGS } from "../assets/assets";
 
 type UserRole = "kisaan" | "pos";
 
 export default function SignupPage() {
   const navigate = useNavigate();
   
-  const role: UserRole = "pos"; // Change this to "pos" to test POS signup
+  const role: UserRole = "kisaan"; // Change this to "pos" to test POS signup
   
   const [step, setStep] = useState<"signup" | "otp">("signup");
   const [agreeToTerms, setAgreeToTerms] = useState(false);
@@ -178,7 +179,7 @@ export default function SignupPage() {
         <div 
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage: 'url(https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80)',
+            backgroundImage: `url(${BGS.auth_bg})`,
             borderTopRightRadius: '2.5rem',
             borderBottomRightRadius: '2.5rem'
           }}
