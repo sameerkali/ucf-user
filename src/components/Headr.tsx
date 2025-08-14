@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 const MENU_ITEMS = [
@@ -13,7 +13,7 @@ export default function Header() {
 
   return (
     <header className="hidden md:flex w-full items-center justify-between px-6 py-4 bg-white border-b border-gray-200 shadow z-50">
-      <div className="font-bold text-xl text-gray-900">{t("appName")}</div>
+      <Link to={`/`}><div className="font-bold text-xl text-gray-900">{t("appName")}</div></Link>
       <nav className="flex gap-8">
         {MENU_ITEMS.map(item => (
           <NavLink
