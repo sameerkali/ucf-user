@@ -1,14 +1,15 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Phone, User, Lock, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
   const navigate = useNavigate();
   
-  const role = "kisaan"; // or "kisaan"
+  const [role] = useState<"kisaan" | "pos">("pos"); // or "pos"
   
   const [step, setStep] = useState<"credentials" | "otp">("credentials");
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [errors, setErrors] = useState({
     phone: "",
     userId: "",
@@ -101,145 +102,219 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: '#FAF9F6' }}>
-      <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-sm">
-        <div className="flex items-center mb-6">
+    <div className="min-h-screen flex bg-black">
+      {/* Left Side - Agricultural Background with Curved Border */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
+        <div 
+          className="absolute inset-0 bg-cover bg-center"
+          style={{
+            backgroundImage: 'url(https://images.unsplash.com/photo-1500937386664-56d1dfef3854?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80)',
+            borderTopRightRadius: '2.5rem',
+            borderBottomRightRadius: '2.5rem'
+          }}
+        >
+          {/* Gradient Overlay */}
+          <div 
+            className="absolute inset-0 bg-gradient-to-br from-green-900/80 via-emerald-800/70 to-teal-900/80"
+            style={{
+              borderTopRightRadius: '2.5rem',
+              borderBottomRightRadius: '2.5rem'
+            }}
+          ></div>
+          
+          {/* Additional Gradient Effects */}
+          <div 
+            className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"
+            style={{
+              borderTopRightRadius: '2.5rem',
+              borderBottomRightRadius: '2.5rem'
+            }}
+          ></div>
+        </div>
+        
+        {/* Left Content */}
+        <div className="relative z-10 flex flex-col justify-center items-start p-12 text-white">
           <button
             onClick={handleBack}
-            className="p-1 hover:bg-gray-100 rounded-full transition-colors focus:outline-none"
+            className="absolute top-8 left-8 p-2 hover:bg-white/10 rounded-full transition-colors"
+            style={{ borderRadius: '0.5rem' }}
           >
-            <ArrowLeft className="w-5 h-5 text-gray-600" />
+            <ArrowLeft className="w-6 h-6" />
           </button>
-          <div className="flex-1 text-center">
-            <h2 className="text-xl font-semibold text-gray-900">
-              {role === "kisaan" ? "Kisaan Login" : "POS Login"}
-            </h2>
+          
+          <div className="max-w-md">
+            <h1 className="text-5xl font-light mb-6 leading-tight">
+              Be a Part of<br />
+              Something <span className="font-bold text-green-300">Beautiful</span>
+            </h1>
+            <p className="text-lg text-green-100 opacity-90">
+              Join thousands of farmers who are revolutionizing agriculture with modern technology
+            </p>
           </div>
         </div>
+      </div>
 
-        {step === "credentials" ? (
-          <>
-            <div className="text-center mb-6">
-              <p className="text-sm text-gray-600">
-                {role === "kisaan" 
-                  ? "Enter your phone number to continue" 
-                  : "Enter your credentials to continue"
-                }
-              </p>
-            </div>
+      {/* Right Side - Login Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-black">
+        <div className="w-full max-w-md">
+          {step === "credentials" ? (
+            <>
+              <div className="mb-8">
+                <h2 className="text-3xl font-semibold text-white mb-2">Login</h2>
+                <p className="text-gray-400 text-sm">
+                  {role === "kisaan" 
+                    ? "Enter your phone number to access your account" 
+                    : "Enter your credentials to access your account"
+                  }
+                </p>
+              </div>
 
-            <form onSubmit={handleCredentialsSubmit} className="flex flex-col gap-4">
-              {role === "kisaan" ? (
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <form onSubmit={handleCredentialsSubmit} className="space-y-6">
+                {role === "kisaan" ? (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Phone Number
+                    </label>
+                    <input
+                      type="tel"
+                      placeholder="Enter your phone number"
+                      value={formData.phone}
+                      onChange={handlePhoneChange}
+                      className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors"
+                      style={{ borderRadius: '0.75rem' }}
+                      required
+                    />
+                    {errors.phone && <p className="text-red-400 text-xs mt-1">{errors.phone}</p>}
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Email
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Enter your email"
+                        value={formData.userId}
+                        onChange={handleUserIdChange}
+                        className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors"
+                        style={{ borderRadius: '0.75rem' }}
+                        required
+                      />
+                      {errors.userId && <p className="text-red-400 text-xs mt-1">{errors.userId}</p>}
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Password
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Enter your password"
+                          value={formData.password}
+                          onChange={handlePasswordChange}
+                          className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors pr-12"
+                          style={{ borderRadius: '0.75rem' }}
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+                        >
+                          {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        </button>
+                      </div>
+                      {errors.password && <p className="text-red-400 text-xs mt-1">{errors.password}</p>}
+                    </div>
+                  </>
+                )}
+
+                {role === "pos" && (
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id="remember"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      className="w-4 h-4 text-green-500 bg-gray-800 border-gray-600 focus:ring-green-500"
+                      style={{ borderRadius: '0.25rem' }}
+                    />
+                    <label htmlFor="remember" className="ml-2 text-sm text-gray-300">
+                      Remember me
+                    </label>
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold hover:from-green-700 hover:to-emerald-700 focus:outline-none transition-all duration-200"
+                  style={{ borderRadius: '0.75rem' }}
+                >
+                  {role === "kisaan" ? "Send OTP" : "Login"}
+                </button>
+              </form>
+            </>
+          ) : (
+            <>
+              <div className="mb-8">
+                <h2 className="text-3xl font-semibold text-white mb-2">Verify OTP</h2>
+                <p className="text-gray-400 text-sm mb-2">
+                  Enter the 6-digit code sent to
+                </p>
+                <p className="text-white font-medium">
+                  {role === "kisaan" ? `+91 ${formData.phone}` : "your registered number"}
+                </p>
+              </div>
+
+              <form onSubmit={handleOtpSubmit} className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    OTP Code
+                  </label>
                   <input
-                    type="tel"
-                    placeholder="Phone Number"
-                    value={formData.phone}
-                    onChange={handlePhoneChange}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none transition bg-white text-gray-900"
+                    type="text"
+                    placeholder="000000"
+                    value={formData.otp}
+                    onChange={handleOtpChange}
+                    className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors text-center text-lg font-mono tracking-widest"
+                    style={{ borderRadius: '0.75rem' }}
+                    maxLength={6}
                     required
                   />
-                  {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
                 </div>
-              ) : (
-                <>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input
-                      type="text"
-                      placeholder="User ID"
-                      value={formData.userId}
-                      onChange={handleUserIdChange}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none transition bg-white text-gray-900"
-                      required
-                    />
-                    {errors.userId && <p className="text-red-500 text-xs mt-1">{errors.userId}</p>}
-                  </div>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Password"
-                      value={formData.password}
-                      onChange={handlePasswordChange}
-                      className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none transition bg-white text-gray-900"
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 focus:outline-none"
-                    >
-                      {showPassword ? (
-                        <EyeOff className="w-4 h-4 text-gray-400" />
-                      ) : (
-                        <Eye className="w-4 h-4 text-gray-400" />
-                      )}
-                    </button>
-                    {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
-                  </div>
-                </>
-              )}
 
+                <button
+                  type="submit"
+                  className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold hover:from-green-700 hover:to-emerald-700 focus:outline-none transition-all duration-200"
+                  style={{ borderRadius: '0.75rem' }}
+                >
+                  Verify & Login
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setStep("credentials")}
+                  className="w-full text-green-500 hover:text-green-400 text-sm transition-colors"
+                >
+                  Resend OTP
+                </button>
+              </form>
+            </>
+          )}
+
+          <div className="mt-8 text-center">
+            <p className="text-gray-400 text-sm">
+              Not a member?{" "}
               <button
-                type="submit"
-                className="w-full py-3 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 focus:outline-none transition"
+                onClick={() => navigate("/signup")}
+                className="text-green-500 hover:text-green-400 font-medium transition-colors"
               >
-                Send OTP
+                Create an account
               </button>
-            </form>
-          </>
-        ) : (
-          <>
-            <div className="text-center mb-6">
-              <p className="text-sm text-gray-600 mb-2">
-                Enter the 6-digit code sent to
-              </p>
-              <p className="text-sm font-medium text-gray-900">
-                {role === "kisaan" ? `+91 ${formData.phone}` : "your registered number"}
-              </p>
-            </div>
-
-            <form onSubmit={handleOtpSubmit} className="flex flex-col gap-4">
-              <input
-                type="text"
-                placeholder="Enter OTP"
-                value={formData.otp}
-                onChange={handleOtpChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-center text-lg font-mono tracking-wider focus:outline-none transition bg-white text-gray-900"
-                maxLength={6}
-                required
-              />
-
-              <button
-                type="submit"
-                className="w-full py-3 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 focus:outline-none transition"
-              >
-                Verify & Login
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setStep("credentials")}
-                className="text-sm text-gray-600 hover:text-gray-800 transition-colors focus:outline-none"
-              >
-                Resend OTP
-              </button>
-            </form>
-          </>
-        )}
-
-        <div className="mt-6 text-center">
-          <p className="text-xs text-gray-500">
-            Don't have an account?{" "}
-            <button
-              onClick={() => navigate("/signup")}
-              className="text-gray-900 hover:text-gray-700 font-medium focus:outline-none"
-            >
-              Sign up
-            </button>
-          </p>
+            </p>
+          </div>
         </div>
       </div>
     </div>
