@@ -19,11 +19,11 @@ const LoadingScreen: React.FC = () => {
           className="text-emerald-100 text-lg opacity-0 animate-fadeInUp"
           style={{ animationDelay: "0.5s" }}
         >
-          {t("digitalAgriculturePlatform") || "Digital Agriculture Platform"}
+          {t("digital Agriculture Platform") || "Digital Agriculture Platform"}
         </p>
       </div>
 
-      <style jsx>{`
+      <style>{`
         @keyframes fadeInUp {
           from {
             opacity: 0;
