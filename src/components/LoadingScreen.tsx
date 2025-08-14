@@ -1,44 +1,44 @@
-import React from 'react';
-import { useTranslation } from 'react-i18next';
+import React from "react";
+import { useTranslation } from "react-i18next";
 
 const LoadingScreen: React.FC = () => {
   const { t } = useTranslation();
 
   return (
-    <div 
+    <div
       className="fixed inset-0 flex flex-col items-center justify-center z-50"
-      style={{ backgroundColor: '#FAF9F6' }}
+      style={{
+        background: "linear-gradient(135deg, #10b981, #059669, #047857)",
+      }}
     >
-      {/* Logo/Brand Section */}
-      <div className="mb-8">
-        <div className="w-20 h-20 bg-gray-900 rounded-full flex items-center justify-center mb-4">
-          <span className="text-white text-2xl font-bold">K</span>
-        </div>
-        <h1 className="text-2xl font-semibold text-gray-900 text-center">Kisaan App</h1>
+      <div className="mb-8 text-center">
+        <h1 className="text-4xl font-bold text-white mb-2 opacity-0 animate-fadeInUp">
+          UCF
+        </h1>
+        <p
+          className="text-emerald-100 text-lg opacity-0 animate-fadeInUp"
+          style={{ animationDelay: "0.5s" }}
+        >
+          {t("digitalAgriculturePlatform") || "Digital Agriculture Platform"}
+        </p>
       </div>
 
-      {/* Loading Animation */}
-      <div className="relative">
-        {/* Spinning Circle */}
-        <div className="w-12 h-12 border-4 border-gray-200 border-t-gray-900 rounded-full animate-spin"></div>
-        
-        {/* Pulsing Dots */}
-        <div className="flex space-x-2 mt-6 justify-center">
-          <div className="w-3 h-3 bg-gray-900 rounded-full animate-pulse"></div>
-          <div className="w-3 h-3 bg-gray-900 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-          <div className="w-3 h-3 bg-gray-900 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
-        </div>
-      </div>
+      <style jsx>{`
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
 
-      {/* Loading Text */}
-      <p className="text-gray-600 mt-6 text-sm animate-pulse">
-        {t("loadingApp") || "Loading your farming dashboard..."}
-      </p>
-
-      {/* Progress Bar */}
-      <div className="w-64 bg-gray-200 rounded-full h-1 mt-4">
-        <div className="bg-gray-900 h-1 rounded-full animate-pulse" style={{ width: '100%' }}></div>
-      </div>
+        .animate-fadeInUp {
+          animation: fadeInUp 1.5s ease-out forwards;
+        }
+      `}</style>
     </div>
   );
 };
