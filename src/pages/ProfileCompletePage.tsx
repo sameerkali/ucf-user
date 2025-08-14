@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  MapPin,
   Building2,
   Landmark,
   CreditCard,
@@ -52,12 +51,12 @@ export default function ProfileComplete() {
     setFormData(prev => ({ ...prev, [field]: sanitize(value) }));
   };
 
-  const handleNum = (field: string, value: string, max: number) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value.replace(/\D/g, "").slice(0, max)
-    }));
-  };
+  // const handleNum = (field: string, value: string, max: number) => {
+  //   setFormData(prev => ({
+  //     ...prev,
+  //     [field]: value.replace(/\D/g, "").slice(0, max)
+  //   }));
+  // };
 
   const handleFile = (field: "aadhaarFront" | "aadhaarBack", file: File | null) => {
     if (file && file.type.startsWith("image/")) {
