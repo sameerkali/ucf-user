@@ -17,7 +17,7 @@ export default function HomePage() {
   const navigationItems = [
     {
       to: "/landing",
-      label: "Full AUTH Flow",
+      label: t("fullAuthFlow"),
       icon: <Home className="w-5 h-5" />,
       color: "from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
     },
@@ -41,7 +41,7 @@ export default function HomePage() {
     },
     {
       to: "/complete-profile",
-      label: t("profile details"),
+      label: t("profileDetails"),
       icon: <Settings className="w-5 h-5" />,
       color: "from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800"
     }
@@ -75,7 +75,7 @@ export default function HomePage() {
             {t("welcome")}
           </h1>
           <p className="text-lg text-gray-600 max-w-md mx-auto leading-relaxed">
-            {t("selectOption")} - Choose your path to explore AgriConnect
+            {t("dashboardDescription")}
           </p>
         </div>
 
@@ -106,11 +106,11 @@ export default function HomePage() {
         {/* Bottom Info */}
         <div className="mt-12 text-center">
           <p className="text-sm text-gray-500">
-            🌾 AgriConnect Development Dashboard
+            🌾 {t("agriConnectDashboard")}
           </p>
           <div className="flex justify-center items-center space-x-4 mt-4">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            <span className="text-xs text-gray-400">Development Mode Active</span>
+            <span className="text-xs text-gray-400">{t("developmentModeActive")}</span>
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
           </div>
         </div>
