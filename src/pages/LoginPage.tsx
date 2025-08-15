@@ -1,11 +1,24 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { BGS } from "../assets/assets";
 
 export default function LoginPage() {
   const navigate = useNavigate();
+
+    const [searchParams] = useSearchParams();
   
-  const [role] = useState<"kisaan" | "pos">("pos"); // or "pos"
+  const [role, setRole] = useState<"kisaan" | "pos">(() => {
+    const urlRole = searchParams.get('role');
+    return (urlRole === 'pos' || urlRole === 'kisaan') ? urlRole : 'kisaan';
+  });
+  
+  useEffect(() => {
+    const urlRole = searchParams.get('role');
+    if (urlRole === 'pos' || urlRole === 'kisaan') {
+      setRole(urlRole);
+    }
+  }, [searchParams]);
   
   const [step, setStep] = useState<"credentials" | "otp">("credentials");
   const [showPassword, setShowPassword] = useState(false);
@@ -88,8 +101,7 @@ export default function LoginPage() {
     e.preventDefault();
     
     if (formData.otp.length === 6) {
-      alert(`${role === "kisaan" ? "Kisaan" : "POS"} Login Successful!`);
-      navigate("/");
+      navigate(`/complete-profile?role=${role}`);
     }
   };
 
@@ -108,7 +120,7 @@ export default function LoginPage() {
         <div 
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage: 'url(https://images.unsplash.com/photo-1500937386664-56d1dfef3854?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80)',
+            backgroundImage: `url(${BGS.login_bg}`,
             borderTopRightRadius: '2.5rem',
             borderBottomRightRadius: '2.5rem'
           }}
@@ -308,7 +320,7 @@ export default function LoginPage() {
             <p className="text-gray-400 text-sm">
               Not a member?{" "}
               <button
-                onClick={() => navigate("/signup")}
+                onClick={() => navigate(`/signup?role=${role}`)}
                 className="text-green-500 hover:text-green-400 font-medium transition-colors"
               >
                 Create an account
