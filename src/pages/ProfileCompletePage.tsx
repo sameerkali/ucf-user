@@ -4,9 +4,11 @@ import { ArrowLeft } from "lucide-react";
 import { BGS } from "../assets/assets";
 import Modal from "../components/Modal";
 import toast from 'react-hot-toast';
+import { useTranslation } from "react-i18next";
 
 export default function ProfileComplete() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [step, setStep] = useState(1);
   const [showErrors, setShowErrors] = useState(false);
   const [showSkipModal, setShowSkipModal] = useState(false);
@@ -99,7 +101,7 @@ export default function ProfileComplete() {
     e.preventDefault();
     setShowErrors(true);
     if (isStepValid()) {
-      toast("Profile submitted successfully!");
+      toast.success(t("profileSubmitted"));
       navigate("/");
     }
   };
@@ -110,10 +112,19 @@ export default function ProfileComplete() {
 
   const getStepTitle = () => {
     switch (step) {
-      case 1: return "Location Details";
-      case 2: return "Banking Information";
-      case 3: return "Farm & Documents";
-      default: return "Profile Setup";
+      case 1: return t("locationDetails");
+      case 2: return t("bankingInformation");
+      case 3: return t("farmDocuments");
+      default: return t("profileSetup");
+    }
+  };
+
+  const getStepDescription = () => {
+    switch (step) {
+      case 1: return t("locationStepDesc");
+      case 2: return t("bankingStepDesc");
+      case 3: return t("farmStepDesc");
+      default: return "";
     }
   };
 
@@ -129,7 +140,7 @@ export default function ProfileComplete() {
       return (
         <div>
           <label className={`block text-sm font-medium mb-2 ${hasError ? "text-red-400" : "text-gray-300"}`}>
-            {placeholder}
+            {t(placeholder)}
           </label>
           <input
             type="file"
@@ -140,7 +151,7 @@ export default function ProfileComplete() {
             }`}
             style={{ borderRadius: '0.75rem' }}
           />
-          {hasError && <p className="text-red-400 text-xs mt-1">Please upload {placeholder.toLowerCase()}</p>}
+          {hasError && <p className="text-red-400 text-xs mt-1">{t("pleaseUpload")} {t(placeholder).toLowerCase()}</p>}
         </div>
       );
     }
@@ -148,11 +159,11 @@ export default function ProfileComplete() {
     return (
       <div>
         <label className={`block text-sm font-medium mb-2 ${hasError ? "text-red-400" : "text-gray-300"}`}>
-          {placeholder}
+          {t(placeholder)}
         </label>
         <input
           type={type}
-          placeholder={`Enter ${placeholder.toLowerCase()}`}
+          placeholder={`${t("enter")} ${t(placeholder).toLowerCase()}`}
           value={(formData[name as keyof typeof formData] as string) || ""}
           onChange={e => handleChange(name, e.target.value)}
           className={`w-full px-4 py-3 bg-gray-800 border text-white placeholder-gray-500 focus:outline-none transition-colors ${
@@ -160,7 +171,7 @@ export default function ProfileComplete() {
           }`}
           style={{ borderRadius: '0.75rem' }}
         />
-        {hasError && <p className="text-red-400 text-xs mt-1">Please enter {placeholder.toLowerCase()}</p>}
+        {hasError && <p className="text-red-400 text-xs mt-1">{t("pleaseEnter")} {t(placeholder).toLowerCase()}</p>}
       </div>
     );
   };
@@ -205,11 +216,11 @@ export default function ProfileComplete() {
             
             <div className="max-w-md">
               <h1 className="text-5xl font-light mb-6 leading-tight">
-                Complete Your<br />
-                <span className="font-bold text-green-300">Farmer Profile</span>
+                {t("completeYour")}<br />
+                <span className="font-bold text-green-300">{t("farmerProfile")}</span>
               </h1>
               <p className="text-lg text-green-100 opacity-90">
-                Provide your details to unlock all agricultural services and connect with the farming community
+                {t("profileDescription")}
               </p>
               
               <div className="mt-8">
@@ -227,7 +238,7 @@ export default function ProfileComplete() {
                     </div>
                   ))}
                 </div>
-                <p className="text-green-200 text-sm mt-2">Step {step} of 3</p>
+                <p className="text-green-200 text-sm mt-2">{t("step")} {step} {t("of")} 3</p>
               </div>
             </div>
           </div>
@@ -240,41 +251,41 @@ export default function ProfileComplete() {
                 {getStepTitle()}
               </h2>
               <p className="text-gray-400 text-sm">
-                Step {step} of 3 - {step === 1 ? "Tell us about your location" : step === 2 ? "Add your banking details" : "Farm details and documents"}
+                {t("step")} {step} {t("of")} 3 - {getStepDescription()}
               </p>
             </div>
 
             <form onSubmit={submitForm} className="space-y-6">
               {step === 1 && (
                 <>
-                  {renderInput("gramPanchayat", "Gram Panchayat")}
-                  {renderInput("district", "District")}
-                  {renderInput("state", "State")}
+                  {renderInput("gramPanchayat", "gramPanchayat")}
+                  {renderInput("district", "district")}
+                  {renderInput("state", "state")}
                 </>
               )}
 
               {step === 2 && (
                 <>
-                  {renderInput("bankAccount", "Bank Account Number")}
-                  {renderInput("bankName", "Bank Name")}
-                  {renderInput("bankBranch", "Bank Branch")}
-                  {renderInput("ifsc", "IFSC Code")}
+                  {renderInput("bankAccount", "bankAccountNumber")}
+                  {renderInput("bankName", "bankName")}
+                  {renderInput("bankBranch", "bankBranch")}
+                  {renderInput("ifsc", "ifscCode")}
                 </>
               )}
 
               {step === 3 && (
                 <>
-                  {renderInput("landHoldings", "Land Holdings (Hectares)", "number")}
-                  {renderInput("annualProduction", "Annual Production (Quintals)", "number")}
-                  {renderInput("annualConsumption", "Annual Consumption (Quintals)", "number")}
-                  {renderInput("crops", "Crops Grown")}
-                  {renderInput("seedArea", "Seed Area (Hectares)", "number")}
-                  {renderInput("irrigatedArea", "Irrigated Area (Hectares)", "number")}
-                  {renderInput("rainfedArea", "Rainfed Area (Hectares)", "number")}
+                  {renderInput("landHoldings", "landHoldings", "number")}
+                  {renderInput("annualProduction", "annualProduction", "number")}
+                  {renderInput("annualConsumption", "annualConsumption", "number")}
+                  {renderInput("crops", "cropsGrown")}
+                  {renderInput("seedArea", "seedArea", "number")}
+                  {renderInput("irrigatedArea", "irrigatedArea", "number")}
+                  {renderInput("rainfedArea", "rainfedArea", "number")}
                   
                   <div className="grid grid-cols-1 gap-6">
-                    {renderInput("aadhaarFront", "Aadhaar Front Image", "file", true)}
-                    {renderInput("aadhaarBack", "Aadhaar Back Image", "file", true)}
+                    {renderInput("aadhaarFront", "aadhaarFrontImage", "file", true)}
+                    {renderInput("aadhaarBack", "aadhaarBackImage", "file", true)}
                   </div>
                 </>
               )}
@@ -287,7 +298,7 @@ export default function ProfileComplete() {
                     className="px-6 py-3 bg-gray-700 text-white font-semibold hover:bg-gray-600 focus:outline-none transition-all duration-200"
                     style={{ borderRadius: '0.75rem' }}
                   >
-                    Back
+                    {t("back")}
                   </button>
                 )}
                 
@@ -298,7 +309,7 @@ export default function ProfileComplete() {
                     className="ml-auto px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold hover:from-green-700 hover:to-emerald-700 focus:outline-none transition-all duration-200"
                     style={{ borderRadius: '0.75rem' }}
                   >
-                    Next Step
+                    {t("nextStep")}
                   </button>
                 )}
                 
@@ -308,7 +319,7 @@ export default function ProfileComplete() {
                     className="ml-auto px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold hover:from-green-700 hover:to-emerald-700 focus:outline-none transition-all duration-200"
                     style={{ borderRadius: '0.75rem' }}
                   >
-                    Complete Profile
+                    {t("completeProfile")}
                   </button>
                 )}
               </div>
@@ -320,7 +331,7 @@ export default function ProfileComplete() {
                 onClick={handleSkip}
                 className="text-gray-400 hover:text-white font-medium transition-colors text-sm underline"
               >
-                Skip for now, I'll do this later
+                {t("skipForNow")}
               </button>
             </div>
 
@@ -341,11 +352,11 @@ export default function ProfileComplete() {
       </div>
 
       <Modal
-        title="Skip Profile Completion"
+        title={t("skipProfileCompletion")}
         isOpen={showSkipModal}
         onClose={() => setShowSkipModal(false)}
         onConfirm={handleSkipConfirm}
-        message="Are you sure you want to skip profile completion? You can do this later."
+        message={t("skipConfirmMessage")}
       />
     </>
   );
