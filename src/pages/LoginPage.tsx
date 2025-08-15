@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Eye, EyeOff, Globe } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { BGS } from "../assets/assets";
 import { useTranslation } from "react-i18next";
 
