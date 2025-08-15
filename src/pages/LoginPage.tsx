@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, Globe } from "lucide-react";
 import { BGS } from "../assets/assets";
+import { useTranslation } from "react-i18next";
 
 export default function LoginPage() {
   const navigate = useNavigate();
-
-    const [searchParams] = useSearchParams();
+  const { t } = useTranslation();
+  const [searchParams] = useSearchParams();
   
   const [role, setRole] = useState<"kisaan" | "pos">(() => {
     const urlRole = searchParams.get('role');
@@ -36,48 +37,44 @@ export default function LoginPage() {
     otp: ""
   });
 
-  // Input sanitization to prevent XSS
+
   const sanitizeInput = (value: string) => {
-    return value.replace(/[<>\"'&]/g, '');
+    return value.replace(/[<>"'&]/g, '');
   };
 
-  // Phone validation (only numbers, max 10 digits)
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, '').slice(0, 10);
     setFormData(prev => ({ ...prev, phone: value }));
     
     if (value.length > 0 && value.length < 10) {
-      setErrors(prev => ({ ...prev, phone: "Phone number must be 10 digits" }));
+      setErrors(prev => ({ ...prev, phone: t("phoneError") }));
     } else {
       setErrors(prev => ({ ...prev, phone: "" }));
     }
   };
 
-  // User ID validation
   const handleUserIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = sanitizeInput(e.target.value);
     setFormData(prev => ({ ...prev, userId: value }));
     
     if (value.length > 0 && value.length < 3) {
-      setErrors(prev => ({ ...prev, userId: "User ID must be at least 3 characters" }));
+      setErrors(prev => ({ ...prev, userId: t("userIdError") }));
     } else {
       setErrors(prev => ({ ...prev, userId: "" }));
     }
   };
 
-  // Password validation (max 16 chars)
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = sanitizeInput(e.target.value).slice(0, 16);
     setFormData(prev => ({ ...prev, password: value }));
     
     if (value.length > 0 && value.length < 6) {
-      setErrors(prev => ({ ...prev, password: "Password must be at least 6 characters" }));
+      setErrors(prev => ({ ...prev, password: t("passwordError") }));
     } else {
       setErrors(prev => ({ ...prev, password: "" }));
     }
   };
 
-  // OTP validation (only numbers, max 6 digits)
   const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, '').slice(0, 6);
     setFormData(prev => ({ ...prev, otp: value }));
@@ -115,17 +112,18 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex bg-black">
+     
+
       {/* Left Side - Agricultural Background with Curved Border */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         <div 
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage: `url(${BGS.login_bg}`,
+            backgroundImage: `url(${BGS.login_bg})`,
             borderTopRightRadius: '2.5rem',
             borderBottomRightRadius: '2.5rem'
           }}
         >
-          {/* Gradient Overlay */}
           <div 
             className="absolute inset-0 bg-gradient-to-br from-green-900/80 via-emerald-800/70 to-teal-900/80"
             style={{
@@ -134,7 +132,6 @@ export default function LoginPage() {
             }}
           ></div>
           
-          {/* Additional Gradient Effects */}
           <div 
             className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"
             style={{
@@ -144,7 +141,6 @@ export default function LoginPage() {
           ></div>
         </div>
         
-        {/* Left Content */}
         <div className="relative z-10 flex flex-col justify-center items-start p-12 text-white">
           <button
             onClick={handleBack}
@@ -156,11 +152,11 @@ export default function LoginPage() {
           
           <div className="max-w-md">
             <h1 className="text-5xl font-light mb-6 leading-tight">
-              Be a Part of<br />
-              Something <span className="font-bold text-green-300">Beautiful</span>
+              {t("leftTitle")}<br />
+              {t("leftSubtitle")} <span className="font-bold text-green-300">{t("leftHighlight")}</span>
             </h1>
             <p className="text-lg text-green-100 opacity-90">
-              Join thousands of farmers who are revolutionizing agriculture with modern technology
+              {t("leftDescription")}
             </p>
           </div>
         </div>
@@ -172,11 +168,11 @@ export default function LoginPage() {
           {step === "credentials" ? (
             <>
               <div className="mb-8">
-                <h2 className="text-3xl font-semibold text-white mb-2">Login</h2>
+                <h2 className="text-3xl font-semibold text-white mb-2">{t("login")}</h2>
                 <p className="text-gray-400 text-sm">
                   {role === "kisaan" 
-                    ? "Enter your phone number to access your account" 
-                    : "Enter your credentials to access your account"
+                    ? t("phoneLoginDesc") 
+                    : t("credentialsLoginDesc")
                   }
                 </p>
               </div>
@@ -185,11 +181,11 @@ export default function LoginPage() {
                 {role === "kisaan" ? (
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Phone Number
+                      {t("phoneNumber")}
                     </label>
                     <input
                       type="tel"
-                      placeholder="Enter your phone number"
+                      placeholder={t("phoneNumberPlaceholder")}
                       value={formData.phone}
                       onChange={handlePhoneChange}
                       className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors"
@@ -202,11 +198,11 @@ export default function LoginPage() {
                   <>
                     <div>
                       <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Email
+                        {t("email")}
                       </label>
                       <input
                         type="text"
-                        placeholder="Enter your email"
+                        placeholder={t("emailPlaceholder")}
                         value={formData.userId}
                         onChange={handleUserIdChange}
                         className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors"
@@ -218,12 +214,12 @@ export default function LoginPage() {
                     
                     <div>
                       <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Password
+                        {t("password")}
                       </label>
                       <div className="relative">
                         <input
                           type={showPassword ? "text" : "password"}
-                          placeholder="Enter your password"
+                          placeholder={t("passwordPlaceholder")}
                           value={formData.password}
                           onChange={handlePasswordChange}
                           className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors pr-12"
@@ -254,7 +250,7 @@ export default function LoginPage() {
                       style={{ borderRadius: '0.25rem' }}
                     />
                     <label htmlFor="remember" className="ml-2 text-sm text-gray-300">
-                      Remember me
+                      {t("rememberMe")}
                     </label>
                   </div>
                 )}
@@ -264,26 +260,26 @@ export default function LoginPage() {
                   className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold hover:from-green-700 hover:to-emerald-700 focus:outline-none transition-all duration-200"
                   style={{ borderRadius: '0.75rem' }}
                 >
-                  {role === "kisaan" ? "Send OTP" : "Login"}
+                  {role === "kisaan" ? t("sendOTP") : t("login")}
                 </button>
               </form>
             </>
           ) : (
             <>
               <div className="mb-8">
-                <h2 className="text-3xl font-semibold text-white mb-2">Verify OTP</h2>
+                <h2 className="text-3xl font-semibold text-white mb-2">{t("verifyOTP")}</h2>
                 <p className="text-gray-400 text-sm mb-2">
-                  Enter the 6-digit code sent to
+                  {t("otpDescription")}
                 </p>
                 <p className="text-white font-medium">
-                  {role === "kisaan" ? `+91 ${formData.phone}` : "your registered number"}
+                  {role === "kisaan" ? `+91 ${formData.phone}` : t("registeredNumber")}
                 </p>
               </div>
 
               <form onSubmit={handleOtpSubmit} className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    OTP Code
+                    {t("otpCode")}
                   </label>
                   <input
                     type="text"
@@ -302,7 +298,7 @@ export default function LoginPage() {
                   className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold hover:from-green-700 hover:to-emerald-700 focus:outline-none transition-all duration-200"
                   style={{ borderRadius: '0.75rem' }}
                 >
-                  Verify & Login
+                  {t("verifyLogin")}
                 </button>
 
                 <button
@@ -310,7 +306,7 @@ export default function LoginPage() {
                   onClick={() => setStep("credentials")}
                   className="w-full text-green-500 hover:text-green-400 text-sm transition-colors"
                 >
-                  Resend OTP
+                  {t("resendOTP")}
                 </button>
               </form>
             </>
@@ -318,12 +314,12 @@ export default function LoginPage() {
 
           <div className="mt-8 text-center">
             <p className="text-gray-400 text-sm">
-              Not a member?{" "}
+              {t("notMember")}{" "}
               <button
                 onClick={() => navigate(`/signup?role=${role}`)}
                 className="text-green-500 hover:text-green-400 font-medium transition-colors"
               >
-                Create an account
+                {t("createAccount")}
               </button>
             </p>
           </div>
