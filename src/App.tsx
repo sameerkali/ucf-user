@@ -21,6 +21,7 @@ import Header from "./components/Headr";
 import Dock from "./components/Dock";
 import LoadingScreen from "./components/LoadingScreen";
 import { useAppLoading } from "./hooks/useAppLoading";
+import { Toaster } from "react-hot-toast";
 
 const MainLayout = () => (
   <>
@@ -41,6 +42,16 @@ export default function App() {
 
   return (
     <BrowserRouter>
+     <Toaster 
+        position="top-right"
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: '#363636',
+            color: '#fff',
+          },
+        }}
+      />
       <OfflineBanner />
       <InstallBanner />
       <Routes>

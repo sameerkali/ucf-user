@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { BGS } from "../assets/assets";
 import Modal from "../components/Modal";
+import toast from 'react-hot-toast';
 
 export default function ProfileComplete() {
   const navigate = useNavigate();
@@ -98,7 +99,7 @@ export default function ProfileComplete() {
     e.preventDefault();
     setShowErrors(true);
     if (isStepValid()) {
-      alert("Profile submitted successfully!");
+      toast("Profile submitted successfully!");
       navigate("/");
     }
   };
