@@ -81,5 +81,39 @@
   "createAccount": "खाता बनाएं",
   "phoneError": "फ़ोन नंबर 10 अंकों का होना चाहिए",
   "userIdError": "उपयोगकर्ता ID कम से कम 3 वर्णों की होनी चाहिए",
-  "passwordError": "पासवर्ड कम से कम 6 वर्णों का होना चाहिए"
+  "passwordError": "पासवर्ड कम से कम 6 वर्णों का होना चाहिए",
+
+
+
+  "signupLeftTitle": "कृषि के भविष्य में",
+  "signupLeftHighlight": "शामिल हों",
+  "signupLeftDescription": "हजारों किसानों के साथ जुड़ें और आधुनिक तकनीक के साथ अपनी कृषि यात्रा में क्रांति लाएं",
+  "joinAsKisaan": "किसान के रूप में जुड़ें",
+  "joinAsPos": "POS के रूप में जुड़ें",
+  "createKisaanAccount": "शुरुआत के लिए अपना किसान खाता बनाएं",
+  "createPosAccount": "शुरुआत के लिए अपना POS खाता बनाएं",
+  "fullName": "पूरा नाम",
+  "fatherName": "पिता का नाम",
+  "aadharNumber": "आधार नंबर",
+  "address": "पता",
+  "businessName": "व्यापार का नाम",
+  "businessAddress": "व्यापार का पता",
+  "emailAddress": "ईमेल पता",
+  "gstNumber": "GST नंबर",
+  "agreeToTermsStart": "मैं",
+  "termsAndConditions": "नियम और शर्तों",
+  "and": "और",
+  "privacyPolicy": "गोपनीयता नीति",
+  "alreadyHaveAccount": "पहले से खाता है?",
+  "signIn": "साइन इन करें",
+  "aadharError": "आधार नंबर 12 अंकों का होना चाहिए",
+  "emailError": "कृपया एक वैध ईमेल पता दर्ज करें",
+  "gstInvalidError": "कृपया एक वैध GST नंबर दर्ज करें",
+  "gstLengthError": "GST नंबर 15 वर्णों का होना चाहिए",
+  "nameError": "नाम कम से कम 2 वर्णों का होना चाहिए",
+  "addressError": "पता कम से कम 10 वर्णों का होना चाहिए",
+  "termsError": "आपको नियम और शर्तों से सहमत होना चाहिए",
+  "kisaanSignupSuccess": "किसान साइनअप सफल! कृपया अपना प्रोफ़ाइल पूरा करें",
+  "posSignupSuccess": "POS साइनअप सफल! व्यवस्थापक सत्यापन आवश्यक"
+
 }

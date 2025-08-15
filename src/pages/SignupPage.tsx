@@ -2,12 +2,12 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { BGS } from "../assets/assets";
-
+import { useTranslation } from "react-i18next";
 
 export default function SignupPage() {
   const navigate = useNavigate();
-  
-    const [searchParams] = useSearchParams();
+  const { t } = useTranslation();
+  const [searchParams] = useSearchParams();
   
   const [role, setRole] = useState<"kisaan" | "pos">(() => {
     const urlRole = searchParams.get('role');
@@ -47,88 +47,82 @@ export default function SignupPage() {
     otp: ""
   });
 
-  // Input sanitization to prevent XSS
+
+
   const sanitizeInput = (value: string) => {
-    return value.replace(/[<>\"'&]/g, '');
+    return value.replace(/[<>"'&]/g, '');
   };
 
-  // Phone validation (only numbers, max 10 digits)
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, '').slice(0, 10);
     setFormData(prev => ({ ...prev, phone: value }));
     
     if (value.length > 0 && value.length < 10) {
-      setErrors(prev => ({ ...prev, phone: "Phone number must be 10 digits" }));
+      setErrors(prev => ({ ...prev, phone: t("phoneError") }));
     } else {
       setErrors(prev => ({ ...prev, phone: "" }));
     }
   };
 
-  // Aadhar validation (only numbers, max 12 digits)
   const handleAadharChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, '').slice(0, 12);
     setFormData(prev => ({ ...prev, aadhar: value }));
     
     if (value.length > 0 && value.length < 12) {
-      setErrors(prev => ({ ...prev, aadhar: "Aadhar number must be 12 digits" }));
+      setErrors(prev => ({ ...prev, aadhar: t("aadharError") }));
     } else {
       setErrors(prev => ({ ...prev, aadhar: "" }));
     }
   };
 
-  // Email validation
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = sanitizeInput(e.target.value);
     setFormData(prev => ({ ...prev, email: value }));
     
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (value.length > 0 && !emailRegex.test(value)) {
-      setErrors(prev => ({ ...prev, email: "Please enter a valid email address" }));
+      setErrors(prev => ({ ...prev, email: t("emailError") }));
     } else {
       setErrors(prev => ({ ...prev, email: "" }));
     }
   };
 
-  // GST validation (alphanumeric, 15 characters)
   const handleGstChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = sanitizeInput(e.target.value.toUpperCase()).slice(0, 15);
     setFormData(prev => ({ ...prev, gst: value }));
     
     const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
     if (value.length > 0 && value.length === 15 && !gstRegex.test(value)) {
-      setErrors(prev => ({ ...prev, gst: "Please enter a valid GST number" }));
+      setErrors(prev => ({ ...prev, gst: t("gstInvalidError") }));
     } else if (value.length > 0 && value.length < 15) {
-      setErrors(prev => ({ ...prev, gst: "GST number must be 15 characters" }));
+      setErrors(prev => ({ ...prev, gst: t("gstLengthError") }));
     } else {
       setErrors(prev => ({ ...prev, gst: "" }));
     }
   };
 
-  // Name validation
   const handleNameChange = (field: string, value: string) => {
     const sanitizedValue = sanitizeInput(value);
     setFormData(prev => ({ ...prev, [field]: sanitizedValue }));
     
     if (sanitizedValue.length > 0 && sanitizedValue.length < 2) {
-      setErrors(prev => ({ ...prev, [field]: "Name must be at least 2 characters" }));
+      setErrors(prev => ({ ...prev, [field]: t("nameError") }));
     } else {
       setErrors(prev => ({ ...prev, [field]: "" }));
     }
   };
 
-  // Address validation
   const handleAddressChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = sanitizeInput(e.target.value);
     setFormData(prev => ({ ...prev, address: value }));
     
     if (value.length > 0 && value.length < 10) {
-      setErrors(prev => ({ ...prev, address: "Address must be at least 10 characters" }));
+      setErrors(prev => ({ ...prev, address: t("addressError") }));
     } else {
       setErrors(prev => ({ ...prev, address: "" }));
     }
   };
 
-  // OTP validation (only numbers, max 6 digits)
   const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, '').slice(0, 6);
     setFormData(prev => ({ ...prev, otp: value }));
@@ -137,9 +131,8 @@ export default function SignupPage() {
   const handleSignupSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Check terms and conditions
     if (!agreeToTerms) {
-      setErrors(prev => ({ ...prev, terms: "You must agree to the terms and conditions" }));
+      setErrors(prev => ({ ...prev, terms: t("termsError") }));
       return;
     } else {
       setErrors(prev => ({ ...prev, terms: "" }));
@@ -166,10 +159,10 @@ export default function SignupPage() {
     
     if (formData.otp.length === 6) {
       if (role === "kisaan") {
-        alert("Kisaan Signup Successful! Please complete your profile");
+        alert(t("kisaanSignupSuccess"));
         navigate("/complete-profile");
       } else {
-        alert("POS Signup Successful! Admin verification required");
+        alert(t("posSignupSuccess"));
         navigate("/");
       }
     }
@@ -185,6 +178,7 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen flex bg-black">
+
       {/* Left Side - Agricultural Background with Curved Border */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         <div 
@@ -195,7 +189,6 @@ export default function SignupPage() {
             borderBottomRightRadius: '2.5rem'
           }}
         >
-          {/* Gradient Overlay */}
           <div 
             className="absolute inset-0 bg-gradient-to-br from-green-900/80 via-emerald-800/70 to-teal-900/80"
             style={{
@@ -204,7 +197,6 @@ export default function SignupPage() {
             }}
           ></div>
           
-          {/* Additional Gradient Effects */}
           <div 
             className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"
             style={{
@@ -214,7 +206,6 @@ export default function SignupPage() {
           ></div>
         </div>
         
-        {/* Left Content */}
         <div className="relative z-10 flex flex-col justify-center items-start p-12 text-white">
           <button
             onClick={handleBack}
@@ -226,11 +217,11 @@ export default function SignupPage() {
           
           <div className="max-w-md">
             <h1 className="text-5xl font-light mb-6 leading-tight">
-              Join the Future of<br />
-              <span className="font-bold text-green-300">Agriculture</span>
+              {t("signupLeftTitle")}<br />
+              <span className="font-bold text-green-300">{t("signupLeftHighlight")}</span>
             </h1>
             <p className="text-lg text-green-100 opacity-90">
-              Connect with thousands of farmers and revolutionize your agricultural journey with modern technology
+              {t("signupLeftDescription")}
             </p>
           </div>
         </div>
@@ -243,12 +234,12 @@ export default function SignupPage() {
             <>
               <div className="mb-8">
                 <h2 className="text-3xl font-semibold text-white mb-2">
-                  {role === "kisaan" ? "Join as Kisaan" : "Join as POS"}
+                  {role === "kisaan" ? t("joinAsKisaan") : t("joinAsPos")}
                 </h2>
                 <p className="text-gray-400 text-sm">
                   {role === "kisaan" 
-                    ? "Create your farmer account to get started" 
-                    : "Create your POS account to get started"
+                    ? t("createKisaanAccount") 
+                    : t("createPosAccount")
                   }
                 </p>
               </div>
@@ -259,7 +250,7 @@ export default function SignupPage() {
                     <div>
                       <input
                         type="text"
-                        placeholder="Full Name"
+                        placeholder={t("fullName")}
                         value={formData.fullName}
                         onChange={(e) => handleNameChange("fullName", e.target.value)}
                         className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors"
@@ -272,7 +263,7 @@ export default function SignupPage() {
                     <div>
                       <input
                         type="text"
-                        placeholder="Father's Name"
+                        placeholder={t("fatherName")}
                         value={formData.fatherName}
                         onChange={(e) => handleNameChange("fatherName", e.target.value)}
                         className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors"
@@ -285,7 +276,7 @@ export default function SignupPage() {
                     <div>
                       <input
                         type="text"
-                        placeholder="Aadhar Number"
+                        placeholder={t("aadharNumber")}
                         value={formData.aadhar}
                         onChange={handleAadharChange}
                         className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors"
@@ -298,7 +289,7 @@ export default function SignupPage() {
                     <div>
                       <input
                         type="tel"
-                        placeholder="Phone Number"
+                        placeholder={t("phoneNumber")}
                         value={formData.phone}
                         onChange={handlePhoneChange}
                         className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors"
@@ -310,7 +301,7 @@ export default function SignupPage() {
 
                     <div>
                       <textarea
-                        placeholder="Address"
+                        placeholder={t("address")}
                         value={formData.address}
                         onChange={handleAddressChange}
                         className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors resize-none"
@@ -326,7 +317,7 @@ export default function SignupPage() {
                     <div>
                       <input
                         type="text"
-                        placeholder="Business Name"
+                        placeholder={t("businessName")}
                         value={formData.name}
                         onChange={(e) => handleNameChange("name", e.target.value)}
                         className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors"
@@ -338,7 +329,7 @@ export default function SignupPage() {
 
                     <div>
                       <textarea
-                        placeholder="Business Address"
+                        placeholder={t("businessAddress")}
                         value={formData.address}
                         onChange={handleAddressChange}
                         className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors resize-none"
@@ -352,7 +343,7 @@ export default function SignupPage() {
                     <div>
                       <input
                         type="email"
-                        placeholder="Email Address"
+                        placeholder={t("emailAddress")}
                         value={formData.email}
                         onChange={handleEmailChange}
                         className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors"
@@ -365,7 +356,7 @@ export default function SignupPage() {
                     <div>
                       <input
                         type="text"
-                        placeholder="GST Number"
+                        placeholder={t("gstNumber")}
                         value={formData.gst}
                         onChange={handleGstChange}
                         className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors"
@@ -389,21 +380,21 @@ export default function SignupPage() {
                       style={{ borderRadius: '0.25rem' }}
                     />
                     <label htmlFor="terms" className="ml-2 text-sm text-gray-300">
-                      I agree to the{" "}
+                      {t("agreeToTermsStart")}{" "}
                       <button
                         type="button"
                         className="text-green-500 hover:text-green-400 underline transition-colors"
                         onClick={() => window.open('/terms', '_blank')}
                       >
-                        Terms and Conditions
+                        {t("termsAndConditions")}
                       </button>
-                      {" "}and{" "}
+                      {" "}{t("and")}{" "}
                       <button
                         type="button"
                         className="text-green-500 hover:text-green-400 underline transition-colors"
                         onClick={() => window.open('/privacy', '_blank')}
                       >
-                        Privacy Policy
+                        {t("privacyPolicy")}
                       </button>
                     </label>
                   </div>
@@ -415,16 +406,16 @@ export default function SignupPage() {
                   className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold hover:from-green-700 hover:to-emerald-700 focus:outline-none transition-all duration-200"
                   style={{ borderRadius: '0.75rem' }}
                 >
-                  Send OTP
+                  {t("sendOTP")}
                 </button>
               </form>
             </>
           ) : (
             <>
               <div className="mb-8">
-                <h2 className="text-3xl font-semibold text-white mb-2">Verify OTP</h2>
+                <h2 className="text-3xl font-semibold text-white mb-2">{t("verifyOTP")}</h2>
                 <p className="text-gray-400 text-sm mb-2">
-                  Enter the 6-digit code sent to
+                  {t("otpDescription")}
                 </p>
                 <p className="text-white font-medium">
                   {role === "kisaan" ? `+91 ${formData.phone}` : formData.email}
@@ -450,7 +441,7 @@ export default function SignupPage() {
                   className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold hover:from-green-700 hover:to-emerald-700 focus:outline-none transition-all duration-200"
                   style={{ borderRadius: '0.75rem' }}
                 >
-                  Create Account
+                  {t("createAccount")}
                 </button>
 
                 <button
@@ -458,7 +449,7 @@ export default function SignupPage() {
                   onClick={() => setStep("signup")}
                   className="w-full text-green-500 hover:text-green-400 text-sm transition-colors"
                 >
-                  Resend OTP
+                  {t("resendOTP")}
                 </button>
               </form>
             </>
@@ -466,12 +457,12 @@ export default function SignupPage() {
 
           <div className="mt-8 text-center">
             <p className="text-gray-400 text-sm">
-              Already have an account?{" "}
+              {t("alreadyHaveAccount")}{" "}
               <button
                 onClick={() => navigate("/login")}
                 className="text-green-500 hover:text-green-400 font-medium transition-colors"
               >
-                Sign in
+                {t("signIn")}
               </button>
             </p>
           </div>
