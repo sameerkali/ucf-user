@@ -137,6 +137,8 @@
   "dashboardDescription": "Select your option to explore AgriConnect development features",
   "agriConnectDashboard": "UCF Development Dashboard",
   "developmentModeActive": "Development Mode Active",
-    "digitalAgriculturePlatform": "Digital Agriculture Platform"
+    "digitalAgriculturePlatform": "Digital Agriculture Platform",
+      "pageNotFoundMessage": "Oops! The page you're looking for is out standing in its field. It might have been moved or replanted.",
+  "goToHomepage": "Go to Homepage"
 
 }

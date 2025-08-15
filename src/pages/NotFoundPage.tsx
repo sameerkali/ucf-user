@@ -1,6 +1,9 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 export default function NotFoundPage() {
+  const { t } = useTranslation();
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-lime-50 text-gray-800 font-sans p-4">
       <div className="text-center">
@@ -21,8 +24,7 @@ export default function NotFoundPage() {
         </h1>
 
         <p className="mt-4 text-lg text-gray-600 max-w-md mx-auto">
-          Oops! The page you’re looking for is out standing in its field. It
-          might have been moved or replanted.
+          {t("pageNotFoundMessage")}
         </p>
 
         <Link
@@ -31,7 +33,7 @@ export default function NotFoundPage() {
                      hover:bg-green-500 hover:text-white 
                      transition-colors duration-300 ease-in-out"
         >
-          Go to Homepage
+          {t("goToHomepage")}
         </Link>
       </div>
     </div>
