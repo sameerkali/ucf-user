@@ -1,26 +1,14 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Building2,
-  Landmark,
-  CreditCard,
-  Home,
-  Building,
-  FileText,
-  Layers,
-  TrendingUp,
-  PieChart,
-  Sprout,
-  Droplet,
-  CloudRain,
-  Upload,
-  Navigation2,
-} from "lucide-react";
+import { ArrowLeft } from "lucide-react";
+import { BGS } from "../assets/assets";
+import Modal from "../components/Modal";
 
 export default function ProfileComplete() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [showErrors, setShowErrors] = useState(false);
+  const [showSkipModal, setShowSkipModal] = useState(false);
 
   const [formData, setFormData] = useState({
     gramPanchayat: "",
@@ -50,13 +38,6 @@ export default function ProfileComplete() {
   const handleChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: sanitize(value) }));
   };
-
-  // const handleNum = (field: string, value: string, max: number) => {
-  //   setFormData(prev => ({
-  //     ...prev,
-  //     [field]: value.replace(/\D/g, "").slice(0, max)
-  //   }));
-  // };
 
   const handleFile = (field: "aadhaarFront" | "aadhaarBack", file: File | null) => {
     if (file && file.type.startsWith("image/")) {
@@ -91,6 +72,15 @@ export default function ProfileComplete() {
 
   const isStepValid = () => Object.keys(validateStep()).length === 0;
 
+  const handleSkip = () => {
+    setShowSkipModal(true);
+  };
+
+  const handleSkipConfirm = () => {
+    setShowSkipModal(false);
+    navigate("/");
+  };
+
   const nextStep = () => {
     setShowErrors(true);
     if (isStepValid()) {
@@ -113,110 +103,249 @@ export default function ProfileComplete() {
     }
   };
 
+  const handleBack = () => {
+    navigate(-1);
+  };
+
+  const getStepTitle = () => {
+    switch (step) {
+      case 1: return "Location Details";
+      case 2: return "Banking Information";
+      case 3: return "Farm & Documents";
+      default: return "Profile Setup";
+    }
+  };
+
   const renderInput = (
     name: string,
     placeholder: string,
-    icon: React.ReactNode,
     type: string = "text",
-    onChangeCb?: (v: string) => void,
     isFileInput = false
   ) => {
     const hasError = showErrors && !formData[name as keyof typeof formData];
+    
     if (isFileInput) {
       return (
         <div>
-          <label className={`block font-medium mb-1 ${hasError ? "text-red-500" : "text-gray-700"}`}>
+          <label className={`block text-sm font-medium mb-2 ${hasError ? "text-red-400" : "text-gray-300"}`}>
             {placeholder}
           </label>
           <input
             type="file"
             accept="image/*"
             onChange={e => handleFile(name as "aadhaarFront" | "aadhaarBack", e.target.files?.[0] ?? null)}
-            className={`block w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0
-              ${hasError ? "file:bg-red-500 file:text-white" : "file:bg-gray-900 file:text-white"}`}
+            className={`w-full px-4 py-3 bg-gray-800 border text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-green-600 file:text-white hover:file:bg-green-700 transition-colors ${
+              hasError ? "border-red-500" : "border-gray-700 focus:border-green-500"
+            }`}
+            style={{ borderRadius: '0.75rem' }}
           />
+          {hasError && <p className="text-red-400 text-xs mt-1">Please upload {placeholder.toLowerCase()}</p>}
         </div>
       );
     }
+
     return (
       <div>
-        <div className="relative">
-          <span className={`absolute left-3 top-1/2 -translate-y-1/2 ${hasError ? "text-red-500" : "text-gray-400"}`}>
-            {icon}
-          </span>
-          <input
-            type={type}
-            placeholder={placeholder}
-            value={(formData[name as keyof typeof formData] as string) || ""}
-            onChange={e => (onChangeCb ? onChangeCb(e.target.value) : handleChange(name, e.target.value))}
-            className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none bg-white
-              ${hasError ? "border-red-500 placeholder-red-500 text-red-500" : "border-gray-300 text-gray-900"}`}
-            style={{ whiteSpace: "pre-wrap", letterSpacing: "normal" }}
-          />
-        </div>
+        <label className={`block text-sm font-medium mb-2 ${hasError ? "text-red-400" : "text-gray-300"}`}>
+          {placeholder}
+        </label>
+        <input
+          type={type}
+          placeholder={`Enter ${placeholder.toLowerCase()}`}
+          value={(formData[name as keyof typeof formData] as string) || ""}
+          onChange={e => handleChange(name, e.target.value)}
+          className={`w-full px-4 py-3 bg-gray-800 border text-white placeholder-gray-500 focus:outline-none transition-colors ${
+            hasError ? "border-red-500" : "border-gray-700 focus:border-green-500"
+          }`}
+          style={{ borderRadius: '0.75rem' }}
+        />
+        {hasError && <p className="text-red-400 text-xs mt-1">Please enter {placeholder.toLowerCase()}</p>}
       </div>
     );
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-8" style={{ backgroundColor: "#FAF9F6" }}>
-      <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-2xl">
-        <h2 className="text-2xl font-semibold text-gray-900 mb-6">
-          Complete Your Profile ({step}/3)
-        </h2>
-
-        <form onSubmit={submitForm} className="space-y-4">
-          {step === 1 && (
-            <>
-              {renderInput("gramPanchayat", "Gram Panchayat", <Navigation2 className="w-4 h-4" />)}
-              {renderInput("district", "District", <Building2 className="w-4 h-4" />)}
-              {renderInput("state", "State", <Landmark className="w-4 h-4" />)}
-            </>
-          )}
-
-          {step === 2 && (
-            <>
-              {renderInput("bankAccount", "Bank Account Number", <CreditCard className="w-4 h-4" />)}
-              {renderInput("bankName", "Bank Name", <Home className="w-4 h-4" />)}
-              {renderInput("bankBranch", "Bank Branch", <Building className="w-4 h-4" />)}
-              {renderInput("ifsc", "IFSC Code", <FileText className="w-4 h-4" />)}
-            </>
-          )}
-
-          {step === 3 && (
-            <>
-              {renderInput("landHoldings", "Land Holdings (Hectares)", <Layers className="w-4 h-4" />)}
-              {renderInput("annualProduction", "Annual Production (Quintals)", <TrendingUp className="w-4 h-4" />)}
-              {renderInput("annualConsumption", "Annual Consumption (Quintals)", <PieChart className="w-4 h-4" />)}
-              {renderInput("crops", "Crops Grown", <Sprout className="w-4 h-4" />)}
-              {renderInput("seedArea", "Seed Area", <FileText className="w-4 h-4" />)}
-              {renderInput("irrigatedArea", "Irrigated Area", <Droplet className="w-4 h-4" />)}
-              {renderInput("rainfedArea", "Rainfed Area", <CloudRain className="w-4 h-4" />)}
-
-              {renderInput("aadhaarFront", "Aadhaar Front Image", <Upload className="w-4 h-4" />, "file", undefined, true)}
-              {renderInput("aadhaarBack", "Aadhaar Back Image", <Upload className="w-4 h-4" />, "file", undefined, true)}
-            </>
-          )}
-
-          <div className="flex justify-between pt-4">
-            {step > 1 && (
-              <button type="button" onClick={prevStep} className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">
-                Back
-              </button>
-            )}
-            {step < 3 && (
-              <button type="button" onClick={nextStep} className="ml-auto px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800">
-                Next
-              </button>
-            )}
-            {step === 3 && (
-              <button type="submit" className="ml-auto px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-500">
-                Submit Profile
-              </button>
-            )}
+    <>
+      <div className="min-h-screen flex bg-black">
+        <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
+          <div 
+            className="absolute inset-0 bg-cover bg-center"
+            style={{
+              backgroundImage: `url(${BGS.kisaan_profile})`,
+              borderTopRightRadius: '2.5rem',
+              borderBottomRightRadius: '2.5rem'
+            }}
+          >
+            <div 
+              className="absolute inset-0 bg-gradient-to-br from-green-900/80 via-emerald-800/70 to-teal-900/80"
+              style={{
+                borderTopRightRadius: '2.5rem',
+                borderBottomRightRadius: '2.5rem'
+              }}
+            ></div>
+            
+            <div 
+              className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"
+              style={{
+                borderTopRightRadius: '2.5rem',
+                borderBottomRightRadius: '2.5rem'
+              }}
+            ></div>
           </div>
-        </form>
+          
+          <div className="relative z-10 flex flex-col justify-center items-start p-12 text-white">
+            <button
+              onClick={handleBack}
+              className="absolute top-8 left-8 p-2 hover:bg-white/10 rounded-full transition-colors"
+              style={{ borderRadius: '0.5rem' }}
+            >
+              <ArrowLeft className="w-6 h-6" />
+            </button>
+            
+            <div className="max-w-md">
+              <h1 className="text-5xl font-light mb-6 leading-tight">
+                Complete Your<br />
+                <span className="font-bold text-green-300">Farmer Profile</span>
+              </h1>
+              <p className="text-lg text-green-100 opacity-90">
+                Provide your details to unlock all agricultural services and connect with the farming community
+              </p>
+              
+              <div className="mt-8">
+                <div className="flex items-center space-x-4">
+                  {[1, 2, 3].map((stepNum) => (
+                    <div
+                      key={stepNum}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
+                        stepNum <= step 
+                          ? "bg-green-500 text-white" 
+                          : "bg-white/20 text-white/60"
+                      }`}
+                    >
+                      {stepNum}
+                    </div>
+                  ))}
+                </div>
+                <p className="text-green-200 text-sm mt-2">Step {step} of 3</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-black overflow-y-auto">
+          <div className="w-full max-w-md">
+            <div className="mb-8">
+              <h2 className="text-3xl font-semibold text-white mb-2">
+                {getStepTitle()}
+              </h2>
+              <p className="text-gray-400 text-sm">
+                Step {step} of 3 - {step === 1 ? "Tell us about your location" : step === 2 ? "Add your banking details" : "Farm details and documents"}
+              </p>
+            </div>
+
+            <form onSubmit={submitForm} className="space-y-6">
+              {step === 1 && (
+                <>
+                  {renderInput("gramPanchayat", "Gram Panchayat")}
+                  {renderInput("district", "District")}
+                  {renderInput("state", "State")}
+                </>
+              )}
+
+              {step === 2 && (
+                <>
+                  {renderInput("bankAccount", "Bank Account Number")}
+                  {renderInput("bankName", "Bank Name")}
+                  {renderInput("bankBranch", "Bank Branch")}
+                  {renderInput("ifsc", "IFSC Code")}
+                </>
+              )}
+
+              {step === 3 && (
+                <>
+                  {renderInput("landHoldings", "Land Holdings (Hectares)", "number")}
+                  {renderInput("annualProduction", "Annual Production (Quintals)", "number")}
+                  {renderInput("annualConsumption", "Annual Consumption (Quintals)", "number")}
+                  {renderInput("crops", "Crops Grown")}
+                  {renderInput("seedArea", "Seed Area (Hectares)", "number")}
+                  {renderInput("irrigatedArea", "Irrigated Area (Hectares)", "number")}
+                  {renderInput("rainfedArea", "Rainfed Area (Hectares)", "number")}
+                  
+                  <div className="grid grid-cols-1 gap-6">
+                    {renderInput("aadhaarFront", "Aadhaar Front Image", "file", true)}
+                    {renderInput("aadhaarBack", "Aadhaar Back Image", "file", true)}
+                  </div>
+                </>
+              )}
+
+              <div className="flex justify-between pt-6">
+                {step > 1 && (
+                  <button 
+                    type="button" 
+                    onClick={prevStep} 
+                    className="px-6 py-3 bg-gray-700 text-white font-semibold hover:bg-gray-600 focus:outline-none transition-all duration-200"
+                    style={{ borderRadius: '0.75rem' }}
+                  >
+                    Back
+                  </button>
+                )}
+                
+                {step < 3 && (
+                  <button 
+                    type="button" 
+                    onClick={nextStep} 
+                    className="ml-auto px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold hover:from-green-700 hover:to-emerald-700 focus:outline-none transition-all duration-200"
+                    style={{ borderRadius: '0.75rem' }}
+                  >
+                    Next Step
+                  </button>
+                )}
+                
+                {step === 3 && (
+                  <button 
+                    type="submit" 
+                    className="ml-auto px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold hover:from-green-700 hover:to-emerald-700 focus:outline-none transition-all duration-200"
+                    style={{ borderRadius: '0.75rem' }}
+                  >
+                    Complete Profile
+                  </button>
+                )}
+              </div>
+            </form>
+            
+            <div className="mt-8 text-center">
+              <button
+                type="button"
+                onClick={handleSkip}
+                className="text-gray-400 hover:text-white font-medium transition-colors text-sm underline"
+              >
+                Skip for now, I'll do this later
+              </button>
+            </div>
+
+            <div className="lg:hidden mt-8 flex justify-center">
+              <div className="flex items-center space-x-2">
+                {[1, 2, 3].map((stepNum) => (
+                  <div
+                    key={stepNum}
+                    className={`w-3 h-3 rounded-full transition-colors ${
+                      stepNum <= step ? "bg-green-500" : "bg-gray-600"
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
+
+      <Modal
+        title="Skip Profile Completion"
+        isOpen={showSkipModal}
+        onClose={() => setShowSkipModal(false)}
+        onConfirm={handleSkipConfirm}
+        message="Are you sure you want to skip profile completion? You can do this later."
+      />
+    </>
   );
 }

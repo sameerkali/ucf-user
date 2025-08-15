@@ -12,7 +12,7 @@ export default function HomePage() {
     >
       <div className="relative z-10 max-w-4xl w-full mx-auto text-center px-4">
         <h1 className="text-5xl md:text-6xl font-bold text-white mb-4" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
-          Welcome to AgriConnect
+          Welcome to UCF
         </h1>
 
         <p className="text-xl text-gray-200 mb-12" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>
@@ -20,7 +20,7 @@ export default function HomePage() {
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <Link to="/kisaan-login" className="group">
+          <Link to="/login?role=kisaan" className="group">
             <div className="h-full flex flex-col justify-between bg-black/40 backdrop-blur-sm rounded-xl shadow-lg p-8 transform transition-all duration-300 ease-in-out border border-gray-400/30 hover:border-green-400 hover:shadow-green-400/30 hover:shadow-2xl hover:-translate-y-2">
               <div>
                 <h2 className="text-4xl font-bold text-white mb-3 tracking-wide text-left" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
@@ -39,7 +39,7 @@ export default function HomePage() {
             </div>
           </Link>
 
-          <Link to="/pos-login" className="group">
+          <Link to="/login?role=pos" className="group">
             <div className="h-full flex flex-col justify-between bg-black/40 backdrop-blur-sm rounded-xl shadow-lg p-8 transform transition-all duration-300 ease-in-out border border-gray-400/30 hover:border-blue-400 hover:shadow-blue-400/30 hover:shadow-2xl hover:-translate-y-2">
               <div>
                 <h2 className="text-4xl font-bold text-white mb-3 tracking-wide text-left" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>

@@ -1,14 +1,25 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { BGS } from "../assets/assets";
 
-type UserRole = "kisaan" | "pos";
 
 export default function SignupPage() {
   const navigate = useNavigate();
   
-  const role: UserRole = "kisaan"; // Change this to "pos" to test POS signup
+    const [searchParams] = useSearchParams();
+  
+  const [role, setRole] = useState<"kisaan" | "pos">(() => {
+    const urlRole = searchParams.get('role');
+    return (urlRole === 'pos' || urlRole === 'kisaan') ? urlRole : 'kisaan';
+  });
+  
+  useEffect(() => {
+    const urlRole = searchParams.get('role');
+    if (urlRole === 'pos' || urlRole === 'kisaan') {
+      setRole(urlRole);
+    }
+  }, [searchParams]);
   
   const [step, setStep] = useState<"signup" | "otp">("signup");
   const [agreeToTerms, setAgreeToTerms] = useState(false);
@@ -179,7 +190,7 @@ export default function SignupPage() {
         <div 
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage: `url(${BGS.auth_bg})`,
+            backgroundImage: `url(${BGS.signup_bg})`,
             borderTopRightRadius: '2.5rem',
             borderBottomRightRadius: '2.5rem'
           }}
