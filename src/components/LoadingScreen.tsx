@@ -13,13 +13,13 @@ const LoadingScreen: React.FC = () => {
     >
       <div className="mb-8 text-center">
         <h1 className="text-4xl font-bold text-white mb-2 opacity-0 animate-fadeInUp">
-          UCF
+          {t("appName")}
         </h1>
         <p
           className="text-emerald-100 text-lg opacity-0 animate-fadeInUp"
           style={{ animationDelay: "0.5s" }}
         >
-          {t("digital Agriculture Platform") || "Digital Agriculture Platform"}
+          {t("digitalAgriculturePlatform")}
         </p>
       </div>
 

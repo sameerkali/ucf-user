@@ -131,5 +131,12 @@
   "skipForNow": "Skip for now, I'll do this later",
   "skipProfileCompletion": "Skip Profile Completion",
   "skipConfirmMessage": "Are you sure you want to skip profile completion? You can do this later.",
-  "profileSubmitted": "Profile submitted successfully!"
+  "profileSubmitted": "Profile submitted successfully!",
+    "fullAuthFlow": "Full AUTH Flow",
+  "profileDetails": "Profile Details",
+  "dashboardDescription": "Select your option to explore AgriConnect development features",
+  "agriConnectDashboard": "UCF Development Dashboard",
+  "developmentModeActive": "Development Mode Active",
+    "digitalAgriculturePlatform": "Digital Agriculture Platform"
+
 }
