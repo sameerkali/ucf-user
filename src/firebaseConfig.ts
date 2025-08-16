@@ -1,4 +1,3 @@
-// src/firebaseConfig.ts
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 
@@ -12,11 +11,8 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
-// Initialize Firebase app
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firebase Authentication
 export const auth = getAuth(app);
 
-// Export the app instance
 export default app;
