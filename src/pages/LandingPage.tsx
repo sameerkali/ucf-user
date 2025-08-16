@@ -2,9 +2,20 @@ import { Link } from "react-router-dom";
 import { BGS } from "../assets/assets";
 import { useTranslation } from "react-i18next";
 import { Globe } from "lucide-react";
+import { useEffect } from "react";
+import { preloadImages } from "../utils/preload";
 
 export default function HomePage() {
   const { t, i18n } = useTranslation();
+
+    useEffect(() => {
+    console.log("fetching images for preload");
+    preloadImages({
+      signup_bg: BGS.signup_bg,
+      login_bg: BGS.login_bg,
+    });
+  }, []);
+
 
   const toggleLanguage = () => {
     i18n.changeLanguage(i18n.language === 'en' ? 'hi' : 'en');
