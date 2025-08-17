@@ -43,7 +43,8 @@ const SettingsPage: React.FC = () => {
 
   const handleLogout = () => {
     setShowLogoutPopup(false);
-    alert(t("loggedOutSuccessfully"));
+    localStorage.removeItem("token");
+    // alert(t("loggedOutSuccessfully"));
     navigate("/login");
   };
 
