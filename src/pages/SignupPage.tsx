@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { BGS } from "../assets/assets";
 import { useTranslation } from "react-i18next";
+import { BASE_URL } from "../utils/urls";
 
 export default function SignupPage() {
   const navigate = useNavigate();
@@ -28,26 +29,41 @@ export default function SignupPage() {
     fatherName: "",
     aadhar: "",
     phone: "",
+    password: "",
+    confirmPassword: "",
     address: "",
+    state: "",
+    district: "",
+    tehsil: "",
+    block: "",
+    village: "",
+    pincode: "",
     name: "",
     email: "",
     gst: "",
     otp: "",
     terms: ""
   });
+
   const [formData, setFormData] = useState({
     fullName: "",
     fatherName: "",
     aadhar: "",
     phone: "",
+    password: "",
+    confirmPassword: "",
     address: "",
+    state: "",
+    district: "",
+    tehsil: "",
+    block: "",
+    village: "",
+    pincode: "",
     name: "",
     email: "",
     gst: "",
     otp: ""
   });
-
-
 
   const sanitizeInput = (value: string) => {
     return value.replace(/[<>"'&]/g, '');
@@ -74,6 +90,52 @@ export default function SignupPage() {
       setErrors(prev => ({ ...prev, aadhar: "" }));
     }
   };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setFormData(prev => ({ ...prev, password: value }));
+    
+    if (value.length > 0 && value.length < 6) {
+      setErrors(prev => ({ ...prev, password: "Password must be at least 6 characters" }));
+    } else {
+      setErrors(prev => ({ ...prev, password: "" }));
+    }
+  };
+
+  const handleConfirmPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setFormData(prev => ({ ...prev, confirmPassword: value }));
+    
+    if (value !== formData.password) {
+      setErrors(prev => ({ ...prev, confirmPassword: "Passwords do not match" }));
+    } else {
+      setErrors(prev => ({ ...prev, confirmPassword: "" }));
+    }
+  };
+
+  const handlePincodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+    setFormData(prev => ({ ...prev, pincode: value }));
+    
+    if (value.length > 0 && value.length < 6) {
+      setErrors(prev => ({ ...prev, pincode: "Pincode must be 6 digits" }));
+    } else {
+      setErrors(prev => ({ ...prev, pincode: "" }));
+    }
+  };
+
+  const handleAddressFieldChange = (field: string, value: string) => {
+    const sanitizedValue = sanitizeInput(value);
+    setFormData(prev => ({ ...prev, [field]: sanitizedValue }));
+    
+    if (sanitizedValue.length > 0 && sanitizedValue.length < 2) {
+      setErrors(prev => ({ ...prev, [field]: "This field must be at least 2 characters" }));
+    } else {
+      setErrors(prev => ({ ...prev, [field]: "" }));
+    }
+  };
+
+  // ... (keep other existing handlers like handleEmailChange, handleGstChange, etc.)
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = sanitizeInput(e.target.value);
@@ -128,7 +190,7 @@ export default function SignupPage() {
     setFormData(prev => ({ ...prev, otp: value }));
   };
 
-  const handleSignupSubmit = (e: React.FormEvent) => {
+  const handleSignupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!agreeToTerms) {
@@ -142,9 +204,48 @@ export default function SignupPage() {
     if (hasErrors) return;
     
     if (role === "kisaan") {
+      // Validate farmer form
       if (formData.fullName && formData.fatherName && formData.aadhar.length === 12 && 
-          formData.phone.length === 10 && formData.address.length >= 10) {
-        setStep("otp");
+          formData.phone.length === 10 && formData.password.length >= 6 && 
+          formData.password === formData.confirmPassword &&
+          formData.state && formData.district && formData.tehsil && 
+          formData.block && formData.village && formData.pincode.length === 6) {
+        
+        try {
+          // Call farmer registration API
+          const response = await fetch(`${BASE_URL}api/farmer/register`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              name: formData.fullName,
+              fatherName: formData.fatherName,
+              password: formData.password,
+              mobile: formData.phone,
+              adharNo: formData.aadhar,
+              address: {
+                state: formData.state,
+                district: formData.district,
+                tehsil: formData.tehsil,
+                block: formData.block,
+                village: formData.village,
+                pincode: formData.pincode
+              },
+              role: "farmer"
+            })
+          });
+
+          if (response.ok) {
+            setStep("otp");
+          } else {
+            const errorData = await response.json();
+            alert(`Registration failed: ${errorData.message || 'Unknown error'}`);
+          }
+        } catch (error) {
+          alert('Network error. Please try again.');
+          console.error('Registration error:', error);
+        }
       }
     } else if (role === "pos") {
       if (formData.name && formData.address.length >= 10 && formData.email && 
@@ -178,7 +279,6 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen flex bg-black">
-
       {/* Left Side - Agricultural Background with Curved Border */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         <div 
@@ -300,16 +400,114 @@ export default function SignupPage() {
                     </div>
 
                     <div>
-                      <textarea
-                        placeholder={t("address")}
-                        value={formData.address}
-                        onChange={handleAddressChange}
-                        className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors resize-none"
+                      <input
+                        type="password"
+                        placeholder="Password"
+                        value={formData.password}
+                        onChange={handlePasswordChange}
+                        className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors"
                         style={{ borderRadius: '0.75rem' }}
-                        rows={3}
                         required
                       />
-                      {errors.address && <p className="text-red-400 text-xs mt-1">{errors.address}</p>}
+                      {errors.password && <p className="text-red-400 text-xs mt-1">{errors.password}</p>}
+                    </div>
+
+                    <div>
+                      <input
+                        type="password"
+                        placeholder="Confirm Password"
+                        value={formData.confirmPassword}
+                        onChange={handleConfirmPasswordChange}
+                        className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors"
+                        style={{ borderRadius: '0.75rem' }}
+                        required
+                      />
+                      {errors.confirmPassword && <p className="text-red-400 text-xs mt-1">{errors.confirmPassword}</p>}
+                    </div>
+
+                    {/* Address Fields */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <input
+                          type="text"
+                          placeholder="State"
+                          value={formData.state}
+                          onChange={(e) => handleAddressFieldChange("state", e.target.value)}
+                          className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors"
+                          style={{ borderRadius: '0.75rem' }}
+                          required
+                        />
+                        {errors.state && <p className="text-red-400 text-xs mt-1">{errors.state}</p>}
+                      </div>
+                      
+                      <div>
+                        <input
+                          type="text"
+                          placeholder="District"
+                          value={formData.district}
+                          onChange={(e) => handleAddressFieldChange("district", e.target.value)}
+                          className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors"
+                          style={{ borderRadius: '0.75rem' }}
+                          required
+                        />
+                        {errors.district && <p className="text-red-400 text-xs mt-1">{errors.district}</p>}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <input
+                          type="text"
+                          placeholder="Tehsil"
+                          value={formData.tehsil}
+                          onChange={(e) => handleAddressFieldChange("tehsil", e.target.value)}
+                          className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors"
+                          style={{ borderRadius: '0.75rem' }}
+                          required
+                        />
+                        {errors.tehsil && <p className="text-red-400 text-xs mt-1">{errors.tehsil}</p>}
+                      </div>
+                      
+                      <div>
+                        <input
+                          type="text"
+                          placeholder="Block"
+                          value={formData.block}
+                          onChange={(e) => handleAddressFieldChange("block", e.target.value)}
+                          className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors"
+                          style={{ borderRadius: '0.75rem' }}
+                          required
+                        />
+                        {errors.block && <p className="text-red-400 text-xs mt-1">{errors.block}</p>}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <input
+                          type="text"
+                          placeholder="Village"
+                          value={formData.village}
+                          onChange={(e) => handleAddressFieldChange("village", e.target.value)}
+                          className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors"
+                          style={{ borderRadius: '0.75rem' }}
+                          required
+                        />
+                        {errors.village && <p className="text-red-400 text-xs mt-1">{errors.village}</p>}
+                      </div>
+                      
+                      <div>
+                        <input
+                          type="text"
+                          placeholder="Pincode"
+                          value={formData.pincode}
+                          onChange={handlePincodeChange}
+                          className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors"
+                          style={{ borderRadius: '0.75rem' }}
+                          required
+                        />
+                        {errors.pincode && <p className="text-red-400 text-xs mt-1">{errors.pincode}</p>}
+                      </div>
                     </div>
                   </>
                 ) : (
@@ -406,7 +604,7 @@ export default function SignupPage() {
                   className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold hover:from-green-700 hover:to-emerald-700 focus:outline-none transition-all duration-200"
                   style={{ borderRadius: '0.75rem' }}
                 >
-                  {t("sendOTP")}
+                  {role === "kisaan" ? "Register" : t("sendOTP")}
                 </button>
               </form>
             </>
