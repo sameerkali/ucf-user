@@ -24,6 +24,10 @@ export default function SignupPage() {
     }
   }, [searchParams]);
 
+  // Two-step form for farmers: personal details and address
+  const [farmerStep, setFarmerStep] = useState<"personal" | "address">(
+    "personal"
+  );
   const [step, setStep] = useState<"signup" | "otp">("signup");
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [errors, setErrors] = useState({
@@ -148,8 +152,6 @@ export default function SignupPage() {
     }
   };
 
-  // ... (keep other existing handlers like handleEmailChange, handleGstChange, etc.)
-
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = sanitizeInput(e.target.value);
     setFormData((prev) => ({ ...prev, email: value }));
@@ -204,7 +206,140 @@ export default function SignupPage() {
     setFormData((prev) => ({ ...prev, otp: value }));
   };
 
-  const handleSignupSubmit = async (e: React.FormEvent) => {
+  // Handle farmer personal details step
+  const handleFarmerPersonalNext = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Validate personal details
+    const personalErrors = {
+      fullName: "",
+      fatherName: "",
+      aadhar: "",
+      phone: "",
+      password: "",
+      confirmPassword: "",
+    };
+
+    if (!formData.fullName || formData.fullName.length < 2) {
+      personalErrors.fullName = "Full name is required";
+    }
+    if (!formData.fatherName || formData.fatherName.length < 2) {
+      personalErrors.fatherName = "Father name is required";
+    }
+    if (formData.aadhar.length !== 12) {
+      personalErrors.aadhar = "Aadhar must be 12 digits";
+    }
+    if (formData.phone.length !== 10) {
+      personalErrors.phone = "Phone number must be 10 digits";
+    }
+    if (formData.password.length < 6) {
+      personalErrors.password = "Password must be at least 6 characters";
+    }
+    if (formData.password !== formData.confirmPassword) {
+      personalErrors.confirmPassword = "Passwords do not match";
+    }
+
+    setErrors((prev) => ({ ...prev, ...personalErrors }));
+
+    const hasPersonalErrors = Object.values(personalErrors).some(
+      (error) => error !== ""
+    );
+    if (!hasPersonalErrors) {
+      setFarmerStep("address");
+    }
+  };
+
+  // Handle farmer address step and final submission
+  const handleFarmerAddressSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!agreeToTerms) {
+      setErrors((prev) => ({ ...prev, terms: t("termsError") }));
+      return;
+    } else {
+      setErrors((prev) => ({ ...prev, terms: "" }));
+    }
+
+    // Validate address fields
+    const addressErrors = {
+      state: "",
+      district: "",
+      tehsil: "",
+      block: "",
+      village: "",
+      pincode: "",
+    };
+
+    if (!formData.state || formData.state.length < 2) {
+      addressErrors.state = "State is required";
+    }
+    if (!formData.district || formData.district.length < 2) {
+      addressErrors.district = "District is required";
+    }
+    if (!formData.tehsil || formData.tehsil.length < 2) {
+      addressErrors.tehsil = "Tehsil is required";
+    }
+    if (!formData.block || formData.block.length < 2) {
+      addressErrors.block = "Block is required";
+    }
+    if (!formData.village || formData.village.length < 2) {
+      addressErrors.village = "Village is required";
+    }
+    if (formData.pincode.length !== 6) {
+      addressErrors.pincode = "Pincode must be 6 digits";
+    }
+
+    setErrors((prev) => ({ ...prev, ...addressErrors }));
+
+    const hasAddressErrors = Object.values(addressErrors).some(
+      (error) => error !== ""
+    );
+
+    if (!hasAddressErrors) {
+      setIsLoading(true);
+      try {
+        const response = await fetch(`${BASE_URL}api/farmer/register`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: formData.fullName,
+            fatherName: formData.fatherName,
+            password: formData.password,
+            mobile: formData.phone,
+            adharNo: formData.aadhar,
+            address: {
+              state: formData.state,
+              district: formData.district,
+              tehsil: formData.tehsil,
+              block: formData.block,
+              village: formData.village,
+              pincode: formData.pincode,
+            },
+            role: "farmer",
+          }),
+        });
+
+        if (response.ok) {
+          alert("Registration successful! Please login with your credentials.");
+          navigate(`/login?role=${role}`);
+        } else {
+          const errorData = await response.json();
+          alert(
+            `Registration failed: ${errorData.message || "Unknown error"}`
+          );
+        }
+      } catch (error) {
+        alert("Network error. Please try again.");
+        console.error("Registration error:", error);
+      }
+      setIsLoading(false);
+    }
+  };
+
+  // Handle POS signup
+  const handlePosSignupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!agreeToTerms) {
@@ -217,73 +352,15 @@ export default function SignupPage() {
     const hasErrors = Object.values(errors).some((error) => error !== "");
     if (hasErrors) return;
 
-    if (role === "kisaan") {
-      // Validate farmer form
-      if (
-        formData.fullName &&
-        formData.fatherName &&
-        formData.aadhar.length === 12 &&
-        formData.phone.length === 10 &&
-        formData.password.length >= 6 &&
-        formData.password === formData.confirmPassword &&
-        formData.state &&
-        formData.district &&
-        formData.tehsil &&
-        formData.block &&
-        formData.village &&
-        formData.pincode.length === 6
-      ) {
-        setIsLoading(true);
-        try {
-          // Call farmer registration API
-          const response = await fetch(`${BASE_URL}api/farmer/register`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              name: formData.fullName,
-              fatherName: formData.fatherName,
-              password: formData.password,
-              mobile: formData.phone,
-              adharNo: formData.aadhar,
-              address: {
-                state: formData.state,
-                district: formData.district,
-                tehsil: formData.tehsil,
-                block: formData.block,
-                village: formData.village,
-                pincode: formData.pincode,
-              },
-              role: "farmer",
-            }),
-          });
-
-          if (response.ok) {
-            setStep("otp");
-          } else {
-            const errorData = await response.json();
-            alert(
-              `Registration failed: ${errorData.message || "Unknown error"}`
-            );
-          }
-        } catch (error) {
-          alert("Network error. Please try again.");
-          console.error("Registration error:", error);
-        }
-        setIsLoading(false);
-      }
-    } else if (role === "pos") {
-      if (
-        formData.name &&
-        formData.address.length >= 10 &&
-        formData.email &&
-        formData.gst.length === 15 &&
-        !errors.email &&
-        !errors.gst
-      ) {
-        setStep("otp");
-      }
+    if (
+      formData.name &&
+      formData.address.length >= 10 &&
+      formData.email &&
+      formData.gst.length === 15 &&
+      !errors.email &&
+      !errors.gst
+    ) {
+      setStep("otp");
     }
   };
 
@@ -291,19 +368,16 @@ export default function SignupPage() {
     e.preventDefault();
 
     if (formData.otp.length === 6) {
-      if (role === "kisaan") {
-        alert(t("kisaanSignupSuccess"));
-        navigate("/complete-profile");
-      } else {
-        alert(t("posSignupSuccess"));
-        navigate("/");
-      }
+      alert("POS registration successful!");
+      navigate("/"); // change this to login page as kisaan or pos
     }
   };
 
   const handleBack = () => {
     if (step === "otp") {
       setStep("signup");
+    } else if (role === "kisaan" && farmerStep === "address") {
+      setFarmerStep("personal");
     } else {
       navigate(-1);
     }
@@ -373,14 +447,32 @@ export default function SignupPage() {
                 </h2>
                 <p className="text-gray-400 text-sm">
                   {role === "kisaan"
-                    ? t("createKisaanAccount")
+                    ? farmerStep === "personal"
+                      ? "Enter your personal details"
+                      : "Enter your address details"
                     : t("createPosAccount")}
                 </p>
+                {role === "kisaan" && (
+                  <div className="flex mt-4">
+                    <div
+                      className={`w-1/2 h-1 rounded-full ${
+                        farmerStep === "personal"
+                          ? "bg-green-500"
+                          : "bg-green-300"
+                      }`}
+                    ></div>
+                    <div
+                      className={`w-1/2 h-1 rounded-full ml-2 ${
+                        farmerStep === "address" ? "bg-green-500" : "bg-gray-600"
+                      }`}
+                    ></div>
+                  </div>
+                )}
               </div>
 
-              <form onSubmit={handleSignupSubmit} className="space-y-4">
-                {role === "kisaan" ? (
-                  <>
+              {role === "kisaan" ? (
+                farmerStep === "personal" ? (
+                  <form onSubmit={handleFarmerPersonalNext} className="space-y-4">
                     <div>
                       <input
                         type="text"
@@ -487,7 +579,16 @@ export default function SignupPage() {
                       )}
                     </div>
 
-                    {/* Address Fields */}
+                    <button
+                      type="submit"
+                      className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold hover:from-green-700 hover:to-emerald-700 focus:outline-none transition-all duration-200"
+                      style={{ borderRadius: "0.75rem" }}
+                    >
+                      Next: Address Details
+                    </button>
+                  </form>
+                ) : (
+                  <form onSubmit={handleFarmerAddressSubmit} className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <input
@@ -605,134 +706,177 @@ export default function SignupPage() {
                         )}
                       </div>
                     </div>
-                  </>
-                ) : (
-                  <>
-                    <div>
-                      <input
-                        type="text"
-                        placeholder={t("businessName")}
-                        value={formData.name}
-                        onChange={(e) =>
-                          handleNameChange("name", e.target.value)
-                        }
-                        className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors"
-                        style={{ borderRadius: "0.75rem" }}
-                        required
-                      />
-                      {errors.name && (
-                        <p className="text-red-400 text-xs mt-1">
-                          {errors.name}
-                        </p>
+
+                    {/* Terms and Conditions */}
+                    <div className="space-y-2">
+                      <div className="flex items-start">
+                        <input
+                          type="checkbox"
+                          id="terms"
+                          checked={agreeToTerms}
+                          onChange={(e) => setAgreeToTerms(e.target.checked)}
+                          className="w-4 h-4 text-green-500 bg-gray-800 border-gray-600 focus:ring-green-500 mt-1"
+                          style={{ borderRadius: "0.25rem" }}
+                        />
+                        <label
+                          htmlFor="terms"
+                          className="ml-2 text-sm text-gray-300"
+                        >
+                          {t("agreeToTermsStart")}{" "}
+                          <button
+                            type="button"
+                            className="text-green-500 hover:text-green-400 underline transition-colors"
+                            onClick={() => window.open("/terms", "_blank")}
+                          >
+                            {t("termsAndConditions")}
+                          </button>{" "}
+                          {t("and")}{" "}
+                          <button
+                            type="button"
+                            className="text-green-500 hover:text-green-400 underline transition-colors"
+                            onClick={() => window.open("/privacy", "_blank")}
+                          >
+                            {t("privacyPolicy")}
+                          </button>
+                        </label>
+                      </div>
+                      {errors.terms && (
+                        <p className="text-red-400 text-xs">{errors.terms}</p>
                       )}
                     </div>
 
-                    <div>
-                      <textarea
-                        placeholder={t("businessAddress")}
-                        value={formData.address}
-                        onChange={handleAddressChange}
-                        className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors resize-none"
-                        style={{ borderRadius: "0.75rem" }}
-                        rows={3}
-                        required
-                      />
-                      {errors.address && (
-                        <p className="text-red-400 text-xs mt-1">
-                          {errors.address}
-                        </p>
-                      )}
-                    </div>
-
-                    <div>
-                      <input
-                        type="email"
-                        placeholder={t("emailAddress")}
-                        value={formData.email}
-                        onChange={handleEmailChange}
-                        className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors"
-                        style={{ borderRadius: "0.75rem" }}
-                        required
-                      />
-                      {errors.email && (
-                        <p className="text-red-400 text-xs mt-1">
-                          {errors.email}
-                        </p>
-                      )}
-                    </div>
-
-                    <div>
-                      <input
-                        type="text"
-                        placeholder={t("gstNumber")}
-                        value={formData.gst}
-                        onChange={handleGstChange}
-                        className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors"
-                        style={{ borderRadius: "0.75rem" }}
-                        required
-                      />
-                      {errors.gst && (
-                        <p className="text-red-400 text-xs mt-1">
-                          {errors.gst}
-                        </p>
-                      )}
-                    </div>
-                  </>
-                )}
-
-                {/* Terms and Conditions */}
-                <div className="space-y-2">
-                  <div className="flex items-start">
-                    <input
-                      type="checkbox"
-                      id="terms"
-                      checked={agreeToTerms}
-                      onChange={(e) => setAgreeToTerms(e.target.checked)}
-                      className="w-4 h-4 text-green-500 bg-gray-800 border-gray-600 focus:ring-green-500 mt-1"
-                      style={{ borderRadius: "0.25rem" }}
-                    />
-                    <label
-                      htmlFor="terms"
-                      className="ml-2 text-sm text-gray-300"
+                    <button
+                      type="submit"
+                      disabled={isLoading}
+                      className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold hover:from-green-700 hover:to-emerald-700 focus:outline-none transition-all duration-200 flex items-center justify-center"
+                      style={{ borderRadius: "0.75rem" }}
                     >
-                      {t("agreeToTermsStart")}{" "}
-                      <button
-                        type="button"
-                        className="text-green-500 hover:text-green-400 underline transition-colors"
-                        onClick={() => window.open("/terms", "_blank")}
-                      >
-                        {t("termsAndConditions")}
-                      </button>{" "}
-                      {t("and")}{" "}
-                      <button
-                        type="button"
-                        className="text-green-500 hover:text-green-400 underline transition-colors"
-                        onClick={() => window.open("/privacy", "_blank")}
-                      >
-                        {t("privacyPolicy")}
-                      </button>
-                    </label>
+                      {isLoading ? (
+                        <Loader2 className="animate-spin w-5 h-5" />
+                      ) : (
+                        "Complete Registration"
+                      )}
+                    </button>
+                  </form>
+                )
+              ) : (
+                <form onSubmit={handlePosSignupSubmit} className="space-y-4">
+                  <div>
+                    <input
+                      type="text"
+                      placeholder={t("businessName")}
+                      value={formData.name}
+                      onChange={(e) => handleNameChange("name", e.target.value)}
+                      className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors"
+                      style={{ borderRadius: "0.75rem" }}
+                      required
+                    />
+                    {errors.name && (
+                      <p className="text-red-400 text-xs mt-1">{errors.name}</p>
+                    )}
                   </div>
-                  {errors.terms && (
-                    <p className="text-red-400 text-xs">{errors.terms}</p>
-                  )}
-                </div>
 
-                
+                  <div>
+                    <textarea
+                      placeholder={t("businessAddress")}
+                      value={formData.address}
+                      onChange={handleAddressChange}
+                      className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors resize-none"
+                      style={{ borderRadius: "0.75rem" }}
+                      rows={3}
+                      required
+                    />
+                    {errors.address && (
+                      <p className="text-red-400 text-xs mt-1">
+                        {errors.address}
+                      </p>
+                    )}
+                  </div>
 
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold hover:from-green-700 hover:to-emerald-700 focus:outline-none transition-all duration-200 flex items-center justify-center"
-                  style={{ borderRadius: "0.75rem" }}
-                >
-                  {isLoading ? (
-                    <Loader2 className="animate-spin w-5 h-5" />
-                  ) : (
-                    t("register")
-                  )}
-                </button>
-              </form>
+                  <div>
+                    <input
+                      type="email"
+                      placeholder={t("emailAddress")}
+                      value={formData.email}
+                      onChange={handleEmailChange}
+                      className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors"
+                      style={{ borderRadius: "0.75rem" }}
+                      required
+                    />
+                    {errors.email && (
+                      <p className="text-red-400 text-xs mt-1">
+                        {errors.email}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <input
+                      type="text"
+                      placeholder={t("gstNumber")}
+                      value={formData.gst}
+                      onChange={handleGstChange}
+                      className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors"
+                      style={{ borderRadius: "0.75rem" }}
+                      required
+                    />
+                    {errors.gst && (
+                      <p className="text-red-400 text-xs mt-1">{errors.gst}</p>
+                    )}
+                  </div>
+
+                  {/* Terms and Conditions */}
+                  <div className="space-y-2">
+                    <div className="flex items-start">
+                      <input
+                        type="checkbox"
+                        id="terms"
+                        checked={agreeToTerms}
+                        onChange={(e) => setAgreeToTerms(e.target.checked)}
+                        className="w-4 h-4 text-green-500 bg-gray-800 border-gray-600 focus:ring-green-500 mt-1"
+                        style={{ borderRadius: "0.25rem" }}
+                      />
+                      <label
+                        htmlFor="terms"
+                        className="ml-2 text-sm text-gray-300"
+                      >
+                        {t("agreeToTermsStart")}{" "}
+                        <button
+                          type="button"
+                          className="text-green-500 hover:text-green-400 underline transition-colors"
+                          onClick={() => window.open("/terms", "_blank")}
+                        >
+                          {t("termsAndConditions")}
+                        </button>{" "}
+                        {t("and")}{" "}
+                        <button
+                          type="button"
+                          className="text-green-500 hover:text-green-400 underline transition-colors"
+                          onClick={() => window.open("/privacy", "_blank")}
+                        >
+                          {t("privacyPolicy")}
+                        </button>
+                      </label>
+                    </div>
+                    {errors.terms && (
+                      <p className="text-red-400 text-xs">{errors.terms}</p>
+                    )}
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold hover:from-green-700 hover:to-emerald-700 focus:outline-none transition-all duration-200 flex items-center justify-center"
+                    style={{ borderRadius: "0.75rem" }}
+                  >
+                    {isLoading ? (
+                      <Loader2 className="animate-spin w-5 h-5" />
+                    ) : (
+                      t("sendOTP")
+                    )}
+                  </button>
+                </form>
+              )}
             </>
           ) : (
             <>
@@ -743,9 +887,7 @@ export default function SignupPage() {
                 <p className="text-gray-400 text-sm mb-2">
                   {t("otpDescription")}
                 </p>
-                <p className="text-white font-medium">
-                  {role === "kisaan" ? `+91 ${formData.phone}` : formData.email}
-                </p>
+                <p className="text-white font-medium">{formData.email}</p>
               </div>
 
               <form onSubmit={handleOtpSubmit} className="space-y-6">
@@ -765,10 +907,14 @@ export default function SignupPage() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold hover:from-green-700 hover:to-emerald-700 focus:outline-none transition-all duration-200"
+                  className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold hover:from-green-700 hover:to-emerald-700 focus:outline-none transition-all duration-200 flex items-center justify-center"
                   style={{ borderRadius: "0.75rem" }}
                 >
-                  {t("createAccount")}
+                  {isLoading ? (
+                    <Loader2 className="animate-spin w-5 h-5" />
+                  ) : (
+                    t("createAccount")
+                  )}
                 </button>
 
                 <button
@@ -786,7 +932,7 @@ export default function SignupPage() {
             <p className="text-gray-400 text-sm">
               {t("alreadyHaveAccount")}{" "}
               <button
-                onClick={() => navigate("/login")}
+                onClick={() => navigate(`/login?role=${role}`)}
                 className="text-green-500 hover:text-green-400 font-medium transition-colors"
               >
                 {t("signIn")}

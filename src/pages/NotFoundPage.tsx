@@ -28,7 +28,7 @@ export default function NotFoundPage() {
         </p>
 
         <Link
-          to="/"
+          to="/home"
           className="mt-10 inline-block px-8 py-3 border border-green-500 text-green-600 rounded-lg font-semibold uppercase tracking-widest
                      hover:bg-green-500 hover:text-white 
                      transition-colors duration-300 ease-in-out"

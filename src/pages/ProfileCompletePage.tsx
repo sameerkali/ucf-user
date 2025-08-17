@@ -81,7 +81,7 @@ export default function ProfileComplete() {
 
   const handleSkipConfirm = () => {
     setShowSkipModal(false);
-    navigate("/");
+    navigate("/home");
   };
 
   const nextStep = () => {
@@ -102,7 +102,7 @@ export default function ProfileComplete() {
     setShowErrors(true);
     if (isStepValid()) {
       toast.success(t("profileSubmitted"));
-      navigate("/");
+      navigate("/home");
     }
   };
 

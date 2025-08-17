@@ -56,7 +56,7 @@ export default function App() {
       <InstallBanner />
       <Routes>
         {/* Routes WITHOUT the Header and Dock */}
-        <Route path="/landing" element={<LandingPage />} />
+        <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/404" element={<NotFoundPage />} />
@@ -64,7 +64,7 @@ export default function App() {
 
         {/* Routes WITH the Header and Dock */}
         <Route element={<MainLayout />}>
-          <Route path="/" element={<HomePage />} />
+          <Route path="/home" element={<HomePage />} />
           <Route path="/posts" element={<PostsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/help" element={<HelpAndSupportPage />} />

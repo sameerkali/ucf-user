@@ -93,7 +93,9 @@ export default function LoginPage() {
           }),
         });
         if (response.ok) {
-          // Success: handle navigation or session storage as needed
+          const data = await response.json();
+          localStorage.setItem("token", data.token);
+          localStorage.setItem("user", JSON.stringify(data.user) || "{}");
           navigate("/complete-profile?role=kisaan");
         } else {
           const errorData = await response.json();
