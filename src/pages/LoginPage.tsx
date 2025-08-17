@@ -95,7 +95,7 @@ export default function LoginPage() {
         if (response.ok) {
           const data = await response.json();
           localStorage.setItem("token", data.token);
-          localStorage.setItem("user", JSON.stringify(data.user) || "{}");
+          localStorage.setItem("user", JSON.stringify(data.result));
           navigate("/complete-profile?role=kisaan");
         } else {
           const errorData = await response.json();

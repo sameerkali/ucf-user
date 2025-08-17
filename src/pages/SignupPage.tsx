@@ -322,7 +322,7 @@ export default function SignupPage() {
         });
 
         if (response.ok) {
-          alert("Registration successful! Please login with your credentials.");
+          // alert("Registration successful! Please login with your credentials.");
           navigate(`/login?role=${role}`);
         } else {
           const errorData = await response.json();

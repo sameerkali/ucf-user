@@ -1,35 +1,44 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { BGS } from "../assets/assets";
 import Modal from "../components/Modal";
 import toast from 'react-hot-toast';
 import { useTranslation } from "react-i18next";
+import { BASE_URL } from "../utils/urls";
 
 export default function ProfileComplete() {
   const navigate = useNavigate();
   const { t } = useTranslation();
+
+  // Only two steps now: Bank details, Farm & Documents
   const [step, setStep] = useState(1);
   const [showErrors, setShowErrors] = useState(false);
   const [showSkipModal, setShowSkipModal] = useState(false);
 
+  // cropsList: fetched from backend for user selection
+  const [cropsList, setCropsList] = useState<string[]>([]);
+  const [cropsLoading, setCropsLoading] = useState(false);
+
+  const [isLoading, setIsLoading] = useState(false);
+
   const [formData, setFormData] = useState({
-    gramPanchayat: "",
-    district: "",
-    state: "",
     bankAccount: "",
+    accountHolder: "",
     bankName: "",
     bankBranch: "",
     ifsc: "",
     landHoldings: "",
     annualProduction: "",
     annualConsumption: "",
-    crops: "",
+    crops: [] as string[],
     seedArea: "",
     irrigatedArea: "",
     rainfedArea: "",
     aadhaarFront: null as File | null,
-    aadhaarBack: null as File | null
+    aadhaarBack: null as File | null,
+    aadhaarFrontUrl: "",
+    aadhaarBackUrl: "",
   });
 
   const sanitize = (v: string) =>
@@ -42,33 +51,85 @@ export default function ProfileComplete() {
     setFormData(prev => ({ ...prev, [field]: sanitize(value) }));
   };
 
-  const handleFile = (field: "aadhaarFront" | "aadhaarBack", file: File | null) => {
+  const handleCropChange = (crop: string) => {
+    setFormData(prev => ({
+      ...prev,
+      crops: prev.crops.includes(crop)
+        ? prev.crops.filter(c => c !== crop)
+        : [...prev.crops, crop],
+    }));
+  };
+
+  const handleFile = async (field: "aadhaarFront" | "aadhaarBack", file: File | null) => {
     if (file && file.type.startsWith("image/")) {
       setFormData(prev => ({ ...prev, [field]: file }));
+
+      // TODO: Replace this mock with your own upload endpoint!
+      const mockUpload = async () => {
+        await new Promise(res => setTimeout(res, 1200));
+        return `uploads/${file.name}`;
+      };
+      const uploadedPath = await mockUpload();
+      setFormData(prev => ({
+        ...prev,
+        [field + "Url"]: uploadedPath,
+      }));
     }
   };
+
+  // Fetch crops with Authorization token
+  useEffect(() => {
+    const fetchCrops = async () => {
+      setCropsLoading(true);
+      const token = localStorage.getItem('token');
+      
+      try {
+        const response = await fetch(`${BASE_URL}api/admin/get-all-crop`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success && data.crops) {
+          // Extract crop names from the response
+          setCropsList(data.crops.map((crop: any) => crop.name));
+        } else {
+          setCropsList(["no", "api", "call", "its", "mocked"]);
+        }
+      } catch (error) {
+        console.error('Error fetching crops:', error);
+        setCropsList([]);
+        toast.error('Failed to load crops');
+      } finally {
+        setCropsLoading(false);
+      }
+    };
+
+    fetchCrops();
+  }, []);
 
   const validateStep = () => {
     const errors: Record<string, boolean> = {};
     if (step === 1) {
-      if (!formData.gramPanchayat) errors.gramPanchayat = true;
-      if (!formData.district) errors.district = true;
-      if (!formData.state) errors.state = true;
-    } else if (step === 2) {
       if (!formData.bankAccount) errors.bankAccount = true;
       if (!formData.bankName) errors.bankName = true;
+      if (!formData.accountHolder) errors.accountHolder = true;
       if (!formData.bankBranch) errors.bankBranch = true;
       if (!formData.ifsc) errors.ifsc = true;
-    } else if (step === 3) {
+    } else if (step === 2) {
       if (!formData.landHoldings) errors.landHoldings = true;
       if (!formData.annualProduction) errors.annualProduction = true;
       if (!formData.annualConsumption) errors.annualConsumption = true;
-      if (!formData.crops) errors.crops = true;
+      if (!formData.crops || formData.crops.length === 0) errors.crops = true;
       if (!formData.seedArea) errors.seedArea = true;
       if (!formData.irrigatedArea) errors.irrigatedArea = true;
       if (!formData.rainfedArea) errors.rainfedArea = true;
-      if (!formData.aadhaarFront) errors.aadhaarFront = true;
-      if (!formData.aadhaarBack) errors.aadhaarBack = true;
+      if (!formData.aadhaarFrontUrl) errors.aadhaarFront = true;
+      if (!formData.aadhaarBackUrl) errors.aadhaarBack = true;
     }
     return errors;
   };
@@ -84,11 +145,43 @@ export default function ProfileComplete() {
     navigate("/home");
   };
 
-  const nextStep = () => {
+  const nextStep = async () => {
     setShowErrors(true);
-    if (isStepValid()) {
-      setStep(s => s + 1);
-      setShowErrors(false);
+    if (step === 1) {
+      if (isStepValid()) {
+        setIsLoading(true);
+        const token = localStorage.getItem('token');
+        
+        // Submit bank details
+        try {
+          const res = await fetch(`${BASE_URL}api/bank/addDetail`, {
+            method: "POST",
+            headers: { 
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              bankName: formData.bankName,
+              accountHolderName: formData.accountHolder,
+              accountNumber: formData.bankAccount,
+              ifscCode: formData.ifsc,
+              branch: formData.bankBranch,
+            }),
+          });
+          
+          if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.message || "Failed to save bank details");
+          }
+          
+          toast.success("Bank details saved successfully!");
+          setStep(2);
+          setShowErrors(false);
+        } catch (error: any) {
+          toast.error(error.message || "Failed to save bank details");
+        }
+        setIsLoading(false);
+      }
     }
   };
 
@@ -97,12 +190,47 @@ export default function ProfileComplete() {
     setStep(s => s - 1);
   };
 
-  const submitForm = (e: React.FormEvent) => {
+  const submitForm = async (e: React.FormEvent) => {
     e.preventDefault();
     setShowErrors(true);
     if (isStepValid()) {
-      toast.success(t("profileSubmitted"));
-      navigate("/home");
+      setIsLoading(true);
+      const token = localStorage.getItem('token');
+      
+      // Submit farm & docs
+      try {
+        const payload = {
+          landHoldings: formData.landHoldings,
+          annualProduction: Number(formData.annualProduction),
+          annualConsumption: Number(formData.annualConsumption),
+          crops: formData.crops,
+          seedArea: Number(formData.seedArea),
+          rainfedArea: Number(formData.rainfedArea),
+          irrigatedArea: Number(formData.irrigatedArea),
+          aadhaarFront: formData.aadhaarFrontUrl,
+          aadhaarBack: formData.aadhaarBackUrl,
+        };
+        
+        const res = await fetch(`${BASE_URL}api/other-details/add`, {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify(payload),
+        });
+        
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.message || "Failed to save farm details");
+        }
+        
+        toast.success(t("profileSubmitted"));
+        navigate("/home");
+      } catch (error: any) {
+        toast.error(error.message || "Failed to save farm details");
+      }
+      setIsLoading(false);
     }
   };
 
@@ -112,18 +240,16 @@ export default function ProfileComplete() {
 
   const getStepTitle = () => {
     switch (step) {
-      case 1: return t("locationDetails");
-      case 2: return t("bankingInformation");
-      case 3: return t("farmDocuments");
+      case 1: return t("bankingInformation");
+      case 2: return t("farmDocuments");
       default: return t("profileSetup");
     }
   };
 
   const getStepDescription = () => {
     switch (step) {
-      case 1: return t("locationStepDesc");
-      case 2: return t("bankingStepDesc");
-      case 3: return t("farmStepDesc");
+      case 1: return t("bankingStepDesc");
+      case 2: return t("farmStepDesc");
       default: return "";
     }
   };
@@ -135,7 +261,6 @@ export default function ProfileComplete() {
     isFileInput = false
   ) => {
     const hasError = showErrors && !formData[name as keyof typeof formData];
-    
     if (isFileInput) {
       return (
         <div>
@@ -155,7 +280,6 @@ export default function ProfileComplete() {
         </div>
       );
     }
-
     return (
       <div>
         <label className={`block text-sm font-medium mb-2 ${hasError ? "text-red-400" : "text-gray-300"}`}>
@@ -175,6 +299,39 @@ export default function ProfileComplete() {
       </div>
     );
   };
+
+  // For crops multi-select, uses checkboxes
+  const renderCropsSelector = () => (
+    <div>
+      <label className={`block text-sm font-medium mb-2 ${showErrors && (!formData.crops || formData.crops.length === 0) ? "text-red-400" : "text-gray-300"}`}>
+        {t("cropsGrown")}
+      </label>
+      {cropsLoading ? (
+        <div className="flex items-center justify-center py-4">
+          <Loader2 className="animate-spin w-5 h-5 text-green-500 mr-2" />
+          <span className="text-gray-400">{t("loading")}...</span>
+        </div>
+      ) : cropsList.length > 0 ? (
+        <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto bg-gray-800 p-3 rounded-lg border border-gray-700">
+          {cropsList.map(crop => (
+            <label key={crop} className="flex items-center cursor-pointer hover:bg-gray-700 p-1 rounded">
+              <input
+                type="checkbox"
+                checked={formData.crops.includes(crop)}
+                onChange={() => handleCropChange(crop)}
+                className="w-4 h-4 text-green-600 bg-gray-800 border-gray-600 focus:ring-green-500 rounded mr-2"
+              />
+              <span className="text-white text-sm">{crop}</span>
+            </label>
+          ))}
+        </div>
+      ) : (
+        <p className="text-gray-400 text-sm">No crops available</p>
+      )}
+      {showErrors && (!formData.crops || formData.crops.length === 0) &&
+        <p className="text-red-400 text-xs mt-1">{t("pleaseSelect")} {t("cropsGrown").toLowerCase()}</p>}
+    </div>
+  );
 
   return (
     <>
@@ -225,7 +382,7 @@ export default function ProfileComplete() {
               
               <div className="mt-8">
                 <div className="flex items-center space-x-4">
-                  {[1, 2, 3].map((stepNum) => (
+                  {[1, 2].map((stepNum) => (
                     <div
                       key={stepNum}
                       className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
@@ -238,7 +395,7 @@ export default function ProfileComplete() {
                     </div>
                   ))}
                 </div>
-                <p className="text-green-200 text-sm mt-2">{t("step")} {step} {t("of")} 3</p>
+                <p className="text-green-200 text-sm mt-2">{t("step")} {step} {t("of")} 2</p>
               </div>
             </div>
           </div>
@@ -251,34 +408,51 @@ export default function ProfileComplete() {
                 {getStepTitle()}
               </h2>
               <p className="text-gray-400 text-sm">
-                {t("step")} {step} {t("of")} 3 - {getStepDescription()}
+                {t("step")} {step} {t("of")} 2 - {getStepDescription()}
               </p>
             </div>
 
             <form onSubmit={submitForm} className="space-y-6">
               {step === 1 && (
                 <>
-                  {renderInput("gramPanchayat", "gramPanchayat")}
-                  {renderInput("district", "district")}
-                  {renderInput("state", "state")}
+                  {renderInput("bankAccount", "bankAccountNumber")}
+                  {renderInput("accountHolder", "accountHolderName")}
+                  {renderInput("bankName", "bankName")}
+                  {renderInput("bankBranch", "bankBranch")}
+                  {renderInput("ifsc", "ifscCode")}
+                  
+                  <div className="flex justify-between pt-6">
+                    <button 
+                      type="button" 
+                      onClick={handleSkip} 
+                      className="px-6 py-3 bg-gray-700 text-white font-semibold hover:bg-gray-600 focus:outline-none transition-all duration-200"
+                      style={{ borderRadius: '0.75rem' }}
+                    >
+                      {t("skipForNow")}
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={nextStep} 
+                      disabled={isLoading}
+                      className="ml-auto px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold hover:from-green-700 hover:to-emerald-700 focus:outline-none transition-all duration-200 flex items-center justify-center"
+                      style={{ borderRadius: '0.75rem' }}
+                    >
+                      {isLoading ? (
+                        <Loader2 className="animate-spin w-5 h-5" />
+                      ) : (
+                        t("nextStep")
+                      )}
+                    </button>
+                  </div>
                 </>
               )}
 
               {step === 2 && (
                 <>
-                  {renderInput("bankAccount", "bankAccountNumber")}
-                  {renderInput("bankName", "bankName")}
-                  {renderInput("bankBranch", "bankBranch")}
-                  {renderInput("ifsc", "ifscCode")}
-                </>
-              )}
-
-              {step === 3 && (
-                <>
-                  {renderInput("landHoldings", "landHoldings", "number")}
+                  {renderInput("landHoldings", "landHoldings")}
                   {renderInput("annualProduction", "annualProduction", "number")}
                   {renderInput("annualConsumption", "annualConsumption", "number")}
-                  {renderInput("crops", "cropsGrown")}
+                  {renderCropsSelector()}
                   {renderInput("seedArea", "seedArea", "number")}
                   {renderInput("irrigatedArea", "irrigatedArea", "number")}
                   {renderInput("rainfedArea", "rainfedArea", "number")}
@@ -287,57 +461,36 @@ export default function ProfileComplete() {
                     {renderInput("aadhaarFront", "aadhaarFrontImage", "file", true)}
                     {renderInput("aadhaarBack", "aadhaarBackImage", "file", true)}
                   </div>
+                  
+                  <div className="flex justify-between pt-6">
+                    <button 
+                      type="button" 
+                      onClick={prevStep} 
+                      className="px-6 py-3 bg-gray-700 text-white font-semibold hover:bg-gray-600 focus:outline-none transition-all duration-200"
+                      style={{ borderRadius: '0.75rem' }}
+                    >
+                      {t("back")}
+                    </button>
+                    <button 
+                      type="submit" 
+                      disabled={isLoading}
+                      className="ml-auto px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold hover:from-green-700 hover:to-emerald-700 focus:outline-none transition-all duration-200 flex items-center justify-center"
+                      style={{ borderRadius: '0.75rem' }}
+                    >
+                      {isLoading ? (
+                        <Loader2 className="animate-spin w-5 h-5" />
+                      ) : (
+                        t("completeProfile")
+                      )}
+                    </button>
+                  </div>
                 </>
               )}
-
-              <div className="flex justify-between pt-6">
-                {step > 1 && (
-                  <button 
-                    type="button" 
-                    onClick={prevStep} 
-                    className="px-6 py-3 bg-gray-700 text-white font-semibold hover:bg-gray-600 focus:outline-none transition-all duration-200"
-                    style={{ borderRadius: '0.75rem' }}
-                  >
-                    {t("back")}
-                  </button>
-                )}
-                
-                {step < 3 && (
-                  <button 
-                    type="button" 
-                    onClick={nextStep} 
-                    className="ml-auto px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold hover:from-green-700 hover:to-emerald-700 focus:outline-none transition-all duration-200"
-                    style={{ borderRadius: '0.75rem' }}
-                  >
-                    {t("nextStep")}
-                  </button>
-                )}
-                
-                {step === 3 && (
-                  <button 
-                    type="submit" 
-                    className="ml-auto px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold hover:from-green-700 hover:to-emerald-700 focus:outline-none transition-all duration-200"
-                    style={{ borderRadius: '0.75rem' }}
-                  >
-                    {t("completeProfile")}
-                  </button>
-                )}
-              </div>
             </form>
             
-            <div className="mt-8 text-center">
-              <button
-                type="button"
-                onClick={handleSkip}
-                className="text-gray-400 hover:text-white font-medium transition-colors text-sm underline"
-              >
-                {t("skipForNow")}
-              </button>
-            </div>
-
             <div className="lg:hidden mt-8 flex justify-center">
               <div className="flex items-center space-x-2">
-                {[1, 2, 3].map((stepNum) => (
+                {[1, 2].map((stepNum) => (
                   <div
                     key={stepNum}
                     className={`w-3 h-3 rounded-full transition-colors ${
