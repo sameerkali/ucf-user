@@ -23,6 +23,17 @@ import LoadingScreen from "./components/LoadingScreen";
 import { useAppLoading } from "./hooks/useAppLoading";
 import { Toaster } from "react-hot-toast";
 
+// Authentication guard for protected routes
+function RequireAuth() {
+  const token = localStorage.getItem("token");
+  
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  return <Outlet />;
+}
+
 const MainLayout = () => (
   <>
     <Header />
@@ -42,35 +53,37 @@ export default function App() {
 
   return (
     <BrowserRouter>
-     <Toaster 
+      <Toaster
         position="top-right"
         toastOptions={{
           duration: 3000,
           style: {
-            background: '#363636',
-            color: '#fff',
+            background: "#363636",
+            color: "#fff",
           },
         }}
       />
       <OfflineBanner />
       <InstallBanner />
       <Routes>
-        {/* Routes WITHOUT the Header and Dock */}
+        {/* Public routes (no header/dock, no auth) */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/404" element={<NotFoundPage />} />
         <Route path="/complete-profile" element={<ProfileComplete />} />
 
-        {/* Routes WITH the Header and Dock */}
-        <Route element={<MainLayout />}>
-          <Route path="/home" element={<HomePage />} />
-          <Route path="/posts" element={<PostsPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/help" element={<HelpAndSupportPage />} />
+        {/* Protected routes (header, dock, must be authenticated) */}
+        <Route element={<RequireAuth />}>
+          <Route element={<MainLayout />}>
+            <Route path="/home" element={<HomePage />} />
+            <Route path="/posts" element={<PostsPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/help" element={<HelpAndSupportPage />} />
+          </Route>
         </Route>
 
-        {/* Catch-all route to redirect to 404 */}
+        {/* Catch-all route */}
         <Route path="*" element={<Navigate to="/404" replace />} />
       </Routes>
     </BrowserRouter>
