@@ -12,16 +12,14 @@ import {
   ChevronDown,
   Check,
 } from "lucide-react";
-import { BASE_URL } from "../utils/urls";
 
 type LanguageCode = "en" | "hi";
 
 const SettingsPage: React.FC = () => {
   const navigate = useNavigate();
   const { i18n, t } = useTranslation();
-  const [profile, setProfile] = useState(null);
+  const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
   const [showLanguagePopup, setShowLanguagePopup] = useState(false);
   const [pendingLang, setPendingLang] = useState<LanguageCode>(
@@ -39,27 +37,26 @@ const SettingsPage: React.FC = () => {
   const appVersion = "v1.2.3";
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    // Get profile data from localStorage instead of API call
+    const getProfileFromStorage = () => {
       setLoading(true);
-      setError("");
-      const token = localStorage.getItem("token");
       try {
-        const response = await fetch(`${BASE_URL}api/farmer/profile`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await response.json();
-        if (response.ok && data.success && data.data) {
-          setProfile(data.data);
+        const userData = localStorage.getItem("user");
+        if (userData) {
+          const parsedProfile = JSON.parse(userData);
+          setProfile(parsedProfile);
         } else {
-          setError(data.message || "Failed to load");
+          setProfile(null);
         }
-      } catch (err) {
-        setError("Error fetching profile");
+      } catch (error) {
+        console.error("Error parsing user data from localStorage:", error);
+        setProfile(null);
       } finally {
         setLoading(false);
       }
     };
-    fetchProfile();
+
+    getProfileFromStorage();
   }, []);
 
   const openLanguagePopup = () => {
@@ -80,7 +77,7 @@ const SettingsPage: React.FC = () => {
   const handleLogout = () => {
     setShowLogoutPopup(false);
     localStorage.removeItem("token");
-    // alert(t("loggedOutSuccessfully"));
+    localStorage.removeItem("user");
     navigate("/login");
   };
 
@@ -137,16 +134,21 @@ const SettingsPage: React.FC = () => {
 
   return (
     <div className="min-h-screen px-4 py-6">
-     <div
-        className="flex items-center gap-3 mb-6 p-4 rounded-xl bg-white shadow  hover:shadow-md transition cursor-pointer hover:bg-gray-50"
+      <div
+        className="flex items-center gap-3 mb-6 p-4 rounded-xl bg-white shadow hover:shadow-md transition cursor-pointer hover:bg-gray-50"
         onClick={() => profile && navigate("/profile", { state: profile })}
       >
-                <img src={profileImgUrl} alt={t("profile")} className="w-16 h-16 rounded-full object-cover border border-gray-300" />
+        <img 
+          src={profileImgUrl} 
+          alt={t("profile")} 
+          className="w-16 h-16 rounded-full object-cover border border-gray-300" 
+        />
 
         <div className="flex-1">
           <div className="font-semibold text-lg text-gray-900">
-            {loading ? t("loading") : error ? t("error") : profile?.name || ""}
+            {loading ? t("loading") + "..." : profile?.name || t("profile")}
           </div>
+          <div className="text-sm text-gray-500">{t("viewProfile")}</div>
         </div>
         <ChevronRight className="w-5 h-5 text-gray-400" />
       </div>

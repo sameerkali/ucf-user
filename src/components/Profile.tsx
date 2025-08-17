@@ -12,7 +12,6 @@ import {
   XCircle,
   UserCheck
 } from "lucide-react";
-import { BASE_URL } from "../utils/urls";
 
 type Address = {
   state: string;
@@ -49,30 +48,28 @@ export default function Profile() {
   const [error, setError] = useState<string>("");
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    // Get profile data from localStorage instead of API call
+    const getProfileFromStorage = () => {
       setLoading(true);
       setError("");
-      const token = localStorage.getItem("token");
 
       try {
-        const response = await fetch(`${BASE_URL}api/farmer/profile`, {
-          headers: { "Authorization": `Bearer ${token}` },
-        });
-        const data = await response.json();
-
-        if (response.ok && data.success && data.data) {
-          setProfile(data.data as ProfileType);
+        const userData = localStorage.getItem("user");
+        if (userData) {
+          const parsedProfile = JSON.parse(userData) as ProfileType;
+          setProfile(parsedProfile);
         } else {
-          setError(data.message || "Failed to load profile");
+          setError("No profile data found");
         }
       } catch (err) {
-        setError("Error fetching profile");
+        console.error("Error parsing user data from localStorage:", err);
+        setError("Error loading profile data");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchProfile();
+    getProfileFromStorage();
   }, []);
 
   if (loading) {
@@ -86,12 +83,12 @@ export default function Profile() {
     );
   }
 
-  if (error) {
+  if (error || !profile) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <p className="text-red-600 mb-4">{error}</p>
+          <p className="text-red-600 mb-4">{error || "No profile data available"}</p>
           <button 
             onClick={() => navigate(-1)}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
