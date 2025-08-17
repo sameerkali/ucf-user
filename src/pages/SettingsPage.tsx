@@ -36,7 +36,6 @@ const SettingsPage: React.FC = () => {
   ];
 
   const profileImgUrl = "https://randomuser.me/api/portraits/men/75.jpg";
-  const profileName = "John Doe";
   const appVersion = "v1.2.3";
 
   useEffect(() => {
