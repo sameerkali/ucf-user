@@ -139,5 +139,6 @@
   "developmentModeActive": "Development Mode Active",
   "digitalAgriculturePlatform": "Digital Agriculture Platform",
   "pageNotFoundMessage": "Oops! The page you're looking for is out standing in its field. It might have been moved or replanted.",
-  "goToHomepage": "Go to Homepage"
+  "goToHomepage": "Go to Homepage",
+  "register":"Register"
 }

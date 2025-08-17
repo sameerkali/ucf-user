@@ -2,8 +2,8 @@ import { Link, NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 const MENU_ITEMS = [
-  { labelKey: "home", to: "/" },
-  { labelKey: "post", to: "/post" },
+  { labelKey: "home", to: "/home" },
+  { labelKey: "post", to: "/posts" },
   { labelKey: "helpSupport", to: "/help" },
   { labelKey: "settings", to: "/settings" }
 ];

@@ -3,8 +3,8 @@ import { Home, HelpCircle, Settings, StickyNote } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 const DOCK_ITEMS = [
-  { labelKey: "home", to: "/", icon: Home },
-  { labelKey: "post", to: "/post", icon: StickyNote },
+  { labelKey: "home", to: "/home", icon: Home },
+  { labelKey: "post", to: "/posts", icon: StickyNote },
   { labelKey: "helpSupport", to: "/help", icon: HelpCircle },
   { labelKey: "settings", to: "/settings", icon: Settings }
 ];
