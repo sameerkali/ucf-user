@@ -37,7 +37,7 @@ function RequireAuth() {
 
 const MainLayout = () => (
   <>
-    {/* <Header /> */}
+    <Header />
     <main className="min-h-screen pb-16 md:pb-0">
       <Outlet />
     </main>
