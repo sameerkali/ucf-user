@@ -1,19 +1,32 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
-  ChevronRight, User, Languages, LogOut, HelpCircle, Info,
-  Settings as SettingsIcon, ChevronDown, Check,
+  ChevronRight,
+  User,
+  Languages,
+  LogOut,
+  HelpCircle,
+  Info,
+  Settings as SettingsIcon,
+  ChevronDown,
+  Check,
 } from "lucide-react";
+import { BASE_URL } from "../utils/urls";
 
 type LanguageCode = "en" | "hi";
 
 const SettingsPage: React.FC = () => {
   const navigate = useNavigate();
   const { i18n, t } = useTranslation();
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const [showLanguagePopup, setShowLanguagePopup] = useState(false);
-  const [pendingLang, setPendingLang] = useState<LanguageCode>(i18n.language as LanguageCode);
+  const [pendingLang, setPendingLang] = useState<LanguageCode>(
+    i18n.language as LanguageCode
+  );
   const [showLogoutPopup, setShowLogoutPopup] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
 
@@ -25,6 +38,30 @@ const SettingsPage: React.FC = () => {
   const profileImgUrl = "https://randomuser.me/api/portraits/men/75.jpg";
   const profileName = "John Doe";
   const appVersion = "v1.2.3";
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      setLoading(true);
+      setError("");
+      const token = localStorage.getItem("token");
+      try {
+        const response = await fetch(`${BASE_URL}api/farmer/profile`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await response.json();
+        if (response.ok && data.success && data.data) {
+          setProfile(data.data);
+        } else {
+          setError(data.message || "Failed to load");
+        }
+      } catch (err) {
+        setError("Error fetching profile");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProfile();
+  }, []);
 
   const openLanguagePopup = () => {
     setPendingLang((i18n.language as LanguageCode) || "en");
@@ -53,27 +90,64 @@ const SettingsPage: React.FC = () => {
     setShowDropdown(false);
   };
 
-  const selectedLanguage = languageOptions.find(opt => opt.value === pendingLang);
+  const selectedLanguage = languageOptions.find(
+    (opt) => opt.value === pendingLang
+  );
 
-  const options = useMemo(() => [
-    { labelKey: "profile", icon: User, onClick: () => navigate("/profile"), descriptionKey: "viewEditProfile" },
-    { labelKey: "changeLanguage", icon: Languages, onClick: openLanguagePopup, descriptionKey: "selectPreferredLanguage" },
-    { labelKey: "faq", icon: HelpCircle, onClick: () => navigate("/faq"), descriptionKey: "frequentlyAskedQuestions" },
-    { labelKey: "appVersion", icon: Info, onClick: () => {}, description: appVersion },
-    { labelKey: "preferences", icon: SettingsIcon, onClick: () => navigate("/preferences"), descriptionKey: "customizeExperience" },
-    { labelKey: "logout", icon: LogOut, onClick: () => setShowLogoutPopup(true), descriptionKey: "signOutAccount" },
-  ], [navigate, appVersion]);
+  const options = useMemo(
+    () => [
+      {
+        labelKey: "profile",
+        icon: User,
+        onClick: () => navigate("/profile"),
+        descriptionKey: "viewEditProfile",
+      },
+      {
+        labelKey: "changeLanguage",
+        icon: Languages,
+        onClick: openLanguagePopup,
+        descriptionKey: "selectPreferredLanguage",
+      },
+      {
+        labelKey: "faq",
+        icon: HelpCircle,
+        onClick: () => navigate("/faq"),
+        descriptionKey: "frequentlyAskedQuestions",
+      },
+      {
+        labelKey: "appVersion",
+        icon: Info,
+        onClick: () => {},
+        description: appVersion,
+      },
+      {
+        labelKey: "preferences",
+        icon: SettingsIcon,
+        onClick: () => navigate("/preferences"),
+        descriptionKey: "customizeExperience",
+      },
+      {
+        labelKey: "logout",
+        icon: LogOut,
+        onClick: () => setShowLogoutPopup(true),
+        descriptionKey: "signOutAccount",
+      },
+    ],
+    [navigate, appVersion]
+  );
 
   return (
     <div className="min-h-screen px-4 py-6">
-      <div
-        className="flex items-center gap-3 mb-6 p-4 rounded-xl bg-white shadow-sm border border-gray-200 hover:shadow-md transition cursor-pointer hover:bg-gray-50"
-        onClick={() => navigate("/profile")}
+     <div
+        className="flex items-center gap-3 mb-6 p-4 rounded-xl bg-white shadow  hover:shadow-md transition cursor-pointer hover:bg-gray-50"
+        onClick={() => profile && navigate("/profile", { state: profile })}
       >
-        <img src={profileImgUrl} alt={t("profile")} className="w-16 h-16 rounded-full object-cover border border-gray-300" />
+                <img src={profileImgUrl} alt={t("profile")} className="w-16 h-16 rounded-full object-cover border border-gray-300" />
+
         <div className="flex-1">
-          <div className="font-semibold text-lg text-gray-900">{profileName}</div>
-          <div className="text-sm text-gray-500">{t("viewProfile")}</div>
+          <div className="font-semibold text-lg text-gray-900">
+            {loading ? t("loading") : error ? t("error") : profile?.name || ""}
+          </div>
         </div>
         <ChevronRight className="w-5 h-5 text-gray-400" />
       </div>
@@ -90,7 +164,9 @@ const SettingsPage: React.FC = () => {
             </div>
             <div className="flex-1">
               <div className="font-medium text-gray-900">{t(opt.labelKey)}</div>
-              <div className="text-sm text-gray-500">{opt.description || t(opt.descriptionKey!)}</div>
+              <div className="text-sm text-gray-500">
+                {opt.description || t(opt.descriptionKey!)}
+              </div>
             </div>
           </button>
         ))}
@@ -100,12 +176,21 @@ const SettingsPage: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white rounded-xl shadow-lg w-full max-w-sm">
             <div className="flex justify-between items-center border-b border-gray-200 px-5 py-3">
-              <h2 className="text-lg font-semibold text-gray-900">{t("changeLanguage")}</h2>
-              <button className="text-gray-400 hover:text-gray-600 focus:outline-none" onClick={() => setShowLanguagePopup(false)}>✕</button>
+              <h2 className="text-lg font-semibold text-gray-900">
+                {t("changeLanguage")}
+              </h2>
+              <button
+                className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                onClick={() => setShowLanguagePopup(false)}
+              >
+                ✕
+              </button>
             </div>
 
             <div className="p-5">
-              <label className="block mb-2 text-sm font-medium text-gray-700">{t("selectLanguage")}</label>
+              <label className="block mb-2 text-sm font-medium text-gray-700">
+                {t("selectLanguage")}
+              </label>
               <div className="relative">
                 <button
                   type="button"
@@ -113,7 +198,11 @@ const SettingsPage: React.FC = () => {
                   onClick={() => setShowDropdown(!showDropdown)}
                 >
                   <span>{selectedLanguage?.label}</span>
-                  <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
+                  <ChevronDown
+                    className={`w-4 h-4 text-gray-400 transition-transform ${
+                      showDropdown ? "rotate-180" : ""
+                    }`}
+                  />
                 </button>
 
                 {showDropdown && (
@@ -123,10 +212,14 @@ const SettingsPage: React.FC = () => {
                         key={option.value}
                         type="button"
                         className="w-full px-3 py-2 text-left hover:bg-gray-50 flex items-center justify-between first:rounded-t-lg last:rounded-b-lg"
-                        onClick={() => handleLanguageSelect(option.value as LanguageCode)}
+                        onClick={() =>
+                          handleLanguageSelect(option.value as LanguageCode)
+                        }
                       >
                         <span>{option.label}</span>
-                        {pendingLang === option.value && <Check className="w-4 h-4 text-blue-600" />}
+                        {pendingLang === option.value && (
+                          <Check className="w-4 h-4 text-blue-600" />
+                        )}
                       </button>
                     ))}
                   </div>
@@ -135,10 +228,16 @@ const SettingsPage: React.FC = () => {
             </div>
 
             <div className="flex justify-end gap-3 px-5 py-3 border-t border-gray-200">
-              <button onClick={() => setShowLanguagePopup(false)} className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition focus:outline-none">
+              <button
+                onClick={() => setShowLanguagePopup(false)}
+                className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition focus:outline-none"
+              >
                 {t("cancel")}
               </button>
-              <button onClick={applyLanguageChange} className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none">
+              <button
+                onClick={applyLanguageChange}
+                className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none"
+              >
                 {t("ok")}
               </button>
             </div>
@@ -152,10 +251,16 @@ const SettingsPage: React.FC = () => {
             <User className="w-10 h-10 text-gray-500 mx-auto mb-3" />
             <p className="mb-5 text-gray-800">{t("areYouSureLogout")}</p>
             <div className="flex justify-center gap-3">
-              <button className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 text-gray-800 transition focus:outline-none" onClick={() => setShowLogoutPopup(false)}>
+              <button
+                className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 text-gray-800 transition focus:outline-none"
+                onClick={() => setShowLogoutPopup(false)}
+              >
                 {t("cancel")}
               </button>
-              <button className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition focus:outline-none" onClick={handleLogout}>
+              <button
+                className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition focus:outline-none"
+                onClick={handleLogout}
+              >
                 {t("logout")}
               </button>
             </div>

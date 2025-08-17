@@ -22,21 +22,22 @@ import Dock from "./components/Dock";
 import LoadingScreen from "./components/LoadingScreen";
 import { useAppLoading } from "./hooks/useAppLoading";
 import { Toaster } from "react-hot-toast";
+import Profile from "./components/Profile";
 
 // Authentication guard for protected routes
 function RequireAuth() {
   const token = localStorage.getItem("token");
-  
+
   if (!token) {
     return <Navigate to="/login" replace />;
   }
-  
+
   return <Outlet />;
 }
 
 const MainLayout = () => (
   <>
-    <Header />
+    {/* <Header /> */}
     <main className="min-h-screen pb-16 md:pb-0">
       <Outlet />
     </main>
@@ -71,7 +72,6 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/404" element={<NotFoundPage />} />
-        <Route path="/complete-profile" element={<ProfileComplete />} />
 
         {/* Protected routes (header, dock, must be authenticated) */}
         <Route element={<RequireAuth />}>
@@ -80,6 +80,8 @@ export default function App() {
             <Route path="/posts" element={<PostsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/help" element={<HelpAndSupportPage />} />
+            <Route path="/complete-profile" element={<ProfileComplete />} />
+            <Route path="/profile" element={<Profile />} />
           </Route>
         </Route>
 
