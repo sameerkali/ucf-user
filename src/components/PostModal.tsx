@@ -12,13 +12,7 @@ interface PostModalProps {
   };
 }
 
-const quantityOptions = [
-  "1 quintal",
-  "5 quintals",
-  "10 quintals",
-  "15 quintals",
-  "20 quintals",
-];
+const quantityOptions = Array.from({ length: 50 }, (_, i) => `${i + 1} quintal${i === 0 ? '' : 's'}`);
 
 const PostModal: React.FC<PostModalProps> = ({ open, onClose, crop }) => {
   const [quantity, setQuantity] = useState<string>(quantityOptions[0]);
@@ -43,7 +37,6 @@ const PostModal: React.FC<PostModalProps> = ({ open, onClose, crop }) => {
   return (
     <div className="fixed inset-0 bg-black/20 z-40 flex items-center justify-center p-4">
       <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl relative">
-        {/* Replace cross with Lucide icon */}
         <button
           className="absolute top-4 right-4 text-gray-600 hover:text-gray-900 transition-colors"
           type="button"
@@ -117,18 +110,36 @@ const PostModal: React.FC<PostModalProps> = ({ open, onClose, crop }) => {
             >
               Quantity
             </label>
-            <select
-              id="quantitySelect"
-              className="w-full p-2 rounded border border-gray-300 bg-white text-gray-800 focus:ring-2 focus:ring-green-400"
-              value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
-            >
-              {quantityOptions.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                id="quantitySelect"
+                className="
+                  w-full
+                  p-3
+                  rounded-lg
+                  border
+                  border-gray-300
+                  bg-white
+                  text-gray-800
+                  appearance-none
+                  pr-10
+                  text-base
+                  shadow-sm
+                "
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
+                style={{ maxHeight: "200px", overflowY: "auto" }}
+              >
+                {quantityOptions.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
+              <span className="absolute top-2 right-3 pointer-events-none text-gray-400">
+                ▼
+              </span>
+            </div>
           </div>
 
           <div>
@@ -142,7 +153,7 @@ const PostModal: React.FC<PostModalProps> = ({ open, onClose, crop }) => {
               id="messageInput"
               rows={4}
               placeholder="Enter message"
-              className="w-full p-2 rounded border border-gray-300 bg-white text-gray-800 focus:ring-2 focus:ring-green-400"
+              className="w-full p-2 rounded border border-gray-300 bg-white text-gray-800 "
               value={message}
               onChange={(e) => setMessage(e.target.value)}
             />
