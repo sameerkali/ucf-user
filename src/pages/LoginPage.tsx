@@ -3,8 +3,8 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { BGS } from "../assets/assets";
 import { useTranslation } from "react-i18next";
-import { BASE_URL } from "../utils/urls";
 import { Loader2 } from "lucide-react";
+import api from "../api/axios";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -73,46 +73,41 @@ export default function LoginPage() {
   };
 
   // Farmer login API call (no OTP logic)
-  const handleFarmerLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    // Validate
-    if (
-      formData.phone.length === 10 &&
-      formData.password.length >= 6 &&
-      !errors.phone &&
-      !errors.password
-    ) {
-      setIsLoading(true);
-      try {
-        const response = await fetch(`${BASE_URL}api/farmer/login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            mobile: formData.phone,
-            password: formData.password,
-          }),
-        });
-        if (response.ok) {
-          const data = await response.json();
-          localStorage.setItem("token", data.token);
-          localStorage.setItem("user", JSON.stringify(data.result));
-          navigate("/complete-profile?role=kisaan");
-        } else {
-          const errorData = await response.json();
-          setErrors((prev) => ({
-            ...prev,
-            password: errorData.message || "Login failed",
-          }));
-        }
-      } catch (error) {
+const handleFarmerLogin = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  if (
+    formData.phone.length === 10 &&
+    formData.password.length >= 6 &&
+    !errors.phone &&
+    !errors.password
+  ) {
+    setIsLoading(true);
+    try {
+      const { data, status } = await api.post("/api/farmer/login", {
+        mobile: formData.phone,
+        password: formData.password,
+      });
+
+      if (status === 200) {
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data.result));
+        navigate("/complete-profile?role=kisaan");
+      } else {
         setErrors((prev) => ({
           ...prev,
-          password: "Network error. Please try again.",
+          password: data.message || "Login failed",
         }));
       }
-      setIsLoading(false);
+    } catch (error: any) {
+      setErrors((prev) => ({
+        ...prev,
+        password: error.response?.data?.message || "Network error. Please try again.",
+      }));
     }
-  };
+    setIsLoading(false);
+  }
+};
 
   // POS logic only (remains unchanged, uses step for OTP if needed)
   const [step, setStep] = useState<"credentials" | "otp">("credentials");
