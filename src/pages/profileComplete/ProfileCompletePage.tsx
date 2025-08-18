@@ -41,7 +41,7 @@ export default function ProfileComplete() {
     landHoldings: "",
     annualProduction: "",
     annualConsumption: "",
-    crops: [] as string[], // array of _ids
+    crops: [] as string[],
     seedArea: "",
     irrigatedArea: "",
     rainfedArea: "",
