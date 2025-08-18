@@ -13,7 +13,7 @@ import NotFoundPage from "./pages/NotFoundPage";
 import SettingsPage from "./pages/SettingsPage";
 import HelpAndSupportPage from "./pages/HelpAndSupportPage";
 import LandingPage from "./pages/LandingPage";
-import ProfileComplete from "./pages/ProfileCompletePage";
+import ProfileComplete from "./pages/profileComplete/ProfileCompletePage";
 
 import OfflineBanner from "./components/OfflineBanner";
 import InstallBanner from "./components/InstallBanner";
