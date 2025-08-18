@@ -1,5 +1,3 @@
-// FallbackGreenCircle.jsx
-
 export default function FallbackGreenCircle() {
   return (
     <svg
