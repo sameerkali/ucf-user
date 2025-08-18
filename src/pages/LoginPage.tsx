@@ -214,7 +214,7 @@ export default function LoginPage() {
                 <h2 className="text-3xl font-semibold text-white mb-2">
                   {t("login")}
                 </h2>
-                <p className="text-gray-400 text-sm">{t("farmerLoginDesc")}</p>
+                <p className="text-gray-400 text-sm">{t("createKisaanAccount")}</p>
               </div>
               <form onSubmit={handleFarmerLogin} className="space-y-6">
                 <div>
@@ -287,7 +287,7 @@ export default function LoginPage() {
                   {t("login")}
                 </h2>
                 <p className="text-gray-400 text-sm">
-                  {t("credentialsLoginDesc")}
+                  {t("createPosAccount")}
                 </p>
               </div>
               <form onSubmit={handleCredentialsSubmit} className="space-y-6">
