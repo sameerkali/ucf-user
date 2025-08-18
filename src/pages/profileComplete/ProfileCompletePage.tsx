@@ -1,28 +1,36 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Loader2 } from "lucide-react";
-import { BGS } from "../assets/assets";
-import Modal from "../components/Modal";
+import { ArrowLeft, Loader2, Check } from "lucide-react";
+import { BGS } from "../../assets/assets";
+import Modal from "../../components/Modal";
 import toast from 'react-hot-toast';
 import { useTranslation } from "react-i18next";
-import api from "../api/axios";
+import api from "../../api/axios";
+import imageCompression from 'browser-image-compression';
+import FallbackGreenCircle from "../../utils/FallbackGreenCircle";
+
+
+
+const ACCOUNT_NUMBER_REGEX = /^[0-9]{9,18}$/;
+const IFSC_REGEX = /^[A-Z]{4}0[0-9A-Z]{6}$/i;
 
 export default function ProfileComplete() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
 
-  // Read initial step from URL query parameter
   const initialStep = Number(searchParams.get("step")) === 2 ? 2 : 1;
   const [step, setStep] = useState(initialStep);
   const [showErrors, setShowErrors] = useState(false);
   const [showSkipModal, setShowSkipModal] = useState(false);
 
-  // cropsList: fetched from backend for user selection
-  const [cropsList, setCropsList] = useState<string[]>([]);
+  // crops as array of objects [{_id, name, image, ...}]
+  const [cropsList, setCropsList] = useState<any[]>([]);
   const [cropsLoading, setCropsLoading] = useState(false);
-
   const [isLoading, setIsLoading] = useState(false);
+
+  // selected crops by _id
+  const [selectedCropIds, setSelectedCropIds] = useState<string[]>([]);
 
   const [formData, setFormData] = useState({
     bankAccount: "",
@@ -43,6 +51,10 @@ export default function ProfileComplete() {
     aadhaarBackUrl: "",
   });
 
+  useEffect(() => {
+    setFormData(f => ({ ...f, crops: selectedCropIds }));
+  }, [selectedCropIds]);
+
   const sanitize = (v: string) =>
     v.replace(/<[^>]*>/g, "")
       .replace(/["'&]/g, "")
@@ -53,117 +65,141 @@ export default function ProfileComplete() {
     setFormData(prev => ({ ...prev, [field]: sanitize(value) }));
   };
 
-  const handleCropChange = (crop: string) => {
-    setFormData(prev => ({
-      ...prev,
-      crops: prev.crops.includes(crop)
-        ? prev.crops.filter(c => c !== crop)
-        : [...prev.crops, crop],
-    }));
+  const handleCropChange = (cropId: string) => {
+    setSelectedCropIds(prev =>
+      prev.includes(cropId)
+        ? prev.filter(id => id !== cropId)
+        : [...prev, cropId]
+    );
   };
 
   const handleFile = async (field: "aadhaarFront" | "aadhaarBack", file: File | null) => {
     if (file && file.type.startsWith("image/")) {
-      setFormData(prev => ({ ...prev, [field]: file }));
-
-      // TODO: Replace this mock with your own upload endpoint!
-      const mockUpload = async () => {
-        await new Promise(res => setTimeout(res, 1200));
-        return `uploads/${file.name}`;
+      const options = {
+        maxSizeMB: 5,
+        maxWidthOrHeight: 1920,
+        useWebWorker: true,
       };
-      const uploadedPath = await mockUpload();
-      setFormData(prev => ({
-        ...prev,
-        [field + "Url"]: uploadedPath,
-      }));
-    }
-  };
-
-  // Fetch crops with Authorization token using axios
-  useEffect(() => {
-  const fetchCrops = async () => {
-    setCropsLoading(true);
-    try {
-      const { data } = await api.get("/api/admin/get-all-crop");
-      
-      if (data.success && data.crops) {
-        setCropsList(data.crops.map((crop: any) => crop.name));
-      } else {
-        // API responded but no crops data
-        setCropsList(["Wheat", "Rice", "Corn", "Barley", "Oats", "Soybean", "Cotton", "Sugarcane"]);
+      let compressedFile = file;
+      try {
+        compressedFile = await imageCompression(file, options);
+      } catch (err) {
+        toast.error("Failed to compress image");
+        return;
       }
-    } catch (error) {
-      console.error('Error fetching crops:', error);
-      // API call failed - use backup crops list
-      setCropsList(["Wheat", "Rice", "Corn", "Barley", "Oats", "Soybean", "Cotton", "Sugarcane"]);
-      toast.error('Failed to load crops, using default list');
-    } finally {
-      setCropsLoading(false);
+      if (compressedFile.size > 5 * 1024 * 1024) {
+        toast.error("Image must be less than 5MB after compression");
+        return;
+      }
+      setFormData(prev => ({ ...prev, [field]: compressedFile }));
     }
   };
 
-  fetchCrops();
-}, []);
-
+  useEffect(() => {
+    const fetchCrops = async () => {
+      setCropsLoading(true);
+      try {
+        const { data } = await api.get("/api/admin/get-all-crop");
+        if (data.success && data.crops) {
+          setCropsList(data.crops.filter((crop: any) => crop.isVisible));
+        } else {
+          setCropsList([
+            { _id: "wheat", name: "Wheat" },
+            { _id: "rice", name: "Rice" },
+            { _id: "corn", name: "Corn" },
+            { _id: "barley", name: "Barley" },
+            { _id: "oats", name: "Oats" },
+            { _id: "soybean", name: "Soybean" },
+            { _id: "cotton", name: "Cotton" },
+            { _id: "sugarcane", name: "Sugarcane" }
+          ]);
+        }
+      } catch (error) {
+        setCropsList([
+          { _id: "wheat", name: "Wheat" },
+          { _id: "rice", name: "Rice" },
+          { _id: "corn", name: "Corn" },
+          { _id: "barley", name: "Barley" },
+          { _id: "oats", name: "Oats" },
+          { _id: "soybean", name: "Soybean" },
+          { _id: "cotton", name: "Cotton" },
+          { _id: "sugarcane", name: "Sugarcane" }
+        ]);
+        toast.error('Failed to load crops, using default list');
+      } finally {
+        setCropsLoading(false);
+      }
+    };
+    fetchCrops();
+  }, []);
 
   const validateStep = () => {
-    const errors: Record<string, boolean> = {};
+    const errors: Record<string, string> = {};
     if (step === 1) {
-      if (!formData.bankAccount) errors.bankAccount = true;
-      if (!formData.bankName) errors.bankName = true;
-      if (!formData.accountHolder) errors.accountHolder = true;
-      if (!formData.bankBranch) errors.bankBranch = true;
-      if (!formData.ifsc) errors.ifsc = true;
+      if (!formData.bankAccount) errors.bankAccount = "Account number is required.";
+      else if (!ACCOUNT_NUMBER_REGEX.test(formData.bankAccount)) errors.bankAccount = "Account number must be 9-18 digits.";
+      if (!formData.bankName) errors.bankName = "Bank name is required.";
+      if (!formData.accountHolder) errors.accountHolder = "Account holder name is required.";
+      if (!formData.bankBranch) errors.bankBranch = "Bank branch is required.";
+      if (!formData.ifsc) errors.ifsc = "IFSC code is required.";
+      else if (!IFSC_REGEX.test(formData.ifsc)) errors.ifsc = "IFSC code must be in format: AAAA0123456";
     } else if (step === 2) {
-      if (!formData.landHoldings) errors.landHoldings = true;
-      if (!formData.annualProduction) errors.annualProduction = true;
-      if (!formData.annualConsumption) errors.annualConsumption = true;
-      if (!formData.crops || formData.crops.length === 0) errors.crops = true;
-      if (!formData.seedArea) errors.seedArea = true;
-      if (!formData.irrigatedArea) errors.irrigatedArea = true;
-      if (!formData.rainfedArea) errors.rainfedArea = true;
-      if (!formData.aadhaarFrontUrl) errors.aadhaarFront = true;
-      if (!formData.aadhaarBackUrl) errors.aadhaarBack = true;
+      if (!formData.landHoldings) errors.landHoldings = "Land holdings is required.";
+      if (!formData.annualProduction) errors.annualProduction = "Annual production is required.";
+      if (!formData.annualConsumption) errors.annualConsumption = "Annual consumption is required.";
+      if (!formData.crops || formData.crops.length === 0) errors.crops = "Select at least one crop.";
+      if (!formData.seedArea) errors.seedArea = "Seed area is required.";
+      if (!formData.irrigatedArea) errors.irrigatedArea = "Irrigated area is required.";
+      if (!formData.rainfedArea) errors.rainfedArea = "Rainfed area is required.";
+      if (!formData.aadhaarFront) errors.aadhaarFront = "Aadhaar front image is required.";
+      if (!formData.aadhaarBack) errors.aadhaarBack = "Aadhaar back image is required.";
     }
     return errors;
   };
 
-  const isStepValid = () => Object.keys(validateStep()).length === 0;
+  const errors = validateStep();
 
-  const handleSkip = () => {
-    setShowSkipModal(true);
-  };
+  const isStepValid = () => Object.keys(errors).length === 0;
 
   const handleSkipConfirm = () => {
     setShowSkipModal(false);
     navigate("/home");
   };
 
+  const skipToNextStep = () => {
+    setStep(2);
+    setShowErrors(false);
+  };
+
+  function parseBankDetailError(message: string){
+    if(message.includes('accountNumber')) return "Invalid account number";
+    if(message.includes('ifscCode')) return "Invalid IFSC code";
+    return "Invalid bank details";
+  }
+
   const nextStep = async () => {
     setShowErrors(true);
     if (step === 1) {
       if (isStepValid()) {
         setIsLoading(true);
-        
-        // Submit bank details using axios
         try {
-          const { data } = await api.post("/api/bank/addDetail", {
+          const response = await api.post("/api/bank/addDetail", {
             bankName: formData.bankName,
             accountHolderName: formData.accountHolder,
             accountNumber: formData.bankAccount,
             ifscCode: formData.ifsc,
             branch: formData.bankBranch,
           });
-          
-          if (data.success) {
-            toast.success("Bank details saved successfully!");
+          if (response.status === 201) {
+            toast.success(response.data.message || "Bank details saved successfully!");
             setStep(2);
             setShowErrors(false);
           } else {
-            toast.error(data.message || "Failed to save bank details");
+            toast.error(parseBankDetailError(response.data?.message || ""));
           }
         } catch (error: any) {
-          toast.error(error?.response?.data?.message || "Failed to save bank details");
+          const msg = error?.response?.data?.message || "";
+          toast.error(parseBankDetailError(msg));
         }
         setIsLoading(false);
       }
@@ -180,28 +216,29 @@ export default function ProfileComplete() {
     setShowErrors(true);
     if (isStepValid()) {
       setIsLoading(true);
-      
-      // Submit farm & docs using axios
       try {
-        const payload = {
-          landHoldings: formData.landHoldings,
-          annualProduction: Number(formData.annualProduction),
-          annualConsumption: Number(formData.annualConsumption),
-          crops: formData.crops,
-          seedArea: Number(formData.seedArea),
-          rainfedArea: Number(formData.rainfedArea),
-          irrigatedArea: Number(formData.irrigatedArea),
-          aadhaarFront: formData.aadhaarFrontUrl,
-          aadhaarBack: formData.aadhaarBackUrl,
-        };
-        
-        const { data } = await api.post("/api/other-details/add", payload);
-        
-        if (data.success) {
+        const formDataObj = new FormData();
+        formDataObj.append("landHoldings", formData.landHoldings);
+        formDataObj.append("annualProduction", formData.annualProduction);
+        formDataObj.append("annualConsumption", formData.annualConsumption);
+        formDataObj.append("seedArea", formData.seedArea);
+        formDataObj.append("rainfedArea", formData.rainfedArea);
+        formDataObj.append("irrigatedArea", formData.irrigatedArea);
+        formDataObj.append("crops", JSON.stringify(formData.crops));
+        if (formData.aadhaarFront) formDataObj.append("aadhaarFront", formData.aadhaarFront);
+        if (formData.aadhaarBack) formDataObj.append("aadhaarBack", formData.aadhaarBack);
+
+        const response = await api.post("/api/other-details/add", formDataObj, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
+
+        if (response.status === 201 || response.status === 200) {
           toast.success(t("profileSubmitted"));
           navigate("/home");
         } else {
-          toast.error(data.message || "Failed to save farm details");
+          toast.error(response.data?.message || "Failed to save farm details");
         }
       } catch (error: any) {
         toast.error(error?.response?.data?.message || "Failed to save farm details");
@@ -221,7 +258,6 @@ export default function ProfileComplete() {
       default: return t("profileSetup");
     }
   };
-
   const getStepDescription = () => {
     switch (step) {
       case 1: return t("bankingStepDesc");
@@ -236,7 +272,8 @@ export default function ProfileComplete() {
     type: string = "text",
     isFileInput = false
   ) => {
-    const hasError = showErrors && !formData[name as keyof typeof formData];
+    const hasError = showErrors && errors[name];
+    let patternMsg = errors[name] || "";
     if (isFileInput) {
       return (
         <div>
@@ -252,7 +289,7 @@ export default function ProfileComplete() {
             }`}
             style={{ borderRadius: '0.75rem' }}
           />
-          {hasError && <p className="text-red-400 text-xs mt-1">{t("pleaseUpload")} {t(placeholder).toLowerCase()}</p>}
+          {hasError && <p className="text-red-400 text-xs mt-1">{patternMsg}</p>}
         </div>
       );
     }
@@ -271,15 +308,14 @@ export default function ProfileComplete() {
           }`}
           style={{ borderRadius: '0.75rem' }}
         />
-        {hasError && <p className="text-red-400 text-xs mt-1">{t("pleaseEnter")} {t(placeholder).toLowerCase()}</p>}
+        {hasError && <p className="text-red-400 text-xs mt-1">{patternMsg}</p>}
       </div>
     );
   };
 
-  // For crops multi-select, uses checkboxes
   const renderCropsSelector = () => (
     <div>
-      <label className={`block text-sm font-medium mb-2 ${showErrors && (!formData.crops || formData.crops.length === 0) ? "text-red-400" : "text-gray-300"}`}>
+      <label className={`block text-sm font-medium mb-2 ${showErrors && errors.crops ? "text-red-400" : "text-gray-300"}`}>
         {t("cropsGrown")}
       </label>
       {cropsLoading ? (
@@ -288,24 +324,58 @@ export default function ProfileComplete() {
           <span className="text-gray-400">{t("loading")}...</span>
         </div>
       ) : cropsList.length > 0 ? (
-        <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto bg-gray-800 p-3 rounded-lg border border-gray-700">
-          {cropsList.map(crop => (
-            <label key={crop} className="flex items-center cursor-pointer hover:bg-gray-700 p-1 rounded">
-              <input
-                type="checkbox"
-                checked={formData.crops.includes(crop)}
-                onChange={() => handleCropChange(crop)}
-                className="w-4 h-4 text-green-600 bg-gray-800 border-gray-600 focus:ring-green-500 rounded mr-2"
-              />
-              <span className="text-white text-sm">{crop}</span>
-            </label>
-          ))}
+        <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto bg-gray-800 p-3 rounded-lg border border-gray-700">
+          {cropsList.map((crop: any) => {
+            const selected = selectedCropIds.includes(crop._id);
+            const showFallback = crop.image && crop.image.startsWith("http://localhost:5000");
+            return (
+              <label
+                key={crop._id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  cursor: 'pointer',
+                  userSelect: 'none',
+                  padding: '6px 14px',
+                  borderRadius: '22px',
+                  border: selected ? '2px solid #22c55e' : '2px solid #333',
+                  background: selected ? 'linear-gradient(90deg,#22c55e 0%,#059669 100%)' : '#222',
+                  color: selected ? '#fff' : '#ddd',
+                  fontWeight: 500,
+                  boxShadow: selected ? '0 2px 8px 0 #05966988' : 'none',
+                  transition: 'all 0.2s'
+                }}
+                className="crop-chip"
+              >
+                {showFallback ? (
+                  <FallbackGreenCircle />
+                ) : crop.image ? (
+                  <img src={crop.image} alt={crop.name} style={{
+                    width: 24, height: 24,
+                    objectFit: 'cover',
+                    borderRadius: '50%',
+                  }} />
+                ) : (
+                  <FallbackGreenCircle />
+                )}
+                <input
+                  type="checkbox"
+                  checked={selected}
+                  style={{ display: 'none' }}
+                  onChange={() => handleCropChange(crop._id)}
+                />
+                {crop.name}
+                {selected && <Check className="ml-1" size={16} />}
+              </label>
+            );
+          })}
         </div>
       ) : (
         <p className="text-gray-400 text-sm">No crops available</p>
       )}
-      {showErrors && (!formData.crops || formData.crops.length === 0) &&
-        <p className="text-red-400 text-xs mt-1">{t("pleaseSelect")} {t("cropsGrown").toLowerCase()}</p>}
+      {showErrors && errors.crops &&
+        <p className="text-red-400 text-xs mt-1">{errors.crops}</p>}
     </div>
   );
 
@@ -313,7 +383,7 @@ export default function ProfileComplete() {
     <>
       <div className="min-h-screen flex bg-black">
         <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
-          <div 
+          <div
             className="absolute inset-0 bg-cover bg-center"
             style={{
               backgroundImage: `url(${BGS.kisaan_profile})`,
@@ -321,15 +391,14 @@ export default function ProfileComplete() {
               borderBottomRightRadius: '2.5rem'
             }}
           >
-            <div 
+            <div
               className="absolute inset-0 bg-gradient-to-br from-green-900/80 via-emerald-800/70 to-teal-900/80"
               style={{
                 borderTopRightRadius: '2.5rem',
                 borderBottomRightRadius: '2.5rem'
               }}
             ></div>
-            
-            <div 
+            <div
               className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"
               style={{
                 borderTopRightRadius: '2.5rem',
@@ -337,7 +406,6 @@ export default function ProfileComplete() {
               }}
             ></div>
           </div>
-          
           <div className="relative z-10 flex flex-col justify-center items-start p-12 text-white">
             <button
               onClick={handleBack}
@@ -346,7 +414,6 @@ export default function ProfileComplete() {
             >
               <ArrowLeft className="w-6 h-6" />
             </button>
-            
             <div className="max-w-md">
               <h1 className="text-5xl font-light mb-6 leading-tight">
                 {t("completeYour")}<br />
@@ -355,7 +422,6 @@ export default function ProfileComplete() {
               <p className="text-lg text-green-100 opacity-90">
                 {t("profileDescription")}
               </p>
-              
               <div className="mt-8">
                 <div className="flex items-center space-x-4">
                   {[1, 2].map((stepNum) => (
@@ -376,7 +442,6 @@ export default function ProfileComplete() {
             </div>
           </div>
         </div>
-
         <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-black overflow-y-auto">
           <div className="w-full max-w-md">
             <div className="mb-8">
@@ -387,7 +452,6 @@ export default function ProfileComplete() {
                 {t("step")} {step} {t("of")} 2 - {getStepDescription()}
               </p>
             </div>
-
             <form onSubmit={submitForm} className="space-y-6">
               {step === 1 && (
                 <>
@@ -396,19 +460,18 @@ export default function ProfileComplete() {
                   {renderInput("bankName", "bankName")}
                   {renderInput("bankBranch", "bankBranch")}
                   {renderInput("ifsc", "ifscCode")}
-                  
                   <div className="flex justify-between pt-6">
-                    <button 
-                      type="button" 
-                      onClick={handleSkip} 
+                    <button
+                      type="button"
+                      onClick={skipToNextStep}
                       className="px-6 py-3 bg-gray-700 text-white font-semibold hover:bg-gray-600 focus:outline-none transition-all duration-200"
                       style={{ borderRadius: '0.75rem' }}
                     >
-                      {t("skipForNow")}
+                      {t("skipToNextStep")}
                     </button>
-                    <button 
-                      type="button" 
-                      onClick={nextStep} 
+                    <button
+                      type="button"
+                      onClick={nextStep}
                       disabled={isLoading}
                       className="ml-auto px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold hover:from-green-700 hover:to-emerald-700 focus:outline-none transition-all duration-200 flex items-center justify-center"
                       style={{ borderRadius: '0.75rem' }}
@@ -422,9 +485,19 @@ export default function ProfileComplete() {
                   </div>
                 </>
               )}
-
               {step === 2 && (
                 <>
+                  <div className="mb-4">
+                    <button
+                      type="button"
+                      onClick={prevStep}
+                      className="px-3 py-2 bg-gray-700 text-white font-semibold hover:bg-gray-600 focus:outline-none transition-all duration-200 flex items-center"
+                      style={{ borderRadius: '0.5rem' }}
+                    >
+                      <ArrowLeft className="w-5 h-5 mr-2" />
+                      {t("back")}
+                    </button>
+                  </div>
                   {renderInput("landHoldings", "landHoldings")}
                   {renderInput("annualProduction", "annualProduction", "number")}
                   {renderInput("annualConsumption", "annualConsumption", "number")}
@@ -432,38 +505,37 @@ export default function ProfileComplete() {
                   {renderInput("seedArea", "seedArea", "number")}
                   {renderInput("irrigatedArea", "irrigatedArea", "number")}
                   {renderInput("rainfedArea", "rainfedArea", "number")}
-                  
                   <div className="grid grid-cols-1 gap-6">
                     {renderInput("aadhaarFront", "aadhaarFrontImage", "file", true)}
                     {renderInput("aadhaarBack", "aadhaarBackImage", "file", true)}
                   </div>
-                  
                   <div className="flex justify-between pt-6">
-                    <button 
-                      type="button" 
-                      onClick={prevStep} 
-                      className="px-6 py-3 bg-gray-700 text-white font-semibold hover:bg-gray-600 focus:outline-none transition-all duration-200"
-                      style={{ borderRadius: '0.75rem' }}
-                    >
-                      {t("back")}
-                    </button>
-                    <button 
-                      type="submit" 
-                      disabled={isLoading}
-                      className="ml-auto px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold hover:from-green-700 hover:to-emerald-700 focus:outline-none transition-all duration-200 flex items-center justify-center"
-                      style={{ borderRadius: '0.75rem' }}
-                    >
-                      {isLoading ? (
-                        <Loader2 className="animate-spin w-5 h-5" />
-                      ) : (
-                        t("completeProfile")
-                      )}
-                    </button>
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setShowSkipModal(true)}
+                        className="px-6 py-3 bg-gray-700 text-white font-semibold hover:bg-gray-600 focus:outline-none transition-all duration-200"
+                        style={{ borderRadius: '0.75rem' }}
+                      >
+                        {t("skipForNow")}
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isLoading}
+                        className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold hover:from-green-700 hover:to-emerald-700 focus:outline-none transition-all duration-200 flex items-center justify-center"
+                        style={{ borderRadius: '0.75rem' }}
+                      >
+                        {isLoading ? (
+                          <Loader2 className="animate-spin w-5 h-5" />
+                        ) : (
+                          t("completeProfile")
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </>
               )}
             </form>
-            
             <div className="lg:hidden mt-8 flex justify-center">
               <div className="flex items-center space-x-2">
                 {[1, 2].map((stepNum) => (
@@ -479,7 +551,6 @@ export default function ProfileComplete() {
           </div>
         </div>
       </div>
-
       <Modal
         title={t("skipProfileCompletion")}
         isOpen={showSkipModal}
