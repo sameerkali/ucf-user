@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { UploadCloud } from "lucide-react";
+import { X, UploadCloud } from "lucide-react";
 
 interface PostModalProps {
   open: boolean;
@@ -37,11 +37,20 @@ const PostModal: React.FC<PostModalProps> = ({ open, onClose, crop }) => {
   return (
     <div className="fixed inset-0 bg-black/20 z-40 flex items-center justify-center p-4">
       <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl relative">
-        {/* No X icon per request */}
+        {/* Lucide X icon as close button */}
+        <button
+          className="absolute top-4 right-4 text-gray-600 hover:text-gray-900 transition-colors"
+          type="button"
+          onClick={onClose}
+          aria-label="Close"
+        >
+          <X className="w-6 h-6" />
+        </button>
 
         <h2 className="text-xl font-semibold mb-4 text-gray-900">
           Add Request Details
         </h2>
+
         {crop && (
           <div className="flex items-center gap-3 mb-6">
             <div className="w-12 h-12 bg-gray-100 rounded flex justify-center items-center overflow-hidden">
