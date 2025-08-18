@@ -8,7 +8,7 @@ import {
 import HomePage from "./pages/HomePage";
 import PostsPage from "./pages/PostsPage";
 import LoginPage from "./pages/LoginPage";
-import SignupPage from "./pages/SignupPage";
+import SignupPage from "./pages/signup/SignupPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import SettingsPage from "./pages/SettingsPage";
 import HelpAndSupportPage from "./pages/HelpAndSupportPage";
