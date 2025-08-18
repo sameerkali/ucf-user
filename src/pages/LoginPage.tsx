@@ -5,6 +5,7 @@ import { BGS } from "../assets/assets";
 import { useTranslation } from "react-i18next";
 import { Loader2 } from "lucide-react";
 import api from "../api/axios";
+import toast from "react-hot-toast";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -38,76 +39,84 @@ export default function LoginPage() {
     otp: "",
   });
 
-  const sanitizeInput = (value: string) => {
-    return value.replace(/[<>"'&]/g, "");
-  };
+  const sanitizeInput = (value: string) => value.replace(/[<>"'&]/g, "");
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, "").slice(0, 10);
     setFormData((prev) => ({ ...prev, phone: value }));
-    if (value.length > 0 && value.length < 10) {
-      setErrors((prev) => ({ ...prev, phone: t("phoneError") }));
-    } else {
-      setErrors((prev) => ({ ...prev, phone: "" }));
-    }
+    setErrors((prev) => ({
+      ...prev,
+      phone: value.length > 0 && value.length < 10 ? t("phoneError") : "",
+    }));
   };
 
   const handleUserIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = sanitizeInput(e.target.value);
     setFormData((prev) => ({ ...prev, userId: value }));
-    if (value.length > 0 && value.length < 3) {
-      setErrors((prev) => ({ ...prev, userId: t("userIdError") }));
-    } else {
-      setErrors((prev) => ({ ...prev, userId: "" }));
-    }
+    setErrors((prev) => ({
+      ...prev,
+      userId: value.length > 0 && value.length < 3 ? t("userIdError") : "",
+    }));
   };
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = sanitizeInput(e.target.value).slice(0, 16);
     setFormData((prev) => ({ ...prev, password: value }));
-    if (value.length > 0 && value.length < 6) {
-      setErrors((prev) => ({ ...prev, password: t("passwordError") }));
-    } else {
-      setErrors((prev) => ({ ...prev, password: "" }));
-    }
+    setErrors((prev) => ({
+      ...prev,
+      password: value.length > 0 && value.length < 6 ? t("passwordError") : "",
+    }));
   };
 
-  // Farmer login API call (no OTP logic)
-const handleFarmerLogin = async (e: React.FormEvent) => {
-  e.preventDefault();
+  // Farmer login API call with navigation logic based on API response
+  const handleFarmerLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (
+      formData.phone.length === 10 &&
+      formData.password.length >= 6 &&
+      !errors.phone &&
+      !errors.password
+    ) {
+      setIsLoading(true);
+      try {
+        const { data, status } = await api.post("/api/farmer/login", {
+          mobile: formData.phone,
+          password: formData.password,
+        });
+        if (status === 200 && data.success) {
+          localStorage.setItem("token", data.token);
+          localStorage.setItem("user", JSON.stringify(data.result));
+          const { bankVerified, otherDetailsVerified } = data.result;
 
-  if (
-    formData.phone.length === 10 &&
-    formData.password.length >= 6 &&
-    !errors.phone &&
-    !errors.password
-  ) {
-    setIsLoading(true);
-    try {
-      const { data, status } = await api.post("/api/farmer/login", {
-        mobile: formData.phone,
-        password: formData.password,
-      });
-
-      if (status === 200) {
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("user", JSON.stringify(data.result));
-        navigate("/complete-profile?role=kisaan");
-      } else {
+          if (bankVerified && otherDetailsVerified) {
+            // Both complete: go to home
+            toast.success(t("loginSuccess") || "Login successful!");
+            navigate("/home");
+          } else if (bankVerified && !otherDetailsVerified) {
+            // Bank complete, farm not: go to profile complete step 2
+            toast.success(t("loginSuccess") || "Login successful!");
+            navigate("/complete-profile?role=kisaan&step=2");
+          } else {
+            // Both missing, start profile from step 1
+            toast.success(t("loginSuccess") || "Login successful!");
+            navigate("/complete-profile?role=kisaan&step=1");
+          }
+        } else {
+          setErrors((prev) => ({
+            ...prev,
+            password: data.message || "Login failed",
+          }));
+        }
+      } catch (error: any) {
         setErrors((prev) => ({
           ...prev,
-          password: data.message || "Login failed",
+          password:
+            error.response?.data?.message || "Network error. Please try again.",
         }));
       }
-    } catch (error: any) {
-      setErrors((prev) => ({
-        ...prev,
-        password: error.response?.data?.message || "Network error. Please try again.",
-      }));
+      setIsLoading(false);
     }
-    setIsLoading(false);
-  }
-};
+  };
 
   // POS logic only (remains unchanged, uses step for OTP if needed)
   const [step, setStep] = useState<"credentials" | "otp">("credentials");
@@ -126,7 +135,6 @@ const handleFarmerLogin = async (e: React.FormEvent) => {
   };
 
   const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Only POS uses OTP
     const value = e.target.value.replace(/\D/g, "").slice(0, 6);
     setFormData((prev) => ({ ...prev, otp: value }));
   };
@@ -148,7 +156,7 @@ const handleFarmerLogin = async (e: React.FormEvent) => {
 
   return (
     <div className="min-h-screen flex bg-black">
-      {/* Left Side - Agricultural Background with Curved Border */}
+      {/* Left Side */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center"
@@ -173,7 +181,6 @@ const handleFarmerLogin = async (e: React.FormEvent) => {
             }}
           ></div>
         </div>
-
         <div className="relative z-10 flex flex-col justify-center items-start p-12 text-white">
           <button
             onClick={handleBack}

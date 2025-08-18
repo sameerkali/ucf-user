@@ -1,18 +1,20 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { BGS } from "../assets/assets";
 import Modal from "../components/Modal";
 import toast from 'react-hot-toast';
 import { useTranslation } from "react-i18next";
-import { BASE_URL } from "../utils/urls";
+import api from "../api/axios";
 
 export default function ProfileComplete() {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const [searchParams] = useSearchParams();
 
-  // Only two steps now: Bank details, Farm & Documents
-  const [step, setStep] = useState(1);
+  // Read initial step from URL query parameter
+  const initialStep = Number(searchParams.get("step")) === 2 ? 2 : 1;
+  const [step, setStep] = useState(initialStep);
   const [showErrors, setShowErrors] = useState(false);
   const [showSkipModal, setShowSkipModal] = useState(false);
 
@@ -77,40 +79,32 @@ export default function ProfileComplete() {
     }
   };
 
-  // Fetch crops with Authorization token
+  // Fetch crops with Authorization token using axios
   useEffect(() => {
-    const fetchCrops = async () => {
-      setCropsLoading(true);
-      const token = localStorage.getItem('token');
+  const fetchCrops = async () => {
+    setCropsLoading(true);
+    try {
+      const { data } = await api.get("/api/admin/get-all-crop");
       
-      try {
-        const response = await fetch(`${BASE_URL}api/admin/get-all-crop`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        const data = await response.json();
-        
-        if (data.success && data.crops) {
-          // Extract crop names from the response
-          setCropsList(data.crops.map((crop: any) => crop.name));
-        } else {
-          setCropsList(["no", "api", "call", "its", "mocked"]);
-        }
-      } catch (error) {
-        console.error('Error fetching crops:', error);
-        setCropsList([]);
-        toast.error('Failed to load crops');
-      } finally {
-        setCropsLoading(false);
+      if (data.success && data.crops) {
+        setCropsList(data.crops.map((crop: any) => crop.name));
+      } else {
+        // API responded but no crops data
+        setCropsList(["Wheat", "Rice", "Corn", "Barley", "Oats", "Soybean", "Cotton", "Sugarcane"]);
       }
-    };
+    } catch (error) {
+      console.error('Error fetching crops:', error);
+      // API call failed - use backup crops list
+      setCropsList(["Wheat", "Rice", "Corn", "Barley", "Oats", "Soybean", "Cotton", "Sugarcane"]);
+      toast.error('Failed to load crops, using default list');
+    } finally {
+      setCropsLoading(false);
+    }
+  };
 
-    fetchCrops();
-  }, []);
+  fetchCrops();
+}, []);
+
 
   const validateStep = () => {
     const errors: Record<string, boolean> = {};
@@ -150,35 +144,26 @@ export default function ProfileComplete() {
     if (step === 1) {
       if (isStepValid()) {
         setIsLoading(true);
-        const token = localStorage.getItem('token');
         
-        // Submit bank details
+        // Submit bank details using axios
         try {
-          const res = await fetch(`${BASE_URL}api/bank/addDetail`, {
-            method: "POST",
-            headers: { 
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${token}`
-            },
-            body: JSON.stringify({
-              bankName: formData.bankName,
-              accountHolderName: formData.accountHolder,
-              accountNumber: formData.bankAccount,
-              ifscCode: formData.ifsc,
-              branch: formData.bankBranch,
-            }),
+          const { data } = await api.post("/api/bank/addDetail", {
+            bankName: formData.bankName,
+            accountHolderName: formData.accountHolder,
+            accountNumber: formData.bankAccount,
+            ifscCode: formData.ifsc,
+            branch: formData.bankBranch,
           });
           
-          if (!res.ok) {
-            const errorData = await res.json();
-            throw new Error(errorData.message || "Failed to save bank details");
+          if (data.success) {
+            toast.success("Bank details saved successfully!");
+            setStep(2);
+            setShowErrors(false);
+          } else {
+            toast.error(data.message || "Failed to save bank details");
           }
-          
-          toast.success("Bank details saved successfully!");
-          setStep(2);
-          setShowErrors(false);
         } catch (error: any) {
-          toast.error(error.message || "Failed to save bank details");
+          toast.error(error?.response?.data?.message || "Failed to save bank details");
         }
         setIsLoading(false);
       }
@@ -195,9 +180,8 @@ export default function ProfileComplete() {
     setShowErrors(true);
     if (isStepValid()) {
       setIsLoading(true);
-      const token = localStorage.getItem('token');
       
-      // Submit farm & docs
+      // Submit farm & docs using axios
       try {
         const payload = {
           landHoldings: formData.landHoldings,
@@ -211,24 +195,16 @@ export default function ProfileComplete() {
           aadhaarBack: formData.aadhaarBackUrl,
         };
         
-        const res = await fetch(`${BASE_URL}api/other-details/add`, {
-          method: "POST",
-          headers: { 
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
-          },
-          body: JSON.stringify(payload),
-        });
+        const { data } = await api.post("/api/other-details/add", payload);
         
-        if (!res.ok) {
-          const errorData = await res.json();
-          throw new Error(errorData.message || "Failed to save farm details");
+        if (data.success) {
+          toast.success(t("profileSubmitted"));
+          navigate("/home");
+        } else {
+          toast.error(data.message || "Failed to save farm details");
         }
-        
-        toast.success(t("profileSubmitted"));
-        navigate("/home");
       } catch (error: any) {
-        toast.error(error.message || "Failed to save farm details");
+        toast.error(error?.response?.data?.message || "Failed to save farm details");
       }
       setIsLoading(false);
     }
