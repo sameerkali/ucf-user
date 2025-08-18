@@ -81,27 +81,30 @@ export default function ProfileComplete() {
 
   // Fetch crops with Authorization token using axios
   useEffect(() => {
-    const fetchCrops = async () => {
-      setCropsLoading(true);
-      try {
-        const { data } = await api.get("/api/admin/get-all-crop");
-        
-        if (data.success && data.crops) {
-          setCropsList(data.crops.map((crop: any) => crop.name));
-        } else {
-          setCropsList(["no", "api", "call", "its", "mocked"]);
-        }
-      } catch (error) {
-        console.error('Error fetching crops:', error);
-        setCropsList([]);
-        toast.error('Failed to load crops');
-      } finally {
-        setCropsLoading(false);
+  const fetchCrops = async () => {
+    setCropsLoading(true);
+    try {
+      const { data } = await api.get("/api/admin/get-all-crop");
+      
+      if (data.success && data.crops) {
+        setCropsList(data.crops.map((crop: any) => crop.name));
+      } else {
+        // API responded but no crops data
+        setCropsList(["Wheat", "Rice", "Corn", "Barley", "Oats", "Soybean", "Cotton", "Sugarcane"]);
       }
-    };
+    } catch (error) {
+      console.error('Error fetching crops:', error);
+      // API call failed - use backup crops list
+      setCropsList(["Wheat", "Rice", "Corn", "Barley", "Oats", "Soybean", "Cotton", "Sugarcane"]);
+      toast.error('Failed to load crops, using default list');
+    } finally {
+      setCropsLoading(false);
+    }
+  };
 
-    fetchCrops();
-  }, []);
+  fetchCrops();
+}, []);
+
 
   const validateStep = () => {
     const errors: Record<string, boolean> = {};
