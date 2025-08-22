@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Eye, EyeOff } from "lucide-react";
+import {  Eye, EyeOff } from "lucide-react";
 import { BGS, GLOBLE, ILLUSTRATIONS } from "../assets/assets";
 import { useTranslation } from "react-i18next";
 import { Loader2 } from "lucide-react";
@@ -144,13 +144,13 @@ export default function LoginPage() {
     }
   };
 
-  const handleBack = () => {
-    if (step === "otp") {
-      setStep("credentials");
-    } else {
-      navigate(-1);
-    }
-  };
+  // const handleBack = () => {
+  //   if (step === "otp") {
+  //     setStep("credentials");
+  //   } else {
+  //     navigate(-1);
+  //   }
+  // };
 
   // FORM
   const renderForm = () => {
