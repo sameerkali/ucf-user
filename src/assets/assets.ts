@@ -17,11 +17,13 @@ import kisaan11 from './illustration/kisaan11.webp';
 
 
 export const BGS = {
-  ucf_logo,
   home_bg,
   signup_bg,
   login_bg,
   kisaan_profile
+};
+export const GLOBLE = {
+  ucf_logo,
 };
 
 export const ILLUSTRATIONS = {
