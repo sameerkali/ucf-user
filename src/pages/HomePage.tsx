@@ -27,7 +27,7 @@ const cropRequests: CropRequest[] = [
       "Seeking 15 quintals of rice for sowing season. Interested in bulk rates and certified seeds.",
     cropType: "Rice",
     date: "2025-08-10",
-    image: "https://dummyimages.com/rice.jpg",
+    image: "",
     id: 2,
   },
   // ... Add more if needed

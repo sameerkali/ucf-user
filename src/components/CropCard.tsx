@@ -56,4 +56,5 @@ const CropCard: React.FC<CropCardProps> = ({
   );
 };
 
+
 export default CropCard;
