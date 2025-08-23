@@ -35,12 +35,12 @@ export const FarmerAddressForm: React.FC<FarmerAddressFormProps> = ({
             placeholder="State"
             value={formData.state}
             onChange={(e) => onAddressFieldChange("state", e.target.value)}
-            className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors"
+            className="w-full px-4 py-3 bg-gray-100 border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 transition-colors"
             style={{ borderRadius: "0.75rem" }}
             required
           />
           {errors.state && (
-            <p className="text-red-400 text-xs mt-1">{errors.state}</p>
+            <p className="text-red-500 text-xs mt-1">{errors.state}</p>
           )}
         </div>
 
@@ -50,12 +50,12 @@ export const FarmerAddressForm: React.FC<FarmerAddressFormProps> = ({
             placeholder="District"
             value={formData.district}
             onChange={(e) => onAddressFieldChange("district", e.target.value)}
-            className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors"
+            className="w-full px-4 py-3 bg-gray-100 border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 transition-colors"
             style={{ borderRadius: "0.75rem" }}
             required
           />
           {errors.district && (
-            <p className="text-red-400 text-xs mt-1">{errors.district}</p>
+            <p className="text-red-500 text-xs mt-1">{errors.district}</p>
           )}
         </div>
       </div>
@@ -67,12 +67,12 @@ export const FarmerAddressForm: React.FC<FarmerAddressFormProps> = ({
             placeholder="Tehsil"
             value={formData.tehsil}
             onChange={(e) => onAddressFieldChange("tehsil", e.target.value)}
-            className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors"
+            className="w-full px-4 py-3 bg-gray-100 border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 transition-colors"
             style={{ borderRadius: "0.75rem" }}
             required
           />
           {errors.tehsil && (
-            <p className="text-red-400 text-xs mt-1">{errors.tehsil}</p>
+            <p className="text-red-500 text-xs mt-1">{errors.tehsil}</p>
           )}
         </div>
 
@@ -82,12 +82,12 @@ export const FarmerAddressForm: React.FC<FarmerAddressFormProps> = ({
             placeholder="Block"
             value={formData.block}
             onChange={(e) => onAddressFieldChange("block", e.target.value)}
-            className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors"
+            className="w-full px-4 py-3 bg-gray-100 border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 transition-colors"
             style={{ borderRadius: "0.75rem" }}
             required
           />
           {errors.block && (
-            <p className="text-red-400 text-xs mt-1">{errors.block}</p>
+            <p className="text-red-500 text-xs mt-1">{errors.block}</p>
           )}
         </div>
       </div>
@@ -99,12 +99,12 @@ export const FarmerAddressForm: React.FC<FarmerAddressFormProps> = ({
             placeholder="Village"
             value={formData.village}
             onChange={(e) => onAddressFieldChange("village", e.target.value)}
-            className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors"
+            className="w-full px-4 py-3 bg-gray-100 border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 transition-colors"
             style={{ borderRadius: "0.75rem" }}
             required
           />
           {errors.village && (
-            <p className="text-red-400 text-xs mt-1">{errors.village}</p>
+            <p className="text-red-500 text-xs mt-1">{errors.village}</p>
           )}
         </div>
 
@@ -114,12 +114,12 @@ export const FarmerAddressForm: React.FC<FarmerAddressFormProps> = ({
             placeholder="Pincode"
             value={formData.pincode}
             onChange={onPincodeChange}
-            className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors"
+            className="w-full px-4 py-3 bg-gray-100 border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 transition-colors"
             style={{ borderRadius: "0.75rem" }}
             required
           />
           {errors.pincode && (
-            <p className="text-red-400 text-xs mt-1">{errors.pincode}</p>
+            <p className="text-red-500 text-xs mt-1">{errors.pincode}</p>
           )}
         </div>
       </div>
@@ -132,14 +132,14 @@ export const FarmerAddressForm: React.FC<FarmerAddressFormProps> = ({
             id="terms"
             checked={agreeToTerms}
             onChange={(e) => onAgreeToTermsChange(e.target.checked)}
-            className="w-4 h-4 text-green-500 bg-gray-800 border-gray-600 focus:ring-green-500 mt-1"
+            className="w-4 h-4 text-green-500 bg-gray-100 border-gray-400 focus:ring-green-500 mt-1"
             style={{ borderRadius: "0.25rem" }}
           />
-          <label htmlFor="terms" className="ml-2 text-sm text-gray-300">
+          <label htmlFor="terms" className="ml-2 text-sm text-gray-700">
             {t("agreeToTermsStart")}{" "}
             <button
               type="button"
-              className="text-green-500 hover:text-green-400 underline transition-colors"
+              className="text-green-600 hover:text-green-500 underline transition-colors"
               onClick={() => window.open("/terms", "_blank")}
             >
               {t("termsAndConditions")}
@@ -147,7 +147,7 @@ export const FarmerAddressForm: React.FC<FarmerAddressFormProps> = ({
             {t("and")}{" "}
             <button
               type="button"
-              className="text-green-500 hover:text-green-400 underline transition-colors"
+              className="text-green-600 hover:text-green-500 underline transition-colors"
               onClick={() => window.open("/privacy", "_blank")}
             >
               {t("privacyPolicy")}
@@ -155,14 +155,14 @@ export const FarmerAddressForm: React.FC<FarmerAddressFormProps> = ({
           </label>
         </div>
         {errors.terms && (
-          <p className="text-red-400 text-xs">{errors.terms}</p>
+          <p className="text-red-500 text-xs">{errors.terms}</p>
         )}
       </div>
 
       <button
         type="submit"
         disabled={isLoading}
-        className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold hover:from-green-700 hover:to-emerald-700 focus:outline-none transition-all duration-200 flex items-center justify-center"
+        className="w-full py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold hover:from-green-600 hover:to-emerald-600 focus:outline-none transition-all duration-200 flex items-center justify-center"
         style={{ borderRadius: "0.75rem" }}
       >
         {isLoading ? (
