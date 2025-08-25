@@ -8,7 +8,7 @@ import { PosSignupForm } from "./PosSignupForm";
 import { OtpForm } from "./OtpForm";
 import type { Role } from "./signup.type";
 import { useSignupForm } from "../../hooks/useSignupForm";
-
+import { GLOBLE, ILLUSTRATIONS } from "../../assets/assets";
 
 export default function SignupPage() {
   const navigate = useNavigate();
@@ -28,7 +28,6 @@ export default function SignupPage() {
   }, [searchParams]);
 
   const {
-    // State
     isLoading,
     farmerStep,
     step,
@@ -85,10 +84,10 @@ export default function SignupPage() {
     return (
       <>
         <div className="mb-8">
-          <h2 className="text-3xl font-semibold text-white mb-2">
+          <h2 className="text-3xl font-semibold text-gray-900 mb-2">
             {role === "kisaan" ? t("joinAsKisaan") : t("joinAsPos")}
           </h2>
-          <p className="text-gray-400 text-sm">
+          <p className="text-gray-600 text-sm">
             {role === "kisaan"
               ? farmerStep === "personal"
                 ? "Enter your personal details"
@@ -104,7 +103,7 @@ export default function SignupPage() {
               ></div>
               <div
                 className={`w-1/2 h-1 rounded-full ml-2 ${
-                  farmerStep === "address" ? "bg-green-500" : "bg-gray-600"
+                  farmerStep === "address" ? "bg-green-500" : "bg-gray-300"
                 }`}
               ></div>
             </div>
@@ -154,27 +153,59 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen flex bg-black">
-      {/* Left Side - Agricultural Background with Curved Border */}
+    <div className="min-h-screen flex flex-col lg:flex-row bg-white">
+      {/* Mobile: Top Illustration + Centered Form */}
+      <div className="block lg:hidden w-full h-screen">
+        <div className="flex flex-col items-center justify-center h-full">
+          {/* Illustration */}
+          <img
+            src={ILLUSTRATIONS.kisaan07}
+            alt="illustration"
+            className="mb-4 w-44 h-44 object-contain"
+          />
+
+          {/* Form Card */}
+          <div className="w-full max-w-md p-6">
+            {renderSignupContent()}
+            <div className="mt-8 text-center">
+              <p className="text-gray-600 text-sm">
+                {t("alreadyHaveAccount")}{" "}
+                <button
+                  onClick={() => navigate(`/login?role=${role}`)}
+                  className="text-green-600 hover:text-green-500 font-medium transition-colors"
+                >
+                  {t("signIn")}
+                </button>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop: Left Side */}
       <LeftPanel onBack={handleBack} />
 
-      {/* Right Side - Signup Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-black overflow-y-auto">
-        <div className="w-full max-w-md">
+      {/* Desktop: Right/Form Side */}
+      <div className="hidden lg:flex w-full lg:w-1/2 items-center justify-center p-8 bg-white">
+        <div className="w-full max-w-md px-6">
           {renderSignupContent()}
-
           <div className="mt-8 text-center">
-            <p className="text-gray-400 text-sm">
+            <p className="text-gray-600 text-sm">
               {t("alreadyHaveAccount")}{" "}
               <button
                 onClick={() => navigate(`/login?role=${role}`)}
-                className="text-green-500 hover:text-green-400 font-medium transition-colors"
+                className="text-green-600 hover:text-green-500 font-medium transition-colors"
               >
                 {t("signIn")}
               </button>
             </p>
           </div>
         </div>
+      </div>
+      
+      {/* Brand Logo - positioned absolutely */}
+      <div className="absolute top-4 left-4 z-50">
+        <img src={GLOBLE.ucf_logo} alt="Brand Logo" className="h-30 w-auto" />
       </div>
     </div>
   );

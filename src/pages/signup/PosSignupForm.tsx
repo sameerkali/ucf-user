@@ -38,12 +38,12 @@ export const PosSignupForm: React.FC<PosSignupFormProps> = ({
           placeholder={t("businessName")}
           value={formData.name}
           onChange={(e) => onNameChange("name", e.target.value)}
-          className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors"
+          className="w-full px-4 py-3 bg-gray-100 border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 transition-colors"
           style={{ borderRadius: "0.75rem" }}
           required
         />
         {errors.name && (
-          <p className="text-red-400 text-xs mt-1">{errors.name}</p>
+          <p className="text-red-500 text-xs mt-1">{errors.name}</p>
         )}
       </div>
 
@@ -52,13 +52,13 @@ export const PosSignupForm: React.FC<PosSignupFormProps> = ({
           placeholder={t("businessAddress")}
           value={formData.address}
           onChange={onAddressChange}
-          className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors resize-none"
+          className="w-full px-4 py-3 bg-gray-100 border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 transition-colors resize-none"
           style={{ borderRadius: "0.75rem" }}
           rows={3}
           required
         />
         {errors.address && (
-          <p className="text-red-400 text-xs mt-1">{errors.address}</p>
+          <p className="text-red-500 text-xs mt-1">{errors.address}</p>
         )}
       </div>
 
@@ -68,12 +68,12 @@ export const PosSignupForm: React.FC<PosSignupFormProps> = ({
           placeholder={t("emailAddress")}
           value={formData.email}
           onChange={onEmailChange}
-          className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors"
+          className="w-full px-4 py-3 bg-gray-100 border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 transition-colors"
           style={{ borderRadius: "0.75rem" }}
           required
         />
         {errors.email && (
-          <p className="text-red-400 text-xs mt-1">{errors.email}</p>
+          <p className="text-red-500 text-xs mt-1">{errors.email}</p>
         )}
       </div>
 
@@ -83,12 +83,12 @@ export const PosSignupForm: React.FC<PosSignupFormProps> = ({
           placeholder={t("gstNumber")}
           value={formData.gst}
           onChange={onGstChange}
-          className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors"
+          className="w-full px-4 py-3 bg-gray-100 border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 transition-colors"
           style={{ borderRadius: "0.75rem" }}
           required
         />
         {errors.gst && (
-          <p className="text-red-400 text-xs mt-1">{errors.gst}</p>
+          <p className="text-red-500 text-xs mt-1">{errors.gst}</p>
         )}
       </div>
 
@@ -100,14 +100,14 @@ export const PosSignupForm: React.FC<PosSignupFormProps> = ({
             id="terms"
             checked={agreeToTerms}
             onChange={(e) => onAgreeToTermsChange(e.target.checked)}
-            className="w-4 h-4 text-green-500 bg-gray-800 border-gray-600 focus:ring-green-500 mt-1"
+            className="w-4 h-4 text-green-500 bg-gray-100 border-gray-400 focus:ring-green-500 mt-1"
             style={{ borderRadius: "0.25rem" }}
           />
-          <label htmlFor="terms" className="ml-2 text-sm text-gray-300">
+          <label htmlFor="terms" className="ml-2 text-sm text-gray-700">
             {t("agreeToTermsStart")}{" "}
             <button
               type="button"
-              className="text-green-500 hover:text-green-400 underline transition-colors"
+              className="text-green-600 hover:text-green-500 underline transition-colors"
               onClick={() => window.open("/terms", "_blank")}
             >
               {t("termsAndConditions")}
@@ -115,7 +115,7 @@ export const PosSignupForm: React.FC<PosSignupFormProps> = ({
             {t("and")}{" "}
             <button
               type="button"
-              className="text-green-500 hover:text-green-400 underline transition-colors"
+              className="text-green-600 hover:text-green-500 underline transition-colors"
               onClick={() => window.open("/privacy", "_blank")}
             >
               {t("privacyPolicy")}
@@ -123,14 +123,14 @@ export const PosSignupForm: React.FC<PosSignupFormProps> = ({
           </label>
         </div>
         {errors.terms && (
-          <p className="text-red-400 text-xs">{errors.terms}</p>
+          <p className="text-red-500 text-xs">{errors.terms}</p>
         )}
       </div>
 
       <button
         type="submit"
         disabled={isLoading}
-        className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold hover:from-green-700 hover:to-emerald-700 focus:outline-none transition-all duration-200 flex items-center justify-center"
+        className="w-full py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold hover:from-green-600 hover:to-emerald-600 focus:outline-none transition-all duration-200 flex items-center justify-center"
         style={{ borderRadius: "0.75rem" }}
       >
         {isLoading ? (
