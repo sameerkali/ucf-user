@@ -15,10 +15,17 @@ import HelpAndSupportPage from "./pages/HelpAndSupportPage";
 import LandingPage from "./pages/LandingPage";
 import ProfileComplete from "./pages/profileComplete/ProfileCompletePage";
 
+// POS Pages
+import PosHomePage from "./pos-pages/PosHomePage";
+import PosTransactionsPage from "./pos-pages/PosTransactionsPage";
+import PosHelpAndSupportPage from "./pos-pages/PosHelpAndSupportPage";
+
 import OfflineBanner from "./components/OfflineBanner";
 import InstallBanner from "./components/InstallBanner";
 import Header from "./components/Headr";
+import PosHeader from "./components/PosHeader";
 import Dock from "./components/Dock";
+import PosDock from "./components/PosDock";
 import LoadingScreen from "./components/LoadingScreen";
 import { useAppLoading } from "./hooks/useAppLoading";
 import { Toaster } from "react-hot-toast";
@@ -35,7 +42,8 @@ function RequireAuth() {
   return <Outlet />;
 }
 
-const MainLayout = () => (
+// Role-based layout components
+const KisaanLayout = () => (
   <>
     <Header />
     <main className="min-h-screen pb-16 md:pb-0">
@@ -44,6 +52,38 @@ const MainLayout = () => (
     <Dock />
   </>
 );
+
+const PosLayout = () => (
+  <>
+    <PosHeader />
+    <main className="min-h-screen pb-16 md:pb-0">
+      <Outlet />
+    </main>
+    <PosDock />
+  </>
+);
+
+// Role-based route wrapper
+function RoleBasedLayout() {
+  const role = localStorage.getItem("role");
+  
+  if (role === "pos") {
+    return <PosLayout />;
+  } else {
+    return <KisaanLayout />;
+  }
+}
+
+// Home page router based on role
+function RoleBasedHome() {
+  const role = localStorage.getItem("role");
+  
+  if (role === "pos") {
+    return <Navigate to="/pos/home" replace />;
+  } else {
+    return <Navigate to="/kisaan/home" replace />;
+  }
+}
 
 export default function App() {
   const isLoading = useAppLoading();
@@ -73,15 +113,32 @@ export default function App() {
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/404" element={<NotFoundPage />} />
 
-        {/* Protected routes (header, dock, must be authenticated) */}
+        {/* Protected routes with role-based routing */}
         <Route element={<RequireAuth />}>
-          <Route element={<MainLayout />}>
-            <Route path="/home" element={<HomePage />} />
-            <Route path="/posts" element={<PostsPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/help" element={<HelpAndSupportPage />} />
+          {/* Role-based home redirect */}
+          <Route path="/home" element={<RoleBasedHome />} />
+          
+          {/* Kisaan routes */}
+          <Route element={<KisaanLayout />}>
+            <Route path="/kisaan/home" element={<HomePage />} />
+            <Route path="/kisaan/posts" element={<PostsPage />} />
+            <Route path="/kisaan/settings" element={<SettingsPage />} />
+            <Route path="/kisaan/help" element={<HelpAndSupportPage />} />
+            <Route path="/kisaan/profile" element={<Profile />} />
+          </Route>
+
+          {/* POS routes */}
+          <Route element={<PosLayout />}>
+            <Route path="/pos/home" element={<PosHomePage />} />
+            <Route path="/pos/transactions" element={<PosTransactionsPage />} />
+            <Route path="/pos/settings" element={<SettingsPage />} />
+            <Route path="/pos/help" element={<PosHelpAndSupportPage />} />
+            <Route path="/pos/profile" element={<Profile />} />
+          </Route>
+
+          {/* Shared routes with role-based layout */}
+          <Route element={<RoleBasedLayout />}>
             <Route path="/complete-profile" element={<ProfileComplete />} />
-            <Route path="/profile" element={<Profile />} />
           </Route>
         </Route>
 

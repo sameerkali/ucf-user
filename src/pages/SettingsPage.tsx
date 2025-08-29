@@ -32,6 +32,7 @@ const SettingsPage: React.FC = () => {
     { value: "en", label: "English" },
     { value: "hi", label: "हिन्दी" },
   ];
+  const role = profile?.role ? profile.role.toLowerCase() : "kisaan";
 
   const profileImgUrl = "https://randomuser.me/api/portraits/men/75.jpg";
   const appVersion = "v1.2.3";
@@ -78,6 +79,8 @@ const SettingsPage: React.FC = () => {
     setShowLogoutPopup(false);
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    localStorage.removeItem("role");
+    localStorage.removeItem("_grecaptcha");
     navigate("/login");
   };
 
@@ -95,7 +98,15 @@ const SettingsPage: React.FC = () => {
       {
         labelKey: "profile",
         icon: User,
-        onClick: () => navigate("/profile"),
+        onClick: () => {
+          if (profile) {
+            if (role === "pos") {
+              navigate("/pos/profile");
+            } else {
+              navigate("/kisaan/profile");
+            }
+          }
+        },
         descriptionKey: "viewEditProfile",
       },
       {
@@ -129,19 +140,27 @@ const SettingsPage: React.FC = () => {
         descriptionKey: "signOutAccount",
       },
     ],
-    [navigate, appVersion]
+    [navigate, appVersion, profile, role] // Add profile and role as dependencies
   );
 
   return (
     <div className="min-h-screen px-4 py-6">
       <div
         className="flex items-center gap-3 mb-6 p-4 rounded-xl bg-white shadow hover:shadow-md transition cursor-pointer hover:bg-gray-50"
-        onClick={() => profile && navigate("/profile", { state: profile })}
+        onClick={() => {
+          if (profile) {
+            if (role === "pos") {
+              navigate("/pos/profile");
+            } else {
+              navigate("/kisaan/profile");
+            }
+          }
+        }}
       >
-        <img 
-          src={profileImgUrl} 
-          alt={t("profile")} 
-          className="w-16 h-16 rounded-full object-cover border border-gray-300" 
+        <img
+          src={profileImgUrl}
+          alt={t("profile")}
+          className="w-16 h-16 rounded-full object-cover border border-gray-300"
         />
 
         <div className="flex-1">

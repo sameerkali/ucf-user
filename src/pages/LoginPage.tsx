@@ -122,6 +122,7 @@ export default function LoginPage() {
       if (status === 200 && data.success) {
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.result));
+        localStorage.setItem("role", "kisaan");
         const { bankVerified, otherDetailsVerified } = data.result;
         
         toast.success(t("loginSuccess") || "Login successful!");
@@ -133,6 +134,64 @@ export default function LoginPage() {
         } else {
           navigate("/complete-profile?role=kisaan&step=1");
         }
+      } else {
+        setErrors((prev) => ({
+          ...prev,
+          password: data.message || t("loginFailed") || "Login failed",
+        }));
+      }
+    } catch (error: any) {
+      setErrors((prev) => ({
+        ...prev,
+        password:
+          error.response?.data?.message ||
+          error?.message ||
+          t("networkError") ||
+          "Network error. Please try again.",
+      }));
+    }
+    setIsLoading(false);
+  };
+
+  // POS password login
+  const handlePosLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (
+      formData.phone.length !== 10 ||
+      !formData.password ||
+      formData.password.length < 6 ||
+      errors.phone ||
+      errors.password
+    ) {
+      if (formData.phone.length !== 10) {
+        setErrors((prev) => ({
+          ...prev,
+          phone: t("phoneError") || "Please enter a valid 10-digit phone number",
+        }));
+      }
+      if (!formData.password || formData.password.length < 6) {
+        setErrors((prev) => ({
+          ...prev,
+          password: t("passwordError") || "Password must be at least 6 characters",
+        }));
+      }
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      const { data, status } = await api.post("/api/pos/login", {
+        mobile: formData.phone,
+        password: formData.password,
+      });
+
+      if ((status === 200 || status === 201) && (data.success || data.statusCode === 201)) {
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data.data));
+        localStorage.setItem("role", "pos");
+        
+        toast.success(t("loginSuccess") || "Login successful!");
+        navigate("/home");
       } else {
         setErrors((prev) => ({
           ...prev,
@@ -282,6 +341,87 @@ export default function LoginPage() {
             </p>
           </div>
           <form onSubmit={handleFarmerLogin} className="space-y-6">
+            {/* Phone Number */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t("phoneNumber") || "Phone Number"}
+              </label>
+              <input
+                type="tel"
+                placeholder={t("phoneNumberPlaceholder") || "Enter 10-digit phone number"}
+                value={formData.phone}
+                onChange={handlePhoneChange}
+                className="w-full px-4 py-3 bg-gray-100 border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 transition-colors"
+                style={{ borderRadius: "0.75rem" }}
+                required
+                maxLength={10}
+              />
+              {errors.phone && (
+                <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
+              )}
+            </div>
+            
+            {/* Password */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t("password") || "Password"}
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder={t("passwordPlaceholder") || "Enter your password"}
+                  value={formData.password}
+                  onChange={handlePasswordChange}
+                  className="w-full px-4 py-3 bg-gray-100 border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 transition-colors pr-12"
+                  style={{ borderRadius: "0.75rem" }}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
+              {errors.password && (
+                <p className="text-red-500 text-xs mt-1">{errors.password}</p>
+              )}
+            </div>
+            
+            <button
+              type="submit"
+              disabled={isLoading || formData.phone.length !== 10 || !formData.password}
+              className="w-full py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold hover:from-green-600 hover:to-emerald-600 focus:outline-none transition-all duration-200 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ borderRadius: "0.75rem" }}
+            >
+              {isLoading ? (
+                <Loader2 className="animate-spin w-5 h-5" />
+              ) : (
+                t("login") || "Login"
+              )}
+            </button>
+          </form>
+        </>
+      );
+    }
+
+    if (role === "pos") {
+      return (
+        <>
+          <div className="mb-8">
+            <h2 className="text-3xl font-semibold text-gray-900 mb-2">
+              {t("posLogin") || "POS Login"}
+            </h2>
+            <p className="text-gray-600 text-sm">
+              {t("createPosAccount") || "Enter your phone number and password to access POS"}
+            </p>
+          </div>
+          <form onSubmit={handlePosLogin} className="space-y-6">
             {/* Phone Number */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
