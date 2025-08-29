@@ -1,21 +1,21 @@
 import { Link, NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
-const MENU_ITEMS = [
-  { labelKey: "home", to: "/kisaan/home" },
-  { labelKey: "post", to: "/kisaan/posts" },
-  { labelKey: "helpSupport", to: "/kisaan/help" },
-  { labelKey: "settings", to: "/kisaan/settings" }
+const POS_MENU_ITEMS = [
+  { labelKey: "home", to: "/pos/home" },
+  { labelKey: "transactions", to: "/pos/transactions" },
+  { labelKey: "helpSupport", to: "/pos/help" },
+  { labelKey: "settings", to: "/pos/settings" }
 ];
 
-export default function Header() {
+export default function PosHeader() {
   const { t } = useTranslation();
 
   return (
     <header className="hidden md:flex w-full items-center justify-between px-6 py-4 bg-white border-b border-gray-200 shadow z-50">
-      <Link to={`/`}><div className="font-bold text-xl text-gray-900">{t("appName")}</div></Link>
+        <Link to={`/`}><div className="font-bold text-xl text-gray-900">{t("appName")}</div></Link>
       <nav className="flex gap-8">
-        {MENU_ITEMS.map(item => (
+        {POS_MENU_ITEMS.map(item => (
           <NavLink
             key={item.to}
             to={item.to}

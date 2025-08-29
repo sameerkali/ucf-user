@@ -10,7 +10,8 @@ import {
   Shield,
   CheckCircle,
   XCircle,
-  UserCheck
+  UserCheck,
+  Mail
 } from "lucide-react";
 
 type Address = {
@@ -24,11 +25,13 @@ type Address = {
 
 type ProfileType = {
   _id: string;
+  id?: string;
   name: string;
-  fatherName: string;
+  fatherName?: string;
   mobile: string;
+  email?: string;
   address?: Address;
-  authMethod: string;
+  authMethod?: string;
   role: string;
   isVerified: boolean;
   mobileVerified: boolean;
@@ -37,6 +40,7 @@ type ProfileType = {
   profileStatus: string;
   createdAt: string;
   updatedAt: string;
+  __v?: number;
 };
 
 export default function Profile() {
@@ -47,8 +51,10 @@ export default function Profile() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
 
+  // Get user role from localStorage
+  const [userRole, setUserRole] = useState<string>("");
+
   useEffect(() => {
-    // Get profile data from localStorage instead of API call
     const getProfileFromStorage = () => {
       setLoading(true);
       setError("");
@@ -58,6 +64,8 @@ export default function Profile() {
         if (userData) {
           const parsedProfile = JSON.parse(userData) as ProfileType;
           setProfile(parsedProfile);
+          // Set role based on profile.role (POS or Farmer)
+          setUserRole(parsedProfile.role?.toLowerCase() || "");
         } else {
           setError("No profile data found");
         }
@@ -100,6 +108,11 @@ export default function Profile() {
     );
   }
 
+  const formatAddress = (address?: Address) => {
+    if (!address) return "N/A";
+    return `${address.village}, ${address.block}, ${address.tehsil}, ${address.district}, ${address.state} - ${address.pincode}`;
+  };
+
   const profileItems = [
     {
       icon: User,
@@ -107,24 +120,30 @@ export default function Profile() {
       value: profile?.name ?? "N/A",
       description: t("fullName")
     },
-    {
+    // Only show father's name for kisaan (farmer) users
+    ...(userRole === "farmer" && profile?.fatherName ? [{
       icon: UserCheck,
       title: t("fatherName"),
-      value: profile?.fatherName ?? "N/A",
+      value: profile.fatherName,
       description: t("fatherFullName")
-    },
+    }] : []),
     {
       icon: Phone,
       title: t("mobile"),
       value: profile?.mobile ?? "N/A",
       description: t("registeredMobile")
     },
+    // Only show email for POS users (since they have email field)
+    ...(userRole === "pos" && profile?.email ? [{
+      icon: Mail,
+      title: t("email"),
+      value: profile.email,
+      description: t("emailAddress")
+    }] : []),
     {
       icon: MapPin,
       title: t("address"),
-      value: profile?.address
-        ? `${profile.address.village}, ${profile.address.block}, ${profile.address.tehsil}, ${profile.address.district}, ${profile.address.state} - ${profile.address.pincode}`
-        : "N/A",
+      value: formatAddress(profile?.address),
       description: t("completeAddress")
     },
     {
@@ -181,7 +200,9 @@ export default function Profile() {
             </div>
             <div>
               <h1 className="text-xl font-semibold text-gray-900">{profile?.name ?? t("profile")}</h1>
-              <p className="text-sm text-gray-500">{t("viewProfile")}</p>
+              <p className="text-sm text-gray-500">
+                {userRole === "pos" ? "POS Profile" : "Farmer Profile"}
+              </p>
             </div>
           </div>
         </div>
@@ -267,9 +288,17 @@ export default function Profile() {
           <h3 className="text-lg font-semibold text-gray-900 mb-4">{t("accountInformation")}</h3>
           <div className="space-y-3 text-sm">
             <div className="flex justify-between">
-              <span className="text-gray-600">{t("authMethod")}:</span>
-              <span className="font-medium text-gray-900 capitalize">{profile?.authMethod ?? 'N/A'}</span>
+              <span className="text-gray-600">{t("userId")}:</span>
+              <span className="font-medium text-gray-900 font-mono">
+                {profile?._id ?? profile?.id ?? 'N/A'}
+              </span>
             </div>
+            {profile?.authMethod && (
+              <div className="flex justify-between">
+                <span className="text-gray-600">{t("authMethod")}:</span>
+                <span className="font-medium text-gray-900 capitalize">{profile.authMethod}</span>
+              </div>
+            )}
             <div className="flex justify-between">
               <span className="text-gray-600">{t("accountCreated")}:</span>
               <span className="font-medium text-gray-900">
