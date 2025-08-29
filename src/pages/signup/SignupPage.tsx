@@ -4,7 +4,8 @@ import { useTranslation } from "react-i18next";
 import { LeftPanel } from "./LeftPanel";
 import { FarmerPersonalForm } from "./FarmerPersonalForm";
 import { FarmerAddressForm } from "./FarmerAddressForm";
-import { PosSignupForm } from "./PosSignupForm";
+import { PosPersonalForm } from "./PosPersonalForm";
+import { PosAddressForm } from "./PosAddressForm";
 import { OtpForm } from "./OtpForm";
 import type { Role } from "./signup.type";
 import { useSignupForm } from "../../hooks/useSignupForm";
@@ -20,6 +21,9 @@ export default function SignupPage() {
     return urlRole === "pos" || urlRole === "kisaan" ? urlRole : "kisaan";
   });
 
+  // Add POS step state
+  const [posStep, setPosStep] = useState<"personal" | "address">("personal");
+
   useEffect(() => {
     const urlRole = searchParams.get("role");
     if (urlRole === "pos" || urlRole === "kisaan") {
@@ -34,12 +38,12 @@ export default function SignupPage() {
     agreeToTerms,
     errors,
     formData,
-    
+
     // Setters
     setFarmerStep,
     setStep,
     setAgreeToTerms,
-    
+
     // Handlers
     handlePhoneChange,
     handleAadharChange,
@@ -58,11 +62,83 @@ export default function SignupPage() {
     handleOtpSubmit,
   } = useSignupForm({ role, navigate });
 
+  // Enhanced mobile change handler for POS
+  const handleMobileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawValue = e.target.value;
+    const cleanValue = rawValue.replace(/\D/g, "").slice(0, 10);
+    handleNameChange("mobile", cleanValue);
+  };
+
+  // Enhanced pincode change handler
+  const handleEnhancedPincodeChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const rawValue = e.target.value;
+    const cleanValue = rawValue.replace(/\D/g, "").slice(0, 6);
+
+    const syntheticEvent = {
+      ...e,
+      target: {
+        ...e.target,
+        value: cleanValue,
+      },
+    };
+
+    handlePincodeChange(syntheticEvent as React.ChangeEvent<HTMLInputElement>);
+  };
+
+  // POS validation and navigation handlers
+  const validatePosPersonal = () => {
+    const newErrors: any = {};
+
+    // Business name validation
+    if (!formData.name || formData.name.trim().length < 2) {
+      newErrors.name = "Business name must be at least 2 characters long";
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!formData.email || !emailRegex.test(formData.email)) {
+      newErrors.email = "Please enter a valid email address";
+    }
+
+    // Mobile validation
+    const mobileRegex = /^[6-9]\d{9}$/;
+    if (!formData.mobile || !mobileRegex.test(formData.mobile)) {
+      newErrors.mobile = "Please enter a valid 10-digit mobile number";
+    }
+
+    // Password validation
+    if (!formData.password || formData.password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters long";
+    }
+
+    // Confirm password validation
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
+    }
+
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handlePosPersonalNext = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (validatePosPersonal()) {
+      setPosStep("address");
+    }
+  };
+
+  const handlePosAddressBack = () => {
+    setPosStep("personal");
+  };
+
   const handleBack = () => {
     if (step === "otp") {
       setStep("signup");
     } else if (role === "kisaan" && farmerStep === "address") {
       setFarmerStep("personal");
+    } else if (role === "pos" && posStep === "address") {
+      setPosStep("personal");
     } else {
       navigate(-1);
     }
@@ -92,8 +168,12 @@ export default function SignupPage() {
               ? farmerStep === "personal"
                 ? "Enter your personal details"
                 : "Enter your address details"
-              : t("createPosAccount")}
+              : posStep === "personal"
+              ? "Enter your business details"
+              : "Enter your address details"}
           </p>
+
+          {/* Progress indicators */}
           {role === "kisaan" && (
             <div className="flex mt-4">
               <div
@@ -104,6 +184,21 @@ export default function SignupPage() {
               <div
                 className={`w-1/2 h-1 rounded-full ml-2 ${
                   farmerStep === "address" ? "bg-green-500" : "bg-gray-300"
+                }`}
+              ></div>
+            </div>
+          )}
+
+          {role === "pos" && (
+            <div className="flex mt-4">
+              <div
+                className={`w-1/2 h-1 rounded-full ${
+                  posStep === "personal" ? "bg-green-500" : "bg-green-300"
+                }`}
+              ></div>
+              <div
+                className={`w-1/2 h-1 rounded-full ml-2 ${
+                  posStep === "address" ? "bg-green-500" : "bg-gray-300"
                 }`}
               ></div>
             </div>
@@ -130,22 +225,32 @@ export default function SignupPage() {
               isLoading={isLoading}
               onSubmit={handleFarmerAddressSubmit}
               onAddressFieldChange={handleAddressFieldChange}
-              onPincodeChange={handlePincodeChange}
+              onPincodeChange={handleEnhancedPincodeChange}
               onAgreeToTermsChange={setAgreeToTerms}
             />
           )
+        ) : posStep === "personal" ? (
+          <PosPersonalForm
+            formData={formData}
+            errors={errors}
+            onSubmit={handlePosPersonalNext}
+            onNameChange={handleNameChange}
+            onEmailChange={handleEmailChange}
+            onMobileChange={handleMobileChange}
+            onPasswordChange={handlePasswordChange}
+            onConfirmPasswordChange={handleConfirmPasswordChange}
+          />
         ) : (
-          <PosSignupForm
+          <PosAddressForm
             formData={formData}
             errors={errors}
             agreeToTerms={agreeToTerms}
             isLoading={isLoading}
             onSubmit={handlePosSignupSubmit}
-            onNameChange={handleNameChange}
-            onAddressChange={handleAddressChange}
-            onEmailChange={handleEmailChange}
-            onGstChange={handleGstChange}
+            onAddressFieldChange={handleAddressFieldChange}
+            onPincodeChange={handleEnhancedPincodeChange}
             onAgreeToTermsChange={setAgreeToTerms}
+            onBack={handlePosAddressBack}
           />
         )}
       </>
@@ -157,14 +262,12 @@ export default function SignupPage() {
       {/* Mobile: Top Illustration + Centered Form */}
       <div className="block lg:hidden w-full h-screen">
         <div className="flex flex-col items-center justify-center h-full">
-          {/* Illustration */}
           <img
             src={ILLUSTRATIONS.kisaan07}
             alt="illustration"
             className="mb-4 w-44 h-44 object-contain"
           />
 
-          {/* Form Card */}
           <div className="w-full max-w-md p-6">
             {renderSignupContent()}
             <div className="mt-8 text-center">
@@ -202,8 +305,8 @@ export default function SignupPage() {
           </div>
         </div>
       </div>
-      
-      {/* Brand Logo - positioned absolutely */}
+
+      {/* Brand Logo */}
       <div className="absolute top-4 left-4 z-50">
         <img src={GLOBLE.ucf_logo} alt="Brand Logo" className="h-30 w-auto" />
       </div>
