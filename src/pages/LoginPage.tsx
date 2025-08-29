@@ -479,7 +479,7 @@ export default function LoginPage() {
         </div>
       </div>
       
-      <div className="absolute top-4 left-4 z-50">
+      <div onClick={() => navigate("/")} className="absolute top-4 left-4 z-50 cursor-pointer">
         <img src={GLOBLE.ucf_logo} alt="Brand Logo" className="h-30 w-auto" />
       </div>
     </div>
