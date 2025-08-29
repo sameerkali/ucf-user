@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 import { BGS, GLOBLE, ILLUSTRATIONS } from "../assets/assets";
 import { useTranslation } from "react-i18next";
 import api from "../api/axios";
 import toast from "react-hot-toast";
-import {
-  sendOTP,
-  verifyOTP,
-  getIdTokenFromUser,
-  setupRecaptcha,
-  clearRecaptcha,
-} from "../firebaseConfig";
-import type { ConfirmationResult } from "firebase/auth";
+
+// Firebase imports commented out for now
+// import {
+//   sendOTP,
+//   verifyOTP,
+//   getIdTokenFromUser,
+//   setupRecaptcha,
+// } from "../firebaseConfig";
+// import type { ConfirmationResult } from "firebase/auth";
 
 type Step = "credentials" | "otp";
 
@@ -34,31 +35,39 @@ export default function LoginPage() {
     }
   }, [searchParams]);
 
-  // Cleanup on component unmount
-  useEffect(() => {
-    return () => {
-      clearRecaptcha();
-    };
-  }, []);
+  const [showPassword, setShowPassword] = useState(false);
+  // const [rememberMe, setRememberMe] = useState(false);
 
   const [errors, setErrors] = useState<{
     phone: string;
+    userId?: string;
+    password?: string;
     otp?: string;
   }>({
     phone: "",
-    otp: "",
+    // userId: "",
+    password: "",
+    // otp: "",
   });
 
   const [formData, setFormData] = useState<{
     phone: string;
+    userId?: string;
+    password?: string;
     otp: string;
   }>({
     phone: "",
+    // userId: "",
+    password: "",
     otp: "",
   });
 
-  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+  // Firebase confirmation result commented out
+  // const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+
   const [step, setStep] = useState<Step>("credentials");
+
+  const sanitizeInput = (value: string) => value.replace(/[<>"'&]/g, "");
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, "").slice(0, 10);
@@ -69,99 +78,57 @@ export default function LoginPage() {
     }));
   };
 
-  const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, "").slice(0, 6);
-    setFormData((prev) => ({ ...prev, otp: value }));
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = sanitizeInput(e.target.value).slice(0, 16);
+    setFormData((prev) => ({ ...prev, password: value }));
     setErrors((prev) => ({
       ...prev,
-      otp: value.length > 0 && value.length < 6 ? t("otpError") || "Invalid OTP" : "",
+      password: value.length > 0 && value.length < 6 ? t("passwordError") || "Password must be at least 6 characters" : "",
     }));
   };
 
-  // Send OTP function
-  const handleSendOtp = async (e: React.FormEvent) => {
+  // Farmer password login (instead of OTP)
+  const handleFarmerLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (formData.phone.length !== 10 || errors.phone) {
-      setErrors((prev) => ({
-        ...prev,
-        phone: t("phoneError") || "Please enter a valid 10-digit phone number",
-      }));
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      // Setup invisible reCAPTCHA
-      setupRecaptcha("recaptcha-container");
-      
-      // Send OTP
-      const confirmation = await sendOTP(formData.phone);
-      setConfirmationResult(confirmation);
-      
-      toast.success(t("otpSent") || "OTP sent successfully!");
-      setStep("otp");
-      
-    } catch (error: any) {
-      console.error("Firebase sendOTP error:", error);
-      
-      let errorMessage = t("otpSendError") || "Failed to send OTP. Please try again.";
-      
-      // Handle specific Firebase errors
-      if (error?.code === "auth/too-many-requests") {
-        errorMessage = "Too many requests. Please try again later.";
-      } else if (error?.code === "auth/invalid-phone-number") {
-        errorMessage = "Invalid phone number. Please check and try again.";
-      } else if (error?.code === "auth/quota-exceeded") {
-        errorMessage = "SMS quota exceeded. Please try again later.";
+    if (
+      formData.phone.length !== 10 ||
+      !formData.password ||
+      formData.password.length < 6 ||
+      errors.phone ||
+      errors.password
+    ) {
+      if (formData.phone.length !== 10) {
+        setErrors((prev) => ({
+          ...prev,
+          phone: t("phoneError") || "Please enter a valid 10-digit phone number",
+        }));
       }
-      
-      toast.error(errorMessage);
-      
-      // Clear and reset reCAPTCHA on error
-      clearRecaptcha();
-    }
-    setIsLoading(false);
-  };
-
-  // Verify OTP function
-  const handleVerifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!confirmationResult || !formData.otp || formData.otp.length !== 6 || errors.otp) {
-      setErrors((prev) => ({
-        ...prev,
-        otp: t("otpError") || "Please enter a valid 6-digit OTP",
-      }));
+      if (!formData.password || formData.password.length < 6) {
+        setErrors((prev) => ({
+          ...prev,
+          password: t("passwordError") || "Password must be at least 6 characters",
+        }));
+      }
       return;
     }
-
+    
     setIsLoading(true);
     try {
-      // Verify OTP with Firebase
-      const userCredential = await verifyOTP(confirmationResult, formData.otp);
-      const firebaseUser = userCredential.user;
-      const idToken = await getIdTokenFromUser(firebaseUser);
-
-      // Send idToken to backend for session creation
       const { data, status } = await api.post("/api/farmer/login", {
         mobile: formData.phone,
-        idToken,
+        password: formData.password,
       });
 
       if (status === 200 && data.success) {
-        // Store user session
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.result));
-        
         const { bankVerified, otherDetailsVerified } = data.result;
         
         toast.success(t("loginSuccess") || "Login successful!");
         
-        // Navigate based on profile completion status
         if (bankVerified && otherDetailsVerified) {
           navigate("/home");
-        } else if (bankVerified) {
+        } else if (bankVerified && !otherDetailsVerified) {
           navigate("/complete-profile?role=kisaan&step=2");
         } else {
           navigate("/complete-profile?role=kisaan&step=1");
@@ -169,40 +136,141 @@ export default function LoginPage() {
       } else {
         setErrors((prev) => ({
           ...prev,
-          otp: data.message || t("loginFailed") || "Login failed",
+          password: data.message || t("loginFailed") || "Login failed",
         }));
       }
     } catch (error: any) {
-      console.error("OTP verification error:", error);
-      
-      let errorMessage = t("networkError") || "Network error. Please try again.";
-      
-      if (error?.code === "auth/invalid-verification-code") {
-        errorMessage = "Invalid OTP. Please check and try again.";
-      } else if (error?.code === "auth/code-expired") {
-        errorMessage = "OTP has expired. Please request a new one.";
-      }
-      
       setErrors((prev) => ({
         ...prev,
-        otp: errorMessage,
+        password:
+          error.response?.data?.message ||
+          error?.message ||
+          t("networkError") ||
+          "Network error. Please try again.",
       }));
     }
     setIsLoading(false);
   };
 
-  // Resend OTP function
-  const handleResendOtp = () => {
-    setStep("credentials");
-    setFormData((prev) => ({ ...prev, otp: "" }));
-    setConfirmationResult(null);
-    setErrors({ phone: "", otp: "" });
-    clearRecaptcha();
-  };
+  // Firebase OTP functions commented out
+  // const handleSendOtp = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   if (formData.phone.length !== 10 || errors.phone) {
+  //     setErrors((prev) => ({
+  //       ...prev,
+  //       phone: t("phoneError"),
+  //     }));
+  //     return;
+  //   }
+  //   setIsLoading(true);
+  //   try {
+  //     const recaptchaContainer = document.getElementById("recaptcha-container");
+  //     if (recaptchaContainer) {
+  //       recaptchaContainer.innerHTML = "";
+  //     }
+  //     setupRecaptcha("recaptcha-container");
+  //     const confirmation = await sendOTP(formData.phone);
+  //     setConfirmationResult(confirmation);
+  //     toast.success(t("otpSent") || "OTP sent successfully!");
+  //     setStep("otp");
+  //   } catch (error: any) {
+  //     console.error("Firebase sendOTP error:", error);
+  //     toast.error(
+  //       t("otpSendError") ||
+  //         error?.message ||
+  //         "Failed to send OTP. Try again later."
+  //     );
+  //   }
+  //   setIsLoading(false);
+  // };
 
-  // Form rendering
+  // const handleVerifyOtp = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   if (
+  //     !confirmationResult ||
+  //     !formData.otp ||
+  //     formData.otp.length !== 6 ||
+  //     errors.otp
+  //   )
+  //     return;
+
+  //   setIsLoading(true);
+  //   try {
+  //     const userCredential = await verifyOTP(confirmationResult, formData.otp);
+  //     const firebaseUser = userCredential.user;
+  //     const idToken = await getIdTokenFromUser(firebaseUser);
+
+  //     const { data, status } = await api.post("/api/farmer/login", {
+  //       mobile: formData.phone,
+  //       idToken,
+  //     });
+
+  //     if (status === 200 && data.success) {
+  //       localStorage.setItem("token", data.token);
+  //       localStorage.setItem("user", JSON.stringify(data.result));
+  //       const { bankVerified, otherDetailsVerified } = data.result;
+  //       toast.success(t("loginSuccess") || "Login successful!");
+  //       if (bankVerified && otherDetailsVerified) {
+  //         navigate("/home");
+  //       } else if (bankVerified) {
+  //         navigate("/complete-profile?role=kisaan&step=2");
+  //       } else {
+  //         navigate("/complete-profile?role=kisaan&step=1");
+  //       }
+  //     } else {
+  //       setErrors((prev) => ({
+  //         ...prev,
+  //         otp: data.message || t("loginFailed") || "Login failed",
+  //       }));
+  //     }
+  //   } catch (error: any) {
+  //     setErrors((prev) => ({
+  //       ...prev,
+  //       otp:
+  //         error.response?.data?.message ||
+  //         error?.message ||
+  //         t("networkError") ||
+  //         "Network error. Please try again.",
+  //     }));
+  //   }
+  //   setIsLoading(false);
+  // };
+
+  // const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const value = e.target.value.replace(/\D/g, "").slice(0, 6);
+  //   setFormData((prev) => ({ ...prev, otp: value }));
+  //   setErrors((prev) => ({
+  //     ...prev,
+  //     otp: value.length > 0 && value.length < 6 ? t("otpError") : "",
+  //   }));
+  // };
+
+  // const handleResendOtp = () => {
+  //   setStep("credentials");
+  //   setFormData((prev) => ({ ...prev, otp: "" }));
+  //   setConfirmationResult(null);
+  // };
+
+  // POS login for future (commented)
+  // const handleCredentialsSubmit = (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   if (role === "pos") {
+  //     if (
+  //       formData.userId &&
+  //       formData.userId.length >= 3 &&
+  //       formData.password &&
+  //       formData.password.length >= 6 &&
+  //       !errors.userId &&
+  //       !errors.password
+  //     ) {
+  //       setStep("otp");
+  //     }
+  //   }
+  // };
+
+  // KISAAN (farmer) form (active with phone + password)
   const renderForm = () => {
-    if (role === "kisaan" && step === "credentials") {
+    if (role === "kisaan") {
       return (
         <>
           <div className="mb-8">
@@ -210,10 +278,11 @@ export default function LoginPage() {
               {t("login") || "Login"}
             </h2>
             <p className="text-gray-600 text-sm">
-              {t("createKisaanAccount") || "Enter your phone number to continue"}
+              {t("createKisaanAccount") || "Enter your phone number and password to continue"}
             </p>
           </div>
-          <form onSubmit={handleSendOtp} className="space-y-6">
+          <form onSubmit={handleFarmerLogin} className="space-y-6">
+            {/* Phone Number */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 {t("phoneNumber") || "Phone Number"}
@@ -233,86 +302,107 @@ export default function LoginPage() {
               )}
             </div>
             
-            <button
-              type="submit"
-              disabled={isLoading || formData.phone.length !== 10}
-              className="w-full py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold hover:from-green-600 hover:to-emerald-600 focus:outline-none transition-all duration-200 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ borderRadius: "0.75rem" }}
-            >
-              {isLoading ? (
-                <Loader2 className="animate-spin w-5 h-5" />
-              ) : (
-                t("sendOtp") || "Send OTP"
-              )}
-            </button>
-            
-            {/* Invisible reCAPTCHA container - hidden from view */}
-            <div id="recaptcha-container" style={{ display: "none" }}></div>
-          </form>
-        </>
-      );
-    }
-    
-    if (role === "kisaan" && step === "otp") {
-      return (
-        <>
-          <div className="mb-8">
-            <h2 className="text-3xl font-semibold text-gray-900 mb-2">
-              {t("verifyOTP") || "Verify OTP"}
-            </h2>
-            <p className="text-gray-600 text-sm mb-2">
-              {t("otpDescription") || "We've sent a 6-digit code to your phone"}
-            </p>
-            <p className="text-gray-900 font-medium">
-              +91 {formData.phone}
-            </p>
-          </div>
-          <form onSubmit={handleVerifyOtp} className="space-y-6">
+            {/* Password */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t("otpCode") || "Enter OTP"}
+                {t("password") || "Password"}
               </label>
-              <input
-                type="text"
-                placeholder="000000"
-                value={formData.otp}
-                onChange={handleOtpChange}
-                className="w-full px-4 py-3 bg-gray-100 border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 transition-colors text-center text-lg font-mono tracking-widest"
-                style={{ borderRadius: "0.75rem" }}
-                maxLength={6}
-                required
-                autoComplete="one-time-code"
-              />
-              {errors.otp && (
-                <p className="text-red-500 text-xs mt-1">{errors.otp}</p>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder={t("passwordPlaceholder") || "Enter your password"}
+                  value={formData.password}
+                  onChange={handlePasswordChange}
+                  className="w-full px-4 py-3 bg-gray-100 border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 transition-colors pr-12"
+                  style={{ borderRadius: "0.75rem" }}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
+              {errors.password && (
+                <p className="text-red-500 text-xs mt-1">{errors.password}</p>
               )}
             </div>
             
             <button
               type="submit"
-              disabled={isLoading || formData.otp.length !== 6}
+              disabled={isLoading || formData.phone.length !== 10 || !formData.password}
               className="w-full py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold hover:from-green-600 hover:to-emerald-600 focus:outline-none transition-all duration-200 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ borderRadius: "0.75rem" }}
             >
               {isLoading ? (
                 <Loader2 className="animate-spin w-5 h-5" />
               ) : (
-                t("verifyLogin") || "Verify & Login"
+                t("login") || "Login"
               )}
-            </button>
-            
-            <button
-              type="button"
-              onClick={handleResendOtp}
-              disabled={isLoading}
-              className="w-full text-green-600 hover:text-green-500 text-sm transition-colors disabled:opacity-50"
-            >
-              {t("resendOTP") || "Didn't receive code? Resend"}
             </button>
           </form>
         </>
       );
     }
+    
+    // OTP step commented out
+    // if (role === "kisaan" && step === "otp") {
+    //   return (
+    //     <>
+    //       <div className="mb-8">
+    //         <h2 className="text-3xl font-semibold text-gray-900 mb-2">
+    //           {t("verifyOTP")}
+    //         </h2>
+    //         <p className="text-gray-600 text-sm mb-2">{t("otpDescription")}</p>
+    //         <p className="text-gray-900 font-medium">{t("registeredNumber")}</p>
+    //       </div>
+    //       <form onSubmit={handleVerifyOtp} className="space-y-6">
+    //         <div>
+    //           <label className="block text-sm font-medium text-gray-700 mb-2">
+    //             {t("otpCode")}
+    //           </label>
+    //           <input
+    //             type="text"
+    //             placeholder="000000"
+    //             value={formData.otp ?? ""}
+    //             onChange={handleOtpChange}
+    //             className="w-full px-4 py-3 bg-gray-100 border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 transition-colors text-center text-lg font-mono tracking-widest"
+    //             style={{ borderRadius: "0.75rem" }}
+    //             maxLength={6}
+    //             required
+    //           />
+    //           {errors.otp && (
+    //             <p className="text-red-500 text-xs mt-1">{errors.otp}</p>
+    //           )}
+    //         </div>
+    //         <button
+    //           type="submit"
+    //           className="w-full py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold hover:from-green-600 hover:to-emerald-600 focus:outline-none transition-all duration-200"
+    //           style={{ borderRadius: "0.75rem" }}
+    //         >
+    //           {isLoading ? (
+    //             <Loader2 className="animate-spin w-5 h-5" />
+    //           ) : (
+    //             t("verifyLogin")
+    //           )}
+    //         </button>
+    //         <button
+    //           type="button"
+    //           onClick={handleResendOtp}
+    //           className="w-full text-green-600 hover:text-green-500 text-sm transition-colors"
+    //         >
+    //           {t("resendOTP")}
+    //         </button>
+    //       </form>
+    //     </>
+    //   );
+    // }
     
     return null;
   };
@@ -343,7 +433,7 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
-
+      
       {/* Desktop: Left Side */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden shadow-lg">
         <div
@@ -370,7 +460,7 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
-
+      
       {/* Desktop: Right/Form Side */}
       <div className="hidden lg:flex w-full lg:w-1/2 items-center justify-center p-8 bg-white">
         <div className="w-full max-w-md px-6">
@@ -388,8 +478,8 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
-
-      <div className="absolute top-4 left-4 z-50">
+      
+      <div onClick={() => navigate("/")} className="absolute top-4 left-4 z-50 cursor-pointer">
         <img src={GLOBLE.ucf_logo} alt="Brand Logo" className="h-30 w-auto" />
       </div>
     </div>
