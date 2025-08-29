@@ -11,6 +11,7 @@ import type { Role, PosRegistrationData } from "./signup.type";
 import { useSignupForm } from "../../hooks/useSignupForm";
 import { GLOBLE, ILLUSTRATIONS } from "../../assets/assets";
 import api from "../../api/axios";
+import toast from "react-hot-toast";
 
 export default function SignupPage() {
   const navigate = useNavigate();
@@ -89,7 +90,7 @@ export default function SignupPage() {
       console.log('Registration successful:', data);
       
       // Show success message
-      alert('POS registration successful!');
+      toast.success('POS registration successful!');
       
       // Navigate to login
       navigate('/login?role=pos');
@@ -118,7 +119,7 @@ export default function SignupPage() {
         errorMessage = 'Server error. Please try again later.';
       }
       
-      alert(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsApiLoading(false);
     }
