@@ -21,7 +21,6 @@ export interface FormData {
   pincode: string;
   name: string;
   email: string;
-  mobile: string;
   gst: string;
   otp: string;
 }
@@ -42,7 +41,6 @@ export interface FormErrors {
   pincode?: string;
   name?: string;
   email?: string;
-  mobile?: string;
   gst?: string;
   otp?: string;
   terms?: string;

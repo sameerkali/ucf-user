@@ -33,6 +33,7 @@ export const setupRecaptcha = (containerId = "recaptcha-container") => {
       size: "normal", // visible reCAPTCHA
       callback: (response: any) => {
         // Optional callback - can handle after captcha solved
+        console.log("first", response)
       },
       "expired-callback": () => {
         // Optional on expire - user has to solve again
