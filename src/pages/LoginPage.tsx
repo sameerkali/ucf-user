@@ -15,7 +15,7 @@ import toast from "react-hot-toast";
 // } from "../firebaseConfig";
 // import type { ConfirmationResult } from "firebase/auth";
 
-type Step = "credentials" | "otp";
+// type Step = "credentials" | "otp";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -65,7 +65,7 @@ export default function LoginPage() {
   // Firebase confirmation result commented out
   // const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
 
-  const [step, setStep] = useState<Step>("credentials");
+  // const [step, setStep] = useState<Step>("credentials");
 
   const sanitizeInput = (value: string) => value.replace(/[<>"'&]/g, "");
 

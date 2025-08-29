@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Calendar, MapPin, Package, IndianRupee, Camera, Video, Loader2, Sprout } from 'lucide-react';
 import { ILLUSTRATIONS } from '../assets/assets';
-import { useTranslation } from 'react-i18next';
+// import { useTranslation } from 'react-i18next';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
 
@@ -41,7 +41,7 @@ interface Post {
 }
 
 const HomePage = () => {
-  const { t } = useTranslation();
+  // const { t } = useTranslation();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');

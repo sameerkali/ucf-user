@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Camera, Video, X, Calendar, Package, IndianRupee, Loader2, Upload, MapPin, Trash2 } from "lucide-react";
 import { ILLUSTRATIONS } from "../assets/assets";
-import { useTranslation } from "react-i18next";
+// import { useTranslation } from "react-i18next";
 import api from "../api/axios";
 import toast from "react-hot-toast";
 
@@ -85,7 +85,7 @@ interface User {
 
 export default function PostPage() {
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  // const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<"create" | "view">("view");
   const [isLoading, setIsLoading] = useState(false);
   const [posts, setPosts] = useState<Post[]>([]);
