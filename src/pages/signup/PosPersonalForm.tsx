@@ -1,63 +1,44 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
-import type { FormData, FormErrors } from "./signup.type";
+
+interface PosPersonalFormData {
+  name: string;
+  email: string;
+  mobile: string;
+  password: string;
+  confirmPassword: string;
+}
 
 interface PosPersonalFormProps {
-  formData: FormData;
-  onSubmit: (data: any) => void;
-  onFieldUpdate: (field: string, value: string) => void;
+  defaultValues?: Partial<PosPersonalFormData>;
+  onNext: (data: PosPersonalFormData) => void;
 }
 
 export const PosPersonalForm: React.FC<PosPersonalFormProps> = ({
-  formData,
-  onSubmit,
-  onFieldUpdate,
+  defaultValues = {},
+  onNext,
 }) => {
   const { t } = useTranslation();
-  
+
   const {
     register,
     handleSubmit,
     watch,
     formState: { errors, isValid },
-    setValue,
-  } = useForm({
+  } = useForm<PosPersonalFormData>({
     mode: "onChange",
-    defaultValues: {
-      name: formData.name || "",
-      email: formData.email || "",
-      mobile: formData.mobile || "",
-      password: formData.password || "",
-      confirmPassword: formData.confirmPassword || "",
-    },
+    defaultValues,
   });
 
-  const watchedFields = watch();
-  const password = watch("password");
+  const password = watch("password", "");
 
-  // Update parent component when fields change
-  React.useEffect(() => {
-    Object.keys(watchedFields).forEach((key) => {
-      if (watchedFields[key] !== formData[key as keyof FormData]) {
-        onFieldUpdate(key, watchedFields[key] || "");
-      }
-    });
-  }, [watchedFields, onFieldUpdate, formData]);
-
-  const handleFormSubmit = (data: any) => {
-    onSubmit(data);
+  const onSubmit = (data: PosPersonalFormData) => {
+    onNext(data);
   };
 
-  const isFormValid = isValid && 
-    watchedFields.name?.length > 0 &&
-    watchedFields.email?.length > 0 &&
-    watchedFields.mobile?.length > 0 &&
-    watchedFields.password?.length > 0 &&
-    watchedFields.confirmPassword?.length > 0;
-
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
       <div>
         <input
           {...register("name", {
@@ -121,9 +102,7 @@ export const PosPersonalForm: React.FC<PosPersonalFormProps> = ({
               message: "Mobile number must be exactly 10 digits",
             },
             onChange: (e) => {
-              const value = e.target.value.replace(/\D/g, '').slice(0, 10);
-              setValue("mobile", value);
-              return value;
+              e.target.value = e.target.value.replace(/\D/g, '').slice(0, 10);
             },
           })}
           type="tel"
@@ -182,9 +161,9 @@ export const PosPersonalForm: React.FC<PosPersonalFormProps> = ({
 
       <button
         type="submit"
-        disabled={!isFormValid}
+        disabled={!isValid}
         className={`w-full py-3 font-semibold transition-all duration-200 ${
-          isFormValid
+          isValid
             ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600 cursor-pointer"
             : "bg-gray-300 text-gray-500 cursor-not-allowed"
         }`}

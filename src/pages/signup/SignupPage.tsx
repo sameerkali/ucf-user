@@ -7,9 +7,10 @@ import { FarmerAddressForm } from "./FarmerAddressForm";
 import { PosPersonalForm } from "./PosPersonalForm";
 import { PosAddressForm } from "./PosAddressForm";
 import { OtpForm } from "./OtpForm";
-import type { Role } from "./signup.type";
+import type { Role, PosRegistrationData } from "./signup.type";
 import { useSignupForm } from "../../hooks/useSignupForm";
 import { GLOBLE, ILLUSTRATIONS } from "../../assets/assets";
+import api from "../../api/axios";
 
 export default function SignupPage() {
   const navigate = useNavigate();
@@ -21,8 +22,9 @@ export default function SignupPage() {
     return urlRole === "pos" || urlRole === "kisaan" ? urlRole : "kisaan";
   });
 
-  // Add POS step state
-  const [posStep, setPosStep] = useState<"personal" | "address">("personal");
+  const [posStep, setPosStep] = useState<'personal' | 'address'>('personal');
+  const [isApiLoading, setIsApiLoading] = useState(false);
+  const [posFormData, setPosFormData] = useState<Partial<PosRegistrationData>>({});
 
   useEffect(() => {
     const urlRole = searchParams.get("role");
@@ -38,98 +40,88 @@ export default function SignupPage() {
     agreeToTerms,
     errors,
     formData,
-
-    // Setters
     setFarmerStep,
     setStep,
     setAgreeToTerms,
-
-    // Handlers
     handlePhoneChange,
     handleAadharChange,
     handlePasswordChange,
     handleConfirmPasswordChange,
     handlePincodeChange,
     handleAddressFieldChange,
-    handleEmailChange,
-    handleGstChange,
     handleNameChange,
-    handleAddressChange,
     handleOtpChange,
     handleFarmerPersonalNext,
     handleFarmerAddressSubmit,
-    handlePosSignupSubmit,
     handleOtpSubmit,
   } = useSignupForm({ role, navigate });
 
-  // Enhanced mobile change handler for POS
-  const handleMobileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawValue = e.target.value;
-    const cleanValue = rawValue.replace(/\D/g, "").slice(0, 10);
-    handleNameChange("mobile", cleanValue);
+  const handlePosPersonalNext = (data: any) => {
+    console.log("POS Personal Data:", data);
+    setPosFormData(prev => ({ ...prev, ...data }));
+    setPosStep('address');
   };
 
-  // Enhanced pincode change handler
-  const handleEnhancedPincodeChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const rawValue = e.target.value;
-    const cleanValue = rawValue.replace(/\D/g, "").slice(0, 6);
+  const handlePosAddressSubmit = async (addressData: any): Promise<void> => {
+    console.log("POS Address Data:", addressData);
+    setIsApiLoading(true);
 
-    const syntheticEvent = {
-      ...e,
-      target: {
-        ...e.target,
-        value: cleanValue,
-      },
-    };
+    try {
+      const payload: PosRegistrationData = {
+        name: posFormData.name || "",
+        email: posFormData.email || "",
+        password: posFormData.password || "",
+        mobile: posFormData.mobile || "",
+        address: {
+          state: addressData.state,
+          district: addressData.district,
+          tehsil: addressData.tehsil,
+          block: addressData.block,
+          village: addressData.village,
+          pincode: addressData.pincode,
+        }
+      };
 
-    handlePincodeChange(syntheticEvent as React.ChangeEvent<HTMLInputElement>);
-  };
+      console.log("API Request Payload:", payload);
 
-  // POS validation and navigation handlers
-  const validatePosPersonal = () => {
-    const newErrors: any = {};
-
-    // Business name validation
-    if (!formData.name || formData.name.trim().length < 2) {
-      newErrors.name = "Business name must be at least 2 characters long";
+      const { data } = await api.post('/api/pos/register', payload);
+      
+      console.log('Registration successful:', data);
+      
+      // Show success message
+      alert('POS registration successful!');
+      
+      // Navigate to login
+      navigate('/login?role=pos');
+      
+    } catch (error: any) {
+      console.error('Registration failed:', error);
+      
+      let errorMessage = 'Registration failed. Please try again.';
+      
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      // Handle specific validation errors
+      if (error.response?.status === 400) {
+        if (error.response.data?.field) {
+          errorMessage = `${error.response.data.field}: ${error.response.data.message}`;
+        }
+      } else if (error.response?.status === 409) {
+        errorMessage = 'Email or mobile number already exists';
+      } else if (error.response?.status === 500) {
+        errorMessage = 'Server error. Please try again later.';
+      }
+      
+      alert(errorMessage);
+    } finally {
+      setIsApiLoading(false);
     }
-
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!formData.email || !emailRegex.test(formData.email)) {
-      newErrors.email = "Please enter a valid email address";
-    }
-
-    // Mobile validation
-    const mobileRegex = /^[6-9]\d{9}$/;
-    if (!formData.mobile || !mobileRegex.test(formData.mobile)) {
-      newErrors.mobile = "Please enter a valid 10-digit mobile number";
-    }
-
-    // Password validation
-    if (!formData.password || formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters long";
-    }
-
-    // Confirm password validation
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = "Passwords do not match";
-    }
-
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handlePosPersonalNext = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (validatePosPersonal()) {
-      setPosStep("address");
-    }
-  };
-
-  const handlePosAddressBack = () => {
-    setPosStep("personal");
   };
 
   const handleBack = () => {
@@ -169,38 +161,21 @@ export default function SignupPage() {
                 ? "Enter your personal details"
                 : "Enter your address details"
               : posStep === "personal"
-              ? "Enter your business details"
-              : "Enter your address details"}
+                ? "Enter your business details"
+                : "Enter your address details"}
           </p>
-
-          {/* Progress indicators */}
+          
           {role === "kisaan" && (
             <div className="flex mt-4">
-              <div
-                className={`w-1/2 h-1 rounded-full ${
-                  farmerStep === "personal" ? "bg-green-500" : "bg-green-300"
-                }`}
-              ></div>
-              <div
-                className={`w-1/2 h-1 rounded-full ml-2 ${
-                  farmerStep === "address" ? "bg-green-500" : "bg-gray-300"
-                }`}
-              ></div>
+              <div className={`w-1/2 h-1 rounded-full ${farmerStep === "personal" ? "bg-green-500" : "bg-green-300"}`}></div>
+              <div className={`w-1/2 h-1 rounded-full ml-2 ${farmerStep === "address" ? "bg-green-500" : "bg-gray-300"}`}></div>
             </div>
           )}
-
+          
           {role === "pos" && (
             <div className="flex mt-4">
-              <div
-                className={`w-1/2 h-1 rounded-full ${
-                  posStep === "personal" ? "bg-green-500" : "bg-green-300"
-                }`}
-              ></div>
-              <div
-                className={`w-1/2 h-1 rounded-full ml-2 ${
-                  posStep === "address" ? "bg-green-500" : "bg-gray-300"
-                }`}
-              ></div>
+              <div className={`w-1/2 h-1 rounded-full ${posStep === "personal" ? "bg-green-500" : "bg-green-300"}`}></div>
+              <div className={`w-1/2 h-1 rounded-full ml-2 ${posStep === "address" ? "bg-green-500" : "bg-gray-300"}`}></div>
             </div>
           )}
         </div>
@@ -225,33 +200,26 @@ export default function SignupPage() {
               isLoading={isLoading}
               onSubmit={handleFarmerAddressSubmit}
               onAddressFieldChange={handleAddressFieldChange}
-              onPincodeChange={handleEnhancedPincodeChange}
+              onPincodeChange={handlePincodeChange}
               onAgreeToTermsChange={setAgreeToTerms}
             />
           )
-        ) : posStep === "personal" ? (
-          <PosPersonalForm
-            formData={formData}
-            errors={errors}
-            onSubmit={handlePosPersonalNext}
-            onNameChange={handleNameChange}
-            onEmailChange={handleEmailChange}
-            onMobileChange={handleMobileChange}
-            onPasswordChange={handlePasswordChange}
-            onConfirmPasswordChange={handleConfirmPasswordChange}
-          />
         ) : (
-          <PosAddressForm
-            formData={formData}
-            errors={errors}
-            agreeToTerms={agreeToTerms}
-            isLoading={isLoading}
-            onSubmit={handlePosSignupSubmit}
-            onAddressFieldChange={handleAddressFieldChange}
-            onPincodeChange={handleEnhancedPincodeChange}
-            onAgreeToTermsChange={setAgreeToTerms}
-            onBack={handlePosAddressBack}
-          />
+          posStep === "personal" ? (
+            <PosPersonalForm
+              defaultValues={posFormData}
+              onNext={handlePosPersonalNext}
+            />
+          ) : (
+            <PosAddressForm
+              defaultValues={posFormData.address}
+              agreeToTerms={agreeToTerms}
+              isLoading={isApiLoading}
+              onSubmit={handlePosAddressSubmit}
+              onAgreeToTermsChange={setAgreeToTerms}
+              onBack={() => setPosStep('personal')}
+            />
+          )
         )}
       </>
     );
@@ -259,7 +227,6 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-white">
-      {/* Mobile: Top Illustration + Centered Form */}
       <div className="block lg:hidden w-full h-screen">
         <div className="flex flex-col items-center justify-center h-full">
           <img
@@ -267,7 +234,6 @@ export default function SignupPage() {
             alt="illustration"
             className="mb-4 w-44 h-44 object-contain"
           />
-
           <div className="w-full max-w-md p-6">
             {renderSignupContent()}
             <div className="mt-8 text-center">
@@ -285,10 +251,8 @@ export default function SignupPage() {
         </div>
       </div>
 
-      {/* Desktop: Left Side */}
       <LeftPanel onBack={handleBack} />
 
-      {/* Desktop: Right/Form Side */}
       <div className="hidden lg:flex w-full lg:w-1/2 items-center justify-center p-8 bg-white">
         <div className="w-full max-w-md px-6">
           {renderSignupContent()}
@@ -305,8 +269,7 @@ export default function SignupPage() {
           </div>
         </div>
       </div>
-
-      {/* Brand Logo */}
+      
       <div className="absolute top-4 left-4 z-50">
         <img src={GLOBLE.ucf_logo} alt="Brand Logo" className="h-30 w-auto" />
       </div>

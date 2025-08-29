@@ -53,13 +53,30 @@ export interface UseSignupFormProps {
   navigate: NavigateFunction;
 }
 
-export interface ValidationResult {
-  isValid: boolean;
-  error?: string;
+export interface PosRegistrationData {
+  name: string;
+  email: string;
+  password: string;
+  mobile: string;
+  address: {
+    state: string;
+    district: string;
+    tehsil: string;
+    block: string;
+    village: string;
+    pincode: string;
+  };
 }
 
-export const debugLog = (context: string, data: any) => {
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`[${context}]`, data);
-  }
-};
+export interface ApiError {
+  message: string;
+  status?: number;
+  field?: string;
+}
+
+export interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  message?: string;
+  error?: string;
+}

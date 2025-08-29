@@ -1,65 +1,106 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { useForm } from "react-hook-form";
 import { Loader2 } from "lucide-react";
-import type { FormData, FormErrors } from "./signup.type";
+
+interface PosAddressFormData {
+  state: string;
+  district: string;
+  tehsil: string;
+  block: string;
+  village: string;
+  pincode: string;
+}
 
 interface PosAddressFormProps {
-  formData: FormData;
-  errors: FormErrors;
+  defaultValues?: Partial<PosAddressFormData>;
   agreeToTerms: boolean;
   isLoading: boolean;
-  onSubmit: (e: React.FormEvent) => void;
-  onAddressFieldChange: (field: string, value: string) => void;
-  onPincodeChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onSubmit: (data: PosAddressFormData) => Promise<void>;
   onAgreeToTermsChange: (checked: boolean) => void;
   onBack: () => void;
 }
 
 export const PosAddressForm: React.FC<PosAddressFormProps> = ({
-  formData,
-  errors,
+  defaultValues = {},
   agreeToTerms,
   isLoading,
   onSubmit,
-  onAddressFieldChange,
-  onPincodeChange,
   onAgreeToTermsChange,
   onBack,
 }) => {
   const { t } = useTranslation();
 
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors, isValid },
+  } = useForm<PosAddressFormData>({
+    mode: "onChange",
+    defaultValues,
+  });
+
+  const watchedFields = watch();
+
+  const isFormComplete = isValid && 
+    agreeToTerms &&
+    Object.values(watchedFields).every(value => value && value.toString().trim().length > 0);
+
+  const handleFormSubmit = async (data: PosAddressFormData) => {
+    if (!agreeToTerms) {
+      alert("Please agree to terms and conditions");
+      return;
+    }
+    await onSubmit(data);
+  };
+
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4" noValidate>
       <div className="grid grid-cols-2 gap-4">
         <div>
           <input
+            {...register("state", {
+              required: "State is required",
+              minLength: {
+                value: 2,
+                message: "State must be at least 2 characters long",
+              },
+              maxLength: {
+                value: 50,
+                message: "State cannot exceed 50 characters",
+              },
+            })}
             type="text"
             placeholder="State"
-            value={formData.state}
-            onChange={(e) => onAddressFieldChange("state", e.target.value)}
             className="w-full px-4 py-3 bg-gray-100 border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 transition-colors"
             style={{ borderRadius: "0.75rem" }}
-            required
-            maxLength={50}
           />
           {errors.state && (
-            <p className="text-red-500 text-xs mt-1">{errors.state}</p>
+            <p className="text-red-500 text-xs mt-1">{errors.state.message}</p>
           )}
         </div>
 
         <div>
           <input
+            {...register("district", {
+              required: "District is required",
+              minLength: {
+                value: 2,
+                message: "District must be at least 2 characters long",
+              },
+              maxLength: {
+                value: 50,
+                message: "District cannot exceed 50 characters",
+              },
+            })}
             type="text"
             placeholder="District"
-            value={formData.district}
-            onChange={(e) => onAddressFieldChange("district", e.target.value)}
             className="w-full px-4 py-3 bg-gray-100 border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 transition-colors"
             style={{ borderRadius: "0.75rem" }}
-            required
-            maxLength={50}
           />
           {errors.district && (
-            <p className="text-red-500 text-xs mt-1">{errors.district}</p>
+            <p className="text-red-500 text-xs mt-1">{errors.district.message}</p>
           )}
         </div>
       </div>
@@ -67,33 +108,47 @@ export const PosAddressForm: React.FC<PosAddressFormProps> = ({
       <div className="grid grid-cols-2 gap-4">
         <div>
           <input
+            {...register("tehsil", {
+              required: "Tehsil is required",
+              minLength: {
+                value: 2,
+                message: "Tehsil must be at least 2 characters long",
+              },
+              maxLength: {
+                value: 50,
+                message: "Tehsil cannot exceed 50 characters",
+              },
+            })}
             type="text"
             placeholder="Tehsil"
-            value={formData.tehsil}
-            onChange={(e) => onAddressFieldChange("tehsil", e.target.value)}
             className="w-full px-4 py-3 bg-gray-100 border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 transition-colors"
             style={{ borderRadius: "0.75rem" }}
-            required
-            maxLength={50}
           />
           {errors.tehsil && (
-            <p className="text-red-500 text-xs mt-1">{errors.tehsil}</p>
+            <p className="text-red-500 text-xs mt-1">{errors.tehsil.message}</p>
           )}
         </div>
 
         <div>
           <input
+            {...register("block", {
+              required: "Block is required",
+              minLength: {
+                value: 2,
+                message: "Block must be at least 2 characters long",
+              },
+              maxLength: {
+                value: 50,
+                message: "Block cannot exceed 50 characters",
+              },
+            })}
             type="text"
             placeholder="Block"
-            value={formData.block}
-            onChange={(e) => onAddressFieldChange("block", e.target.value)}
             className="w-full px-4 py-3 bg-gray-100 border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 transition-colors"
             style={{ borderRadius: "0.75rem" }}
-            required
-            maxLength={50}
           />
           {errors.block && (
-            <p className="text-red-500 text-xs mt-1">{errors.block}</p>
+            <p className="text-red-500 text-xs mt-1">{errors.block.message}</p>
           )}
         </div>
       </div>
@@ -101,40 +156,60 @@ export const PosAddressForm: React.FC<PosAddressFormProps> = ({
       <div className="grid grid-cols-2 gap-4">
         <div>
           <input
+            {...register("village", {
+              required: "Village is required",
+              minLength: {
+                value: 2,
+                message: "Village must be at least 2 characters long",
+              },
+              maxLength: {
+                value: 50,
+                message: "Village cannot exceed 50 characters",
+              },
+            })}
             type="text"
             placeholder="Village"
-            value={formData.village}
-            onChange={(e) => onAddressFieldChange("village", e.target.value)}
             className="w-full px-4 py-3 bg-gray-100 border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 transition-colors"
             style={{ borderRadius: "0.75rem" }}
-            required
-            maxLength={50}
           />
           {errors.village && (
-            <p className="text-red-500 text-xs mt-1">{errors.village}</p>
+            <p className="text-red-500 text-xs mt-1">{errors.village.message}</p>
           )}
         </div>
 
         <div>
           <input
+            {...register("pincode", {
+              required: "Pincode is required",
+              pattern: {
+                value: /^[1-9][0-9]{5}$/,
+                message: "Please enter a valid 6-digit pincode (cannot start with 0)",
+              },
+              minLength: {
+                value: 6,
+                message: "Pincode must be exactly 6 digits",
+              },
+              maxLength: {
+                value: 6,
+                message: "Pincode must be exactly 6 digits",
+              },
+              onChange: (e) => {
+                e.target.value = e.target.value.replace(/\D/g, '').slice(0, 6);
+              },
+            })}
             type="text"
             placeholder="Pincode"
-            value={formData.pincode}
-            onChange={onPincodeChange}
             className="w-full px-4 py-3 bg-gray-100 border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 transition-colors"
             style={{ borderRadius: "0.75rem" }}
             maxLength={6}
             inputMode="numeric"
-            pattern="[1-9][0-9]{5}"
-            required
           />
           {errors.pincode && (
-            <p className="text-red-500 text-xs mt-1">{errors.pincode}</p>
+            <p className="text-red-500 text-xs mt-1">{errors.pincode.message}</p>
           )}
         </div>
       </div>
 
-      {/* Terms and Conditions */}
       <div className="space-y-2">
         <div className="flex items-start">
           <input
@@ -165,8 +240,8 @@ export const PosAddressForm: React.FC<PosAddressFormProps> = ({
             </button>
           </label>
         </div>
-        {errors.terms && (
-          <p className="text-red-500 text-xs">{errors.terms}</p>
+        {!agreeToTerms && (
+          <p className="text-red-500 text-xs">You must agree to the terms and conditions</p>
         )}
       </div>
 
@@ -182,8 +257,12 @@ export const PosAddressForm: React.FC<PosAddressFormProps> = ({
         </button>
         <button
           type="submit"
-          disabled={isLoading}
-          className="w-1/2 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold hover:from-green-600 hover:to-emerald-600 focus:outline-none transition-all duration-200 flex items-center justify-center disabled:opacity-50"
+          disabled={!isFormComplete || isLoading}
+          className={`w-1/2 py-3 font-semibold transition-all duration-200 flex items-center justify-center ${
+            isFormComplete && !isLoading
+              ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600 cursor-pointer"
+              : "bg-gray-300 text-gray-500 cursor-not-allowed"
+          }`}
           style={{ borderRadius: "0.75rem" }}
         >
           {isLoading ? (
