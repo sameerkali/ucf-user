@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { X, Package, Loader2, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+// Consistent interfaces matching HomePage
 interface Crop {
   name: string;
   type: string;
-  quantity: string;
-  pricePerQuintal: string;
+  quantity: number; // Changed to number for consistency
+  pricePerQuintal: number; // Changed to number for consistency
 }
 
 interface Post {
@@ -32,7 +33,7 @@ const FulfillmentModal: React.FC<FulfillmentModalProps> = ({
   post,
   isOpen,
   onClose,
-  fulfillmentMutation, // Use this instead of direct API calls
+  fulfillmentMutation,
 }) => {
   const [selectedCrops, setSelectedCrops] = useState<FulfillmentCrop[]>([]);
 
@@ -82,7 +83,7 @@ const FulfillmentModal: React.FC<FulfillmentModalProps> = ({
 
   const getMaxQuantity = (cropName: string) => {
     const crop = post.crops.find(c => c.name === cropName);
-    return crop ? parseInt(crop.quantity) : 1;
+    return crop ? crop.quantity : 1; // Now using number directly
   };
 
   const getAvailableCrops = (currentIndex: number) => {
