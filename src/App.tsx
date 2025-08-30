@@ -25,6 +25,7 @@ import CreateFarmerAccount from "./pos-pages/CreateFarmerAccount";
 import ReviewRequests from "./pos-pages/ReviewRequests";
 
 
+
 import OfflineBanner from "./components/OfflineBanner";
 import InstallBanner from "./components/InstallBanner";
 import Header from "./components/Headr";
@@ -35,6 +36,7 @@ import LoadingScreen from "./components/LoadingScreen";
 import { useAppLoading } from "./hooks/useAppLoading";
 import { Toaster } from "react-hot-toast";
 import Profile from "./components/Profile";
+import PosCreatePost from "./pos-pages/PosCreatePost";
 
 
 // Authentication guard for protected routes
@@ -179,6 +181,8 @@ export default function App() {
             <Route path="/pos/settings" element={<SettingsPage />} />
             <Route path="/pos/help" element={<PosHelpAndSupportPage />} />
             <Route path="/pos/profile" element={<Profile />} />
+            <Route path="/pos/create-post" element={<PosCreatePost />} />
+            
           </Route>
 
 

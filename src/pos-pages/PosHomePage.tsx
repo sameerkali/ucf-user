@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { UserPlus, ClipboardCheck, ArrowRight } from 'lucide-react'
+import { UserPlus, ClipboardCheck, ArrowRight, Magnet } from 'lucide-react'
 
 const PosHomePage = () => {
   const navigate = useNavigate()
@@ -11,6 +11,10 @@ const handleCreateFarmerAccount = () => {
 const handleReviewRequests = () => {
   navigate('/pos/review-requests')
 }
+const handlePost = () => {
+  navigate('/pos/create-post')
+}
+
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-6 sm:px-6 lg:px-8">
@@ -84,6 +88,36 @@ const handleReviewRequests = () => {
               <div className="mt-4 sm:mt-6">
                 <div className="inline-flex items-center text-green-600 font-medium group-hover:text-green-700">
                   <span className="text-sm sm:text-base">Review Now</span>
+                  <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform duration-300" />
+                </div>
+              </div>
+            </div>
+          </div>
+           {/* Create a post */}
+          <div 
+            onClick={handlePost}
+            className="group bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer border border-gray-200 hover:border-green-300 hover:-translate-y-1 p-6 sm:p-8"
+          >
+            <div className="text-center">
+              {/* Icon */}
+              <div className="mx-auto w-16 h-16 sm:w-20 sm:h-20 bg-green-100 rounded-2xl flex items-center justify-center mb-4 sm:mb-6 group-hover:bg-green-200 transition-colors duration-300">
+                <Magnet className="w-8 h-8 sm:w-10 sm:h-10 text-green-600" />
+              </div>
+              
+              {/* Title */}
+              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-3 group-hover:text-green-600 transition-colors duration-300">
+                Create a Post
+              </h3>
+              
+              {/* Description */}
+              <p className="text-gray-600 text-base sm:text-lg leading-relaxed">
+                create post for buy and sell crops 
+              </p>
+              
+              {/* Action Indicator */}
+              <div className="mt-4 sm:mt-6">
+                <div className="inline-flex items-center text-green-600 font-medium group-hover:text-green-700">
+                  <span className="text-sm sm:text-base">Post now </span>
                   <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform duration-300" />
                 </div>
               </div>

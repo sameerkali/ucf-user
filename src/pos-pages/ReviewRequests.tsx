@@ -28,6 +28,11 @@ interface Request {
   updatedAt: string;
 }
 
+interface ApiResponse {
+  success: boolean;
+  requests: Request[];
+}
+
 interface UpdateStatusPayload {
   requestId: string;
   status: 'verified' | 'rejected';
@@ -40,10 +45,10 @@ const ReviewRequests: FC = () => {
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<FilterStatus>('all');
 
-  // Fetch requests query
-  const { data: requests = [], isLoading, isError, error } = useQuery<Request[]>({
+  // Fetch requests query with proper API response handling
+  const { data: apiResponse, isLoading, isError, error } = useQuery<ApiResponse>({
     queryKey: ['requests'],
-    queryFn: async (): Promise<Request[]> => {
+    queryFn: async (): Promise<ApiResponse> => {
       const token = localStorage.getItem('token');
       const { data } = await api.get('/api/requests/getAll', {
         headers: { Authorization: `Bearer ${token}` }
@@ -53,6 +58,10 @@ const ReviewRequests: FC = () => {
     refetchOnWindowFocus: false,
     staleTime: 30000, // 30 seconds
   });
+
+  // Extract requests from API response, defaulting to empty array
+  const requests = apiResponse?.requests || [];
+  const isSuccessful = apiResponse?.success || false;
 
   // Update status mutation
   const updateStatusMutation = useMutation({
@@ -120,10 +129,29 @@ const ReviewRequests: FC = () => {
           <h2 className="text-xl font-bold text-gray-900 mb-2">Error Loading Requests</h2>
           <p className="text-gray-600 mb-4">{error?.message || 'Something went wrong'}</p>
           <button 
-            onClick={() => window.location.reload()}
+            onClick={() => queryClient.invalidateQueries({ queryKey: ['requests'] })}
             className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
           >
             Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Handle API failure or unsuccessful response
+  if (!isSuccessful) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-gray-50 flex justify-center items-center p-4">
+        <div className="bg-white rounded-2xl p-8 shadow-lg text-center max-w-md">
+          <XCircle className="w-16 h-16 text-orange-500 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-gray-900 mb-2">API Request Failed</h2>
+          <p className="text-gray-600 mb-4">The server response was not successful</p>
+          <button 
+            onClick={() => queryClient.invalidateQueries({ queryKey: ['requests'] })}
+            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+          >
+            Retry
           </button>
         </div>
       </div>
@@ -153,41 +181,71 @@ const ReviewRequests: FC = () => {
           </div>
         </div>
 
-        {/* Filter Tabs */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Filter className="w-5 h-5 text-gray-500" />
-            <span className="font-medium text-gray-700">Filter by status:</span>
+        {/* Show filter tabs only if there are requests */}
+        {requests.length > 0 && (
+          <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Filter className="w-5 h-5 text-gray-500" />
+              <span className="font-medium text-gray-700">Filter by status:</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {(['all', 'pending', 'verified', 'rejected'] as FilterStatus[]).map((status) => (
+                <button
+                  key={status}
+                  onClick={() => setFilter(status)}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                    filter === status
+                      ? 'bg-green-500 text-white shadow-md'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {status.charAt(0).toUpperCase() + status.slice(1)} ({statusCounts[status]})
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {(['all', 'pending', 'verified', 'rejected'] as FilterStatus[]).map((status) => (
-              <button
-                key={status}
-                onClick={() => setFilter(status)}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  filter === status
-                    ? 'bg-green-500 text-white shadow-md'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                {status.charAt(0).toUpperCase() + status.slice(1)} ({statusCounts[status]})
-              </button>
-            ))}
-          </div>
-        </div>
+        )}
 
         {/* Requests List */}
         <div className="bg-white rounded-2xl shadow-lg p-6">
-          {filteredRequests.length === 0 ? (
+          {requests.length === 0 ? (
+            <div className="text-center py-16">
+              <div className="bg-green-100 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6">
+                <Users className="w-12 h-12 text-green-500" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-3">No Farmer Requests Yet</h3>
+              <p className="text-gray-500 text-lg mb-6">
+                There are no farmer requests to review at the moment.
+              </p>
+              <div className="bg-green-50 border-l-4 border-green-400 p-4 max-w-md mx-auto text-left">
+                <div className="flex">
+                  <div className="ml-3">
+                    <p className="text-sm text-green-700">
+                      <strong>What's next?</strong> Farmer requests will appear here once they submit applications through the system.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <button 
+                onClick={() => queryClient.invalidateQueries({ queryKey: ['requests'] })}
+                className="mt-6 px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium"
+              >
+                Refresh Requests
+              </button>
+            </div>
+          ) : filteredRequests.length === 0 ? (
             <div className="text-center py-12">
               <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">No Requests Found</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">No {filter} Requests</h3>
               <p className="text-gray-500">
-                {filter === 'all' 
-                  ? 'No farmer requests available at the moment.' 
-                  : `No ${filter} requests found.`
-                }
+                No requests found with status: <strong>{filter}</strong>
               </p>
+              <button 
+                onClick={() => setFilter('all')}
+                className="mt-4 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+              >
+                View All Requests
+              </button>
             </div>
           ) : (
             <div className="space-y-4">
@@ -277,7 +335,7 @@ const ReviewRequests: FC = () => {
           )}
         </div>
 
-        {/* Summary Stats */}
+        {/* Summary Stats - only show if there are requests */}
         {requests.length > 0 && (
           <div className="mt-6 bg-white rounded-2xl shadow-lg p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Summary Statistics</h3>
