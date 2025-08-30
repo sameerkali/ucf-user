@@ -9,8 +9,6 @@ import api from "../../api/axios";
 import imageCompression from 'browser-image-compression';
 import FallbackGreenCircle from "../../utils/FallbackGreenCircle";
 
-
-
 const ACCOUNT_NUMBER_REGEX = /^[0-9]{9,18}$/;
 const IFSC_REGEX = /^[A-Z]{4}0[0-9A-Z]{6}$/i;
 
@@ -19,6 +17,8 @@ export default function ProfileComplete() {
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
 
+  // Get role from URL parameters
+  const role = searchParams.get("role") || "kisaan";
   const initialStep = Number(searchParams.get("step")) === 2 ? 2 : 1;
   const [step, setStep] = useState(initialStep);
   const [showErrors, setShowErrors] = useState(false);
@@ -38,6 +38,7 @@ export default function ProfileComplete() {
     bankName: "",
     bankBranch: "",
     ifsc: "",
+    // Farmer fields
     landHoldings: "",
     annualProduction: "",
     annualConsumption: "",
@@ -49,11 +50,20 @@ export default function ProfileComplete() {
     aadhaarBack: null as File | null,
     aadhaarFrontUrl: "",
     aadhaarBackUrl: "",
+    // POS fields
+    storageArea: "",
+    sections: "",
+    cropsHandled: [] as string[],
+    maxCropCapacity: "",
   });
 
   useEffect(() => {
-    setFormData(f => ({ ...f, crops: selectedCropIds }));
-  }, [selectedCropIds]);
+    if (role === "kisaan") {
+      setFormData(f => ({ ...f, crops: selectedCropIds }));
+    } else if (role === "pos") {
+      setFormData(f => ({ ...f, cropsHandled: selectedCropIds }));
+    }
+  }, [selectedCropIds, role]);
 
   const sanitize = (v: string) =>
     v.replace(/<[^>]*>/g, "")
@@ -144,15 +154,22 @@ export default function ProfileComplete() {
       if (!formData.ifsc) errors.ifsc = "IFSC code is required.";
       else if (!IFSC_REGEX.test(formData.ifsc)) errors.ifsc = "IFSC code must be in format: AAAA0123456";
     } else if (step === 2) {
-      if (!formData.landHoldings) errors.landHoldings = "Land holdings is required.";
-      if (!formData.annualProduction) errors.annualProduction = "Annual production is required.";
-      if (!formData.annualConsumption) errors.annualConsumption = "Annual consumption is required.";
-      if (!formData.crops || formData.crops.length === 0) errors.crops = "Select at least one crop.";
-      if (!formData.seedArea) errors.seedArea = "Seed area is required.";
-      if (!formData.irrigatedArea) errors.irrigatedArea = "Irrigated area is required.";
-      if (!formData.rainfedArea) errors.rainfedArea = "Rainfed area is required.";
-      if (!formData.aadhaarFront) errors.aadhaarFront = "Aadhaar front image is required.";
-      if (!formData.aadhaarBack) errors.aadhaarBack = "Aadhaar back image is required.";
+      if (role === "kisaan") {
+        if (!formData.landHoldings) errors.landHoldings = "Land holdings is required.";
+        if (!formData.annualProduction) errors.annualProduction = "Annual production is required.";
+        if (!formData.annualConsumption) errors.annualConsumption = "Annual consumption is required.";
+        if (!formData.crops || formData.crops.length === 0) errors.crops = "Select at least one crop.";
+        if (!formData.seedArea) errors.seedArea = "Seed area is required.";
+        if (!formData.irrigatedArea) errors.irrigatedArea = "Irrigated area is required.";
+        if (!formData.rainfedArea) errors.rainfedArea = "Rainfed area is required.";
+        if (!formData.aadhaarFront) errors.aadhaarFront = "Aadhaar front image is required.";
+        if (!formData.aadhaarBack) errors.aadhaarBack = "Aadhaar back image is required.";
+      } else if (role === "pos") {
+        if (!formData.storageArea) errors.storageArea = "Storage area is required.";
+        if (!formData.sections) errors.sections = "Number of sections is required.";
+        if (!formData.cropsHandled || formData.cropsHandled.length === 0) errors.cropsHandled = "Select at least one crop handled.";
+        if (!formData.maxCropCapacity) errors.maxCropCapacity = "Maximum crop capacity is required.";
+      }
     }
     return errors;
   };
@@ -218,15 +235,23 @@ export default function ProfileComplete() {
       setIsLoading(true);
       try {
         const formDataObj = new FormData();
-        formDataObj.append("landHoldings", formData.landHoldings);
-        formDataObj.append("annualProduction", formData.annualProduction);
-        formDataObj.append("annualConsumption", formData.annualConsumption);
-        formDataObj.append("seedArea", formData.seedArea);
-        formDataObj.append("rainfedArea", formData.rainfedArea);
-        formDataObj.append("irrigatedArea", formData.irrigatedArea);
-        formDataObj.append("crops", JSON.stringify(formData.crops));
-        if (formData.aadhaarFront) formDataObj.append("aadhaarFront", formData.aadhaarFront);
-        if (formData.aadhaarBack) formDataObj.append("aadhaarBack", formData.aadhaarBack);
+        
+        if (role === "kisaan") {
+          formDataObj.append("landHoldings", formData.landHoldings);
+          formDataObj.append("annualProduction", formData.annualProduction);
+          formDataObj.append("annualConsumption", formData.annualConsumption);
+          formDataObj.append("seedArea", formData.seedArea);
+          formDataObj.append("rainfedArea", formData.rainfedArea);
+          formDataObj.append("irrigatedArea", formData.irrigatedArea);
+          formDataObj.append("crops", JSON.stringify(formData.crops));
+          if (formData.aadhaarFront) formDataObj.append("aadhaarFront", formData.aadhaarFront);
+          if (formData.aadhaarBack) formDataObj.append("aadhaarBack", formData.aadhaarBack);
+        } else if (role === "pos") {
+          formDataObj.append("storageArea", formData.storageArea);
+          formDataObj.append("sections", formData.sections);
+          formDataObj.append("cropsHandled", JSON.stringify(formData.cropsHandled));
+          formDataObj.append("maxCropCapacity", formData.maxCropCapacity);
+        }
 
         const response = await api.post("/api/other-details/add", formDataObj, {
           headers: {
@@ -238,10 +263,10 @@ export default function ProfileComplete() {
           toast.success(t("profileSubmitted"));
           navigate("/home");
         } else {
-          toast.error(response.data?.message || "Failed to save farm details");
+          toast.error(response.data?.message || `Failed to save ${role === "kisaan" ? "farm" : "POS"} details`);
         }
       } catch (error: any) {
-        toast.error(error?.response?.data?.message || "Failed to save farm details");
+        toast.error(error?.response?.data?.message || `Failed to save ${role === "kisaan" ? "farm" : "POS"} details`);
       }
       setIsLoading(false);
     }
@@ -254,14 +279,15 @@ export default function ProfileComplete() {
   const getStepTitle = () => {
     switch (step) {
       case 1: return t("bankingInformation");
-      case 2: return t("farmDocuments");
+      case 2: return role === "kisaan" ? t("farmDocuments") : "POS Details";
       default: return t("profileSetup");
     }
   };
+  
   const getStepDescription = () => {
     switch (step) {
       case 1: return t("bankingStepDesc");
-      case 2: return t("farmStepDesc");
+      case 2: return role === "kisaan" ? t("farmStepDesc") : "Enter your POS storage and handling details";
       default: return "";
     }
   };
@@ -277,15 +303,15 @@ export default function ProfileComplete() {
     if (isFileInput) {
       return (
         <div>
-          <label className={`block text-sm font-medium mb-2 ${hasError ? "text-red-400" : "text-gray-300"}`}>
+          <label className={`block text-sm font-medium mb-2 ${hasError ? "text-red-400" : "text-black"}`}>
             {t(placeholder)}
           </label>
           <input
             type="file"
             accept="image/*"
             onChange={e => handleFile(name as "aadhaarFront" | "aadhaarBack", e.target.files?.[0] ?? null)}
-            className={`w-full px-4 py-3 bg-gray-800 border text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-green-600 file:text-white hover:file:bg-green-700 transition-colors ${
-              hasError ? "border-red-500" : "border-gray-700 focus:border-green-500"
+            className={`w-full px-4 py-3 bg-white border text-black file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-green-600 file:text-white hover:file:bg-green-700 transition-colors ${
+              hasError ? "border-red-500" : "border-green-500 focus:border-green-600"
             }`}
             style={{ borderRadius: '0.75rem' }}
           />
@@ -295,7 +321,7 @@ export default function ProfileComplete() {
     }
     return (
       <div>
-        <label className={`block text-sm font-medium mb-2 ${hasError ? "text-red-400" : "text-gray-300"}`}>
+        <label className={`block text-sm font-medium mb-2 ${hasError ? "text-red-400" : "text-black"}`}>
           {t(placeholder)}
         </label>
         <input
@@ -303,8 +329,8 @@ export default function ProfileComplete() {
           placeholder={`${t("enter")} ${t(placeholder).toLowerCase()}`}
           value={(formData[name as keyof typeof formData] as string) || ""}
           onChange={e => handleChange(name, e.target.value)}
-          className={`w-full px-4 py-3 bg-gray-800 border text-white placeholder-gray-500 focus:outline-none transition-colors ${
-            hasError ? "border-red-500" : "border-gray-700 focus:border-green-500"
+          className={`w-full px-4 py-3 bg-white border text-black placeholder-gray-500 focus:outline-none transition-colors ${
+            hasError ? "border-red-500" : "border-green-500 focus:border-green-600"
           }`}
           style={{ borderRadius: '0.75rem' }}
         />
@@ -313,75 +339,80 @@ export default function ProfileComplete() {
     );
   };
 
-  const renderCropsSelector = () => (
-    <div>
-      <label className={`block text-sm font-medium mb-2 ${showErrors && errors.crops ? "text-red-400" : "text-gray-300"}`}>
-        {t("cropsGrown")}
-      </label>
-      {cropsLoading ? (
-        <div className="flex items-center justify-center py-4">
-          <Loader2 className="animate-spin w-5 h-5 text-green-500 mr-2" />
-          <span className="text-gray-400">{t("loading")}...</span>
-        </div>
-      ) : cropsList.length > 0 ? (
-        <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto bg-gray-800 p-3 rounded-lg border border-gray-700">
-          {cropsList.map((crop: any) => {
-            const selected = selectedCropIds.includes(crop._id);
-            const showFallback = crop.image && crop.image.startsWith("http://localhost:5000");
-            return (
-              <label
-                key={crop._id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  cursor: 'pointer',
-                  userSelect: 'none',
-                  padding: '6px 14px',
-                  borderRadius: '22px',
-                  border: selected ? '2px solid #22c55e' : '2px solid #333',
-                  background: selected ? 'linear-gradient(90deg,#22c55e 0%,#059669 100%)' : '#222',
-                  color: selected ? '#fff' : '#ddd',
-                  fontWeight: 500,
-                  boxShadow: selected ? '0 2px 8px 0 #05966988' : 'none',
-                  transition: 'all 0.2s'
-                }}
-                className="crop-chip"
-              >
-                {showFallback ? (
-                  <FallbackGreenCircle />
-                ) : crop.image ? (
-                  <img src={crop.image} alt={crop.name} style={{
-                    width: 24, height: 24,
-                    objectFit: 'cover',
-                    borderRadius: '50%',
-                  }} />
-                ) : (
-                  <FallbackGreenCircle />
-                )}
-                <input
-                  type="checkbox"
-                  checked={selected}
-                  style={{ display: 'none' }}
-                  onChange={() => handleCropChange(crop._id)}
-                />
-                {crop.name}
-                {selected && <Check className="ml-1" size={16} />}
-              </label>
-            );
-          })}
-        </div>
-      ) : (
-        <p className="text-gray-400 text-sm">No crops available</p>
-      )}
-      {showErrors && errors.crops &&
-        <p className="text-red-400 text-xs mt-1">{errors.crops}</p>}
-    </div>
-  );
+  const renderCropsSelector = () => {
+    const fieldName = role === "kisaan" ? "crops" : "cropsHandled";
+    const labelText = role === "kisaan" ? t("cropsGrown") : "Crops Handled";
+    
+    return (
+      <div>
+        <label className={`block text-sm font-medium mb-2 ${showErrors && errors[fieldName] ? "text-red-400" : "text-black"}`}>
+          {labelText}
+        </label>
+        {cropsLoading ? (
+          <div className="flex items-center justify-center py-4">
+            <Loader2 className="animate-spin w-5 h-5 text-green-500 mr-2" />
+            <span className="text-gray-600">{t("loading")}...</span>
+          </div>
+        ) : cropsList.length > 0 ? (
+          <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto bg-white p-3 rounded-lg border border-green-500">
+            {cropsList.map((crop: any) => {
+              const selected = selectedCropIds.includes(crop._id);
+              const showFallback = crop.image && crop.image.startsWith("http://localhost:5000");
+              return (
+                <label
+                  key={crop._id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    cursor: 'pointer',
+                    userSelect: 'none',
+                    padding: '6px 14px',
+                    borderRadius: '22px',
+                    border: selected ? '2px solid #22c55e' : '2px solid #333',
+                    background: selected ? 'linear-gradient(90deg,#22c55e 0%,#059669 100%)' : '#f9f9f9',
+                    color: selected ? '#fff' : '#333',
+                    fontWeight: 500,
+                    boxShadow: selected ? '0 2px 8px 0 #05966988' : 'none',
+                    transition: 'all 0.2s'
+                  }}
+                  className="crop-chip"
+                >
+                  {showFallback ? (
+                    <FallbackGreenCircle />
+                  ) : crop.image ? (
+                    <img src={crop.image} alt={crop.name} style={{
+                      width: 24, height: 24,
+                      objectFit: 'cover',
+                      borderRadius: '50%',
+                    }} />
+                  ) : (
+                    <FallbackGreenCircle />
+                  )}
+                  <input
+                    type="checkbox"
+                    checked={selected}
+                    style={{ display: 'none' }}
+                    onChange={() => handleCropChange(crop._id)}
+                  />
+                  {crop.name}
+                  {selected && <Check className="ml-1" size={16} />}
+                </label>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="text-gray-600 text-sm">No crops available</p>
+        )}
+        {showErrors && errors[fieldName] &&
+          <p className="text-red-400 text-xs mt-1">{errors[fieldName]}</p>}
+      </div>
+    );
+  };
 
   return (
     <>
-      <div className="min-h-screen flex bg-black">
+      <div className="min-h-screen flex bg-white">
         <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
           <div
             className="absolute inset-0 bg-cover bg-center"
@@ -417,10 +448,12 @@ export default function ProfileComplete() {
             <div className="max-w-md">
               <h1 className="text-5xl font-light mb-6 leading-tight">
                 {t("completeYour")}<br />
-                <span className="font-bold text-green-300">{t("farmerProfile")}</span>
+                <span className="font-bold text-green-300">
+                  {role === "kisaan" ? t("farmerProfile") : "POS Profile"}
+                </span>
               </h1>
               <p className="text-lg text-green-100 opacity-90">
-                {t("profileDescription")}
+                {role === "kisaan" ? t("profileDescription") : "Complete your Point of Sale profile to get started"}
               </p>
               <div className="mt-8">
                 <div className="flex items-center space-x-4">
@@ -442,13 +475,13 @@ export default function ProfileComplete() {
             </div>
           </div>
         </div>
-        <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-black overflow-y-auto">
+        <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-white overflow-y-auto">
           <div className="w-full max-w-md">
             <div className="mb-8">
-              <h2 className="text-3xl font-semibold text-white mb-2">
+              <h2 className="text-3xl font-semibold text-black mb-2">
                 {getStepTitle()}
               </h2>
-              <p className="text-gray-400 text-sm">
+              <p className="text-gray-600 text-sm">
                 {t("step")} {step} {t("of")} 2 - {getStepDescription()}
               </p>
             </div>
@@ -498,17 +531,30 @@ export default function ProfileComplete() {
                       {t("back")}
                     </button>
                   </div>
-                  {renderInput("landHoldings", "landHoldings")}
-                  {renderInput("annualProduction", "annualProduction", "number")}
-                  {renderInput("annualConsumption", "annualConsumption", "number")}
-                  {renderCropsSelector()}
-                  {renderInput("seedArea", "seedArea", "number")}
-                  {renderInput("irrigatedArea", "irrigatedArea", "number")}
-                  {renderInput("rainfedArea", "rainfedArea", "number")}
-                  <div className="grid grid-cols-1 gap-6">
-                    {renderInput("aadhaarFront", "aadhaarFrontImage", "file", true)}
-                    {renderInput("aadhaarBack", "aadhaarBackImage", "file", true)}
-                  </div>
+                  
+                  {role === "kisaan" ? (
+                    <>
+                      {renderInput("landHoldings", "landHoldings")}
+                      {renderInput("annualProduction", "annualProduction", "number")}
+                      {renderInput("annualConsumption", "annualConsumption", "number")}
+                      {renderCropsSelector()}
+                      {renderInput("seedArea", "seedArea", "number")}
+                      {renderInput("irrigatedArea", "irrigatedArea", "number")}
+                      {renderInput("rainfedArea", "rainfedArea", "number")}
+                      <div className="grid grid-cols-1 gap-6">
+                        {renderInput("aadhaarFront", "aadhaarFrontImage", "file", true)}
+                        {renderInput("aadhaarBack", "aadhaarBackImage", "file", true)}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {renderInput("storageArea", "Storage Area (e.g., 2000 sqft)")}
+                      {renderInput("sections", "Number of Sections", "number")}
+                      {renderCropsSelector()}
+                      {renderInput("maxCropCapacity", "Maximum Crop Capacity (in tons)", "number")}
+                    </>
+                  )}
+                  
                   <div className="flex justify-between pt-6">
                     <div className="flex gap-3">
                       <button

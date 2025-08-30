@@ -1,21 +1,4 @@
-add all apis in proper way
-make profile complete logic correct (after login show or now based on status i got in login response)
-shorten the code now the code is unrealistic large which is not good for all factors 
+1.delete api in kisaab post 
+2. pos after login details like account and other 
+3. kisaan fullfillment api
 
-
-fix the OPT firebase 
-make the complete profile in light mode 
-
-// backend api's yet to be implimented
-get on home page (getting the posts)
-fullfillment api (posts)
-
-post by kisaan--> 
-title, description, video/photos, crop{name, quantity, price/questal other}, ready by date,
-
-
-admin: 
-admin login
-AUTH: kisaan signup/ pos signup -> verification req 
-
-isVerified
