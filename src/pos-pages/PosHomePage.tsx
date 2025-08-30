@@ -1,17 +1,16 @@
-import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { UserPlus, ClipboardCheck, ArrowRight } from 'lucide-react'
 
 const PosHomePage = () => {
   const navigate = useNavigate()
 
-  const handleCreateFarmerAccount = () => {
-    navigate('/create-farmer-account')
-  }
+const handleCreateFarmerAccount = () => {
+  navigate('/pos/create-farmer-account')
+}
 
-  const handleReviewRequests = () => {
-    navigate('/review-requests')
-  }
+const handleReviewRequests = () => {
+  navigate('/pos/review-requests')
+}
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-6 sm:px-6 lg:px-8">
