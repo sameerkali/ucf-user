@@ -1,15 +1,17 @@
-import { useEffect, useState } from 'react';
-import { Calendar, MapPin, Package, IndianRupee, Camera, Video, Loader2, Sprout } from 'lucide-react';
+import React, { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Calendar, MapPin, Package, IndianRupee, Camera, Video, Loader2, Sprout, ShoppingCart, RefreshCw } from 'lucide-react';
 import { ILLUSTRATIONS } from '../assets/assets';
-// import { useTranslation } from 'react-i18next';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
+import FulfillmentModal from '../components/FulfillmentModal';
 
+// Shared interfaces that both HomePage and FulfillmentModal will use
 interface Crop {
   name: string;
   type: string;
-  quantity: string;
-  pricePerQuintal: string;
+  quantity: number; // API returns number
+  pricePerQuintal: number; // API returns number
 }
 
 interface Location {
@@ -21,6 +23,11 @@ interface Location {
   pincode: string;
 }
 
+interface CreatedBy {
+  id: string;
+  role: string;
+}
+
 interface Post {
   _id: string;
   type: string;
@@ -28,54 +35,77 @@ interface Post {
   description: string;
   crops: Crop[];
   readyByDate: string;
+  requiredByDate?: string;
   photos: string[];
   videos: string[];
   location: Location;
   status: string;
   createdAt: string;
   updatedAt: string;
-  createdBy: {
-    id: string;
-    role: string;
-  };
+  createdBy: CreatedBy;
+  __v?: number;
 }
 
-const HomePage = () => {
-  // const { t } = useTranslation();
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string>('');
+interface ApiResponse {
+  status_code: number;
+  message: string;
+  data: Post[];
+}
 
-  useEffect(() => {
-    fetchPosts();
-  }, []);
+interface FulfillmentPayload {
+  postId: string;
+  crops: Array<{
+    name: string;
+    quantity: number;
+  }>;
+}
 
-  const fetchPosts = async () => {
-    setLoading(true);
-    setError('');
-    
-    try {
-      // Using POST method without any body as you specified
-      const { data } = await api.post('/api/posts/list');
+const HomePage: React.FC = () => {
+  const queryClient = useQueryClient();
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+
+  // React Query for fetching posts
+  const {
+    data: posts = [],
+    isLoading: loading,
+    error,
+    refetch: fetchPosts,
+    isFetching
+  } = useQuery({
+    queryKey: ['posts'],
+    queryFn: async (): Promise<Post[]> => {
+      const { data }: { data: ApiResponse } = await api.post('/api/posts/list');
       
-      // Handle different response structures
-      if (data.status_code === 200 || data.success) {
-        setPosts(data.data || data.posts || []);
-      } else if (data.message) {
-        setPosts(data.data || []);
+      if (data.status_code === 200) {
+        return data.data || [];
       } else {
-        setError('Failed to fetch posts');
+        throw new Error(data.message || 'Failed to fetch posts');
       }
-    } catch (error: any) {
-      console.error('Error fetching posts:', error);
-      setError(error.response?.data?.message || 'Network error occurred');
-      toast.error('Failed to load posts');
-    }
-    
-    setLoading(false);
-  };
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: false,
+  });
 
-  const formatDate = (dateString: string) => {
+  // Fulfillment mutation
+  const fulfillmentMutation = useMutation({
+    mutationFn: async (fulfillmentData: FulfillmentPayload): Promise<any> => {
+      const { data } = await api.post('/api/fulfillments/create', fulfillmentData);
+      return data;
+    },
+    onSuccess: () => {
+      toast.success('Fulfillment request submitted successfully!');
+      handleCloseModal();
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+    },
+    onError: (error: any) => {
+      const errorMessage = error?.response?.data?.message || error.message || 'Failed to submit fulfillment request';
+      toast.error(errorMessage);
+    }
+  });
+
+  const formatDate = (dateString: string): string => {
     return new Date(dateString).toLocaleDateString("en-IN", {
       day: "numeric",
       month: "short",
@@ -83,9 +113,40 @@ const HomePage = () => {
     });
   };
 
-  const formatLocation = (location: Location) => {
+  const formatLocation = (location: Location): string => {
     return `${location.village}, ${location.tehsil}, ${location.district}, ${location.state}`;
   };
+
+  const handleFulfillmentClick = (post: Post): void => {
+    setSelectedPost(post);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = (): void => {
+    setIsModalOpen(false);
+    setSelectedPost(null);
+  };
+
+  const handleFulfillmentSuccess = (): void => {
+    // This will be handled by the mutation's onSuccess
+  };
+
+  const handleRefresh = async (): Promise<void> => {
+    try {
+      await fetchPosts();
+      toast.success('Posts refreshed!');
+    } catch (error) {
+      toast.error('Failed to refresh posts');
+    }
+  };
+
+  // Handle error case with proper error handling
+  React.useEffect(() => {
+    if (error) {
+      console.error('Error fetching posts:', error);
+      toast.error('Failed to load posts');
+    }
+  }, [error]);
 
   if (loading) {
     return (
@@ -110,9 +171,11 @@ const HomePage = () => {
           <h3 className="text-xl font-semibold text-gray-700 mb-3">
             Something went wrong
           </h3>
-          <p className="text-gray-500 mb-6">{error}</p>
+          <p className="text-gray-500 mb-6">
+            {error instanceof Error ? error.message : 'Network error occurred'}
+          </p>
           <button
-            onClick={fetchPosts}
+            onClick={handleRefresh}
             className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-xl hover:from-green-600 hover:to-emerald-600 transition-all shadow-lg"
           >
             Try Again
@@ -125,19 +188,6 @@ const HomePage = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-4 lg:py-8">
       <div className="max-w-7xl mx-auto px-4">
-        {/* Header Section */}
-        <div className="text-center mb-12">
-          <div className="flex items-center justify-center mb-6">
-            <Sprout className="w-12 h-12 text-green-600 mr-3" />
-            <h1 className="text-4xl lg:text-5xl font-bold text-gray-900">
-              Farm Fresh Posts
-            </h1>
-          </div>
-          <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-            Discover quality crops directly from farmers in your area. Connect, buy, and support local agriculture.
-          </p>
-        </div>
-
         {/* Posts Section */}
         {posts.length === 0 ? (
           <div className="text-center py-20 bg-white rounded-2xl shadow-sm">
@@ -153,10 +203,11 @@ const HomePage = () => {
               Be the first to share your crops with the farming community. Start connecting with buyers today!
             </p>
             <button
-              onClick={fetchPosts}
-              className="px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-xl hover:from-green-600 hover:to-emerald-600 transition-all shadow-lg hover:shadow-xl"
+              onClick={handleRefresh}
+              disabled={isFetching}
+              className="px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-xl hover:from-green-600 hover:to-emerald-600 transition-all shadow-lg hover:shadow-xl disabled:opacity-50"
             >
-              Refresh Posts
+              {isFetching ? 'Refreshing...' : 'Refresh Posts'}
             </button>
           </div>
         ) : (
@@ -170,19 +221,19 @@ const HomePage = () => {
                 </div>
                 <div className="text-center">
                   <div className="text-3xl font-bold text-blue-600">
-                    {posts.filter(post => post.status === 'active').length}
+                    {posts.filter((post: Post) => post.status === 'active').length}
                   </div>
                   <div className="text-gray-600 font-medium">Active Posts</div>
                 </div>
                 <div className="text-center">
                   <div className="text-3xl font-bold text-orange-600">
-                    {posts.reduce((acc, post) => acc + (post.crops?.length || 0), 0)}
+                    {posts.reduce((acc: number, post: Post) => acc + (post.crops?.length || 0), 0)}
                   </div>
                   <div className="text-gray-600 font-medium">Crop Varieties</div>
                 </div>
                 <div className="text-center">
                   <div className="text-3xl font-bold text-purple-600">
-                    {posts.reduce((acc, post) => acc + (post.photos?.length || 0) + (post.videos?.length || 0), 0)}
+                    {posts.reduce((acc: number, post: Post) => acc + (post.photos?.length || 0) + (post.videos?.length || 0), 0)}
                   </div>
                   <div className="text-gray-600 font-medium">Media Files</div>
                 </div>
@@ -191,7 +242,7 @@ const HomePage = () => {
 
             {/* Posts Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-              {posts.map((post) => (
+              {posts.map((post: Post) => (
                 <div
                   key={post._id}
                   className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all duration-200 hover:-translate-y-1"
@@ -240,7 +291,7 @@ const HomePage = () => {
                         Crop Details
                       </h4>
                       <div className="space-y-3">
-                        {post.crops.map((crop, index) => (
+                        {post.crops.map((crop: Crop, index: number) => (
                           <div key={index} className="bg-white rounded-lg p-3 shadow-sm">
                             <div className="flex justify-between items-center mb-2">
                               <h5 className="font-semibold text-green-800">{crop.name}</h5>
@@ -270,7 +321,7 @@ const HomePage = () => {
 
                   {/* Media Indicators */}
                   {(post.photos.length > 0 || post.videos.length > 0) && (
-                    <div className="flex items-center gap-4 pt-4 border-t border-gray-100">
+                    <div className="flex items-center gap-4 pt-4 border-t border-gray-100 mb-4">
                       {post.photos.length > 0 && (
                         <div className="flex items-center gap-2 text-sm text-gray-500">
                           <Camera className="w-4 h-4 text-blue-500" />
@@ -286,8 +337,21 @@ const HomePage = () => {
                     </div>
                   )}
 
+                  {/* Fulfillment Button */}
+                  {post.status === 'active' && post.crops && post.crops.length > 0 && (
+                    <div className="mb-4">
+                      <button
+                        onClick={() => handleFulfillmentClick(post)}
+                        className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold py-3 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+                      >
+                        <ShoppingCart className="w-4 h-4" />
+                        Request Fulfillment
+                      </button>
+                    </div>
+                  )}
+
                   {/* Post Footer */}
-                  <div className="mt-4 pt-4 border-t border-gray-100">
+                  <div className="pt-4 border-t border-gray-100">
                     <div className="flex items-center justify-between text-xs text-gray-400">
                       <span>Posted {formatDate(post.createdAt)}</span>
                       <span>By {post.createdBy.role}</span>
@@ -296,20 +360,20 @@ const HomePage = () => {
                 </div>
               ))}
             </div>
-
-            {/* Load More / Refresh Button */}
-            <div className="text-center mt-12">
-              <button
-                onClick={fetchPosts}
-                className="px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-xl hover:from-green-600 hover:to-emerald-600 transition-all shadow-lg hover:shadow-xl flex items-center gap-2 mx-auto"
-              >
-                <Loader2 className="w-5 h-5" />
-                Refresh Posts
-              </button>
-            </div>
           </>
         )}
       </div>
+
+      {/* Fulfillment Modal */}
+      {isModalOpen && selectedPost && (
+        <FulfillmentModal
+          post={selectedPost}
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          onSuccess={handleFulfillmentSuccess}
+          fulfillmentMutation={fulfillmentMutation}
+        />
+      )}
     </div>
   );
 };

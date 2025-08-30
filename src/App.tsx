@@ -5,6 +5,7 @@ import {
   Navigate,
   Outlet,
 } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import HomePage from "./pages/HomePage";
 import PostsPage from "./pages/PostsPage";
 import LoginPage from "./pages/LoginPage";
@@ -15,10 +16,14 @@ import HelpAndSupportPage from "./pages/HelpAndSupportPage";
 import LandingPage from "./pages/LandingPage";
 import ProfileComplete from "./pages/profileComplete/ProfileCompletePage";
 
+
 // POS Pages
 import PosHomePage from "./pos-pages/PosHomePage";
 import PosTransactionsPage from "./pos-pages/PosTransactionsPage";
 import PosHelpAndSupportPage from "./pos-pages/PosHelpAndSupportPage";
+import CreateFarmerAccount from "./pos-pages/CreateFarmerAccount";
+import ReviewRequests from "./pos-pages/ReviewRequests";
+
 
 import OfflineBanner from "./components/OfflineBanner";
 import InstallBanner from "./components/InstallBanner";
@@ -31,6 +36,7 @@ import { useAppLoading } from "./hooks/useAppLoading";
 import { Toaster } from "react-hot-toast";
 import Profile from "./components/Profile";
 
+
 // Authentication guard for protected routes
 function RequireAuth() {
   const token = localStorage.getItem("token");
@@ -41,6 +47,18 @@ function RequireAuth() {
 
   return <Outlet />;
 }
+
+// Redirect logged-in users away from the login/signup/landing pages
+function RedirectIfAuthenticated() {
+  const token = localStorage.getItem("token");
+
+  if (token) {
+    return <Navigate to="/home" replace />;
+  }
+
+  return <Outlet />;
+}
+
 
 // Role-based layout components
 const KisaanLayout = () => (
@@ -53,6 +71,7 @@ const KisaanLayout = () => (
   </>
 );
 
+
 const PosLayout = () => (
   <>
     <PosHeader />
@@ -62,6 +81,7 @@ const PosLayout = () => (
     <PosDock />
   </>
 );
+
 
 // Role-based route wrapper
 function RoleBasedLayout() {
@@ -74,6 +94,7 @@ function RoleBasedLayout() {
   }
 }
 
+
 // Home page router based on role
 function RoleBasedHome() {
   const role = localStorage.getItem("role");
@@ -85,14 +106,31 @@ function RoleBasedHome() {
   }
 }
 
+
 export default function App() {
   const isLoading = useAppLoading();
+
+
+  const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000,
+      gcTime: 10 * 60 * 1000,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
 
   if (isLoading) {
     return <LoadingScreen />;
   }
 
+
   return (
+    <QueryClientProvider client={queryClient}>
+
+
     <BrowserRouter>
       <Toaster
         position="top-right"
@@ -107,11 +145,15 @@ export default function App() {
       <OfflineBanner />
       <InstallBanner />
       <Routes>
-        {/* Public routes (no header/dock, no auth) */}
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
+        {/* Redirect logged-in users from auth and landing pages */}
+        <Route element={<RedirectIfAuthenticated />}>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+        </Route>
+
         <Route path="/404" element={<NotFoundPage />} />
+
 
         {/* Protected routes with role-based routing */}
         <Route element={<RequireAuth />}>
@@ -127,14 +169,18 @@ export default function App() {
             <Route path="/kisaan/profile" element={<Profile />} />
           </Route>
 
+
           {/* POS routes */}
           <Route element={<PosLayout />}>
             <Route path="/pos/home" element={<PosHomePage />} />
             <Route path="/pos/transactions" element={<PosTransactionsPage />} />
+            <Route path="/pos/create-farmer-account" element={<CreateFarmerAccount />} />
+            <Route path="/pos/review-requests" element={<ReviewRequests />} />
             <Route path="/pos/settings" element={<SettingsPage />} />
             <Route path="/pos/help" element={<PosHelpAndSupportPage />} />
             <Route path="/pos/profile" element={<Profile />} />
           </Route>
+
 
           {/* Shared routes with role-based layout */}
           <Route element={<RoleBasedLayout />}>
@@ -142,9 +188,11 @@ export default function App() {
           </Route>
         </Route>
 
+
         {/* Catch-all route */}
         <Route path="*" element={<Navigate to="/404" replace />} />
       </Routes>
     </BrowserRouter>
+    </QueryClientProvider>
   );
 }
