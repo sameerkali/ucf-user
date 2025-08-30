@@ -13,7 +13,7 @@ export default function Header() {
 
   return (
     <header className="hidden md:flex w-full items-center justify-between px-6 py-4 bg-white border-b border-gray-200 shadow z-50">
-      <Link to={`/`}><div className="font-bold text-xl text-gray-900">{t("appName")}</div></Link>
+      <Link to={`/home`}><div className="font-bold text-xl text-gray-900">{t("appName")}</div></Link>
       <nav className="flex gap-8">
         {MENU_ITEMS.map(item => (
           <NavLink
