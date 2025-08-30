@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Calendar, MapPin, Package, IndianRupee, Camera, Video, Loader2, Sprout } from 'lucide-react';
+import { Calendar, MapPin, Package, IndianRupee, Camera, Video, Loader2, Sprout, ShoppingCart } from 'lucide-react';
 import { ILLUSTRATIONS } from '../assets/assets';
-// import { useTranslation } from 'react-i18next';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
+import FulfillmentModal from '../components/FulfillmentModal';
 
 interface Crop {
   name: string;
@@ -41,10 +41,11 @@ interface Post {
 }
 
 const HomePage = () => {
-  // const { t } = useTranslation();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     fetchPosts();
@@ -55,10 +56,8 @@ const HomePage = () => {
     setError('');
     
     try {
-      // Using POST method without any body as you specified
       const { data } = await api.post('/api/posts/list');
       
-      // Handle different response structures
       if (data.status_code === 200 || data.success) {
         setPosts(data.data || data.posts || []);
       } else if (data.message) {
@@ -85,6 +84,23 @@ const HomePage = () => {
 
   const formatLocation = (location: Location) => {
     return `${location.village}, ${location.tehsil}, ${location.district}, ${location.state}`;
+  };
+
+  const handleFulfillmentClick = (post: Post) => {
+    setSelectedPost(post);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedPost(null);
+  };
+
+  const handleFulfillmentSuccess = () => {
+    toast.success('Fulfillment request submitted successfully!');
+    handleCloseModal();
+    // Optionally refresh posts
+    fetchPosts();
   };
 
   if (loading) {
@@ -125,19 +141,6 @@ const HomePage = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-4 lg:py-8">
       <div className="max-w-7xl mx-auto px-4">
-        {/* Header Section */}
-        <div className="text-center mb-12">
-          <div className="flex items-center justify-center mb-6">
-            <Sprout className="w-12 h-12 text-green-600 mr-3" />
-            <h1 className="text-4xl lg:text-5xl font-bold text-gray-900">
-              Farm Fresh Posts
-            </h1>
-          </div>
-          <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-            Discover quality crops directly from farmers in your area. Connect, buy, and support local agriculture.
-          </p>
-        </div>
-
         {/* Posts Section */}
         {posts.length === 0 ? (
           <div className="text-center py-20 bg-white rounded-2xl shadow-sm">
@@ -270,7 +273,7 @@ const HomePage = () => {
 
                   {/* Media Indicators */}
                   {(post.photos.length > 0 || post.videos.length > 0) && (
-                    <div className="flex items-center gap-4 pt-4 border-t border-gray-100">
+                    <div className="flex items-center gap-4 pt-4 border-t border-gray-100 mb-4">
                       {post.photos.length > 0 && (
                         <div className="flex items-center gap-2 text-sm text-gray-500">
                           <Camera className="w-4 h-4 text-blue-500" />
@@ -286,8 +289,21 @@ const HomePage = () => {
                     </div>
                   )}
 
+                  {/* Fulfillment Button */}
+                  {post.status === 'active' && post.crops && post.crops.length > 0 && (
+                    <div className="mb-4">
+                      <button
+                        onClick={() => handleFulfillmentClick(post)}
+                        className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold py-3 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+                      >
+                        <ShoppingCart className="w-4 h-4" />
+                        Request Fulfillment
+                      </button>
+                    </div>
+                  )}
+
                   {/* Post Footer */}
-                  <div className="mt-4 pt-4 border-t border-gray-100">
+                  <div className="pt-4 border-t border-gray-100">
                     <div className="flex items-center justify-between text-xs text-gray-400">
                       <span>Posted {formatDate(post.createdAt)}</span>
                       <span>By {post.createdBy.role}</span>
@@ -310,6 +326,16 @@ const HomePage = () => {
           </>
         )}
       </div>
+
+      {/* Fulfillment Modal */}
+      {isModalOpen && selectedPost && (
+        <FulfillmentModal
+          post={selectedPost}
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          onSuccess={handleFulfillmentSuccess}
+        />
+      )}
     </div>
   );
 };
