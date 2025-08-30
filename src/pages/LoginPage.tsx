@@ -74,7 +74,10 @@ export default function LoginPage() {
     setFormData((prev) => ({ ...prev, phone: value }));
     setErrors((prev) => ({
       ...prev,
-      phone: value.length > 0 && value.length < 10 ? t("phoneError") || "Invalid phone number" : "",
+      phone:
+        value.length > 0 && value.length < 10
+          ? t("phoneError") || "Invalid phone number"
+          : "",
     }));
   };
 
@@ -83,7 +86,10 @@ export default function LoginPage() {
     setFormData((prev) => ({ ...prev, password: value }));
     setErrors((prev) => ({
       ...prev,
-      password: value.length > 0 && value.length < 6 ? t("passwordError") || "Password must be at least 6 characters" : "",
+      password:
+        value.length > 0 && value.length < 6
+          ? t("passwordError") || "Password must be at least 6 characters"
+          : "",
     }));
   };
 
@@ -100,18 +106,20 @@ export default function LoginPage() {
       if (formData.phone.length !== 10) {
         setErrors((prev) => ({
           ...prev,
-          phone: t("phoneError") || "Please enter a valid 10-digit phone number",
+          phone:
+            t("phoneError") || "Please enter a valid 10-digit phone number",
         }));
       }
       if (!formData.password || formData.password.length < 6) {
         setErrors((prev) => ({
           ...prev,
-          password: t("passwordError") || "Password must be at least 6 characters",
+          password:
+            t("passwordError") || "Password must be at least 6 characters",
         }));
       }
       return;
     }
-    
+
     setIsLoading(true);
     try {
       const { data, status } = await api.post("/api/farmer/login", {
@@ -124,9 +132,9 @@ export default function LoginPage() {
         localStorage.setItem("user", JSON.stringify(data.result));
         localStorage.setItem("role", "kisaan");
         const { bankVerified, otherDetailsVerified } = data.result;
-        
+
         toast.success(t("loginSuccess") || "Login successful!");
-        
+
         if (bankVerified && otherDetailsVerified) {
           navigate("/home");
         } else if (bankVerified && !otherDetailsVerified) {
@@ -166,32 +174,48 @@ export default function LoginPage() {
       if (formData.phone.length !== 10) {
         setErrors((prev) => ({
           ...prev,
-          phone: t("phoneError") || "Please enter a valid 10-digit phone number",
+          phone:
+            t("phoneError") || "Please enter a valid 10-digit phone number",
         }));
       }
       if (!formData.password || formData.password.length < 6) {
         setErrors((prev) => ({
           ...prev,
-          password: t("passwordError") || "Password must be at least 6 characters",
+          password:
+            t("passwordError") || "Password must be at least 6 characters",
         }));
       }
       return;
     }
-    
+
     setIsLoading(true);
     try {
       const { data, status } = await api.post("/api/pos/login", {
         mobile: formData.phone,
         password: formData.password,
       });
-
-      if ((status === 200 || status === 201) && (data.success || data.statusCode === 201)) {
+      // console.log("other details verified POS:", data?.data?.otherDetailsVerified);
+      // console.log("bank details verified POS:", data?.data?.bankVerified);
+      
+      if (
+        (status === 200 || status === 201) &&
+        (data.success || data.statusCode === 201)
+      ) {
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.data));
         localStorage.setItem("role", "pos");
-        
+        const { bankVerified, otherDetailsVerified } = data.data;
+
         toast.success(t("loginSuccess") || "Login successful!");
-        navigate("/home");
+        //
+        if (bankVerified && otherDetailsVerified) {
+          navigate("/home");
+        } else if (bankVerified && !otherDetailsVerified) {
+          navigate("/complete-profile?role=pos&step=2");
+        } else {
+          navigate("/complete-profile?role=pos&step=1");
+        }
+        //
       } else {
         setErrors((prev) => ({
           ...prev,
@@ -337,7 +361,8 @@ export default function LoginPage() {
               {t("login") || "Login"}
             </h2>
             <p className="text-gray-600 text-sm">
-              {t("createKisaanAccount") || "Enter your phone number and password to continue"}
+              {t("createKisaanAccount") ||
+                "Enter your phone number and password to continue"}
             </p>
           </div>
           <form onSubmit={handleFarmerLogin} className="space-y-6">
@@ -348,7 +373,9 @@ export default function LoginPage() {
               </label>
               <input
                 type="tel"
-                placeholder={t("phoneNumberPlaceholder") || "Enter 10-digit phone number"}
+                placeholder={
+                  t("phoneNumberPlaceholder") || "Enter 10-digit phone number"
+                }
                 value={formData.phone}
                 onChange={handlePhoneChange}
                 className="w-full px-4 py-3 bg-gray-100 border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 transition-colors"
@@ -360,7 +387,7 @@ export default function LoginPage() {
                 <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
               )}
             </div>
-            
+
             {/* Password */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -369,7 +396,9 @@ export default function LoginPage() {
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
-                  placeholder={t("passwordPlaceholder") || "Enter your password"}
+                  placeholder={
+                    t("passwordPlaceholder") || "Enter your password"
+                  }
                   value={formData.password}
                   onChange={handlePasswordChange}
                   className="w-full px-4 py-3 bg-gray-100 border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 transition-colors pr-12"
@@ -392,10 +421,12 @@ export default function LoginPage() {
                 <p className="text-red-500 text-xs mt-1">{errors.password}</p>
               )}
             </div>
-            
+
             <button
               type="submit"
-              disabled={isLoading || formData.phone.length !== 10 || !formData.password}
+              disabled={
+                isLoading || formData.phone.length !== 10 || !formData.password
+              }
               className="w-full py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold hover:from-green-600 hover:to-emerald-600 focus:outline-none transition-all duration-200 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ borderRadius: "0.75rem" }}
             >
@@ -418,7 +449,8 @@ export default function LoginPage() {
               {t("posLogin") || "POS Login"}
             </h2>
             <p className="text-gray-600 text-sm">
-              {t("createPosAccount") || "Enter your phone number and password to access POS"}
+              {t("createPosAccount") ||
+                "Enter your phone number and password to access POS"}
             </p>
           </div>
           <form onSubmit={handlePosLogin} className="space-y-6">
@@ -429,7 +461,9 @@ export default function LoginPage() {
               </label>
               <input
                 type="tel"
-                placeholder={t("phoneNumberPlaceholder") || "Enter 10-digit phone number"}
+                placeholder={
+                  t("phoneNumberPlaceholder") || "Enter 10-digit phone number"
+                }
                 value={formData.phone}
                 onChange={handlePhoneChange}
                 className="w-full px-4 py-3 bg-gray-100 border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 transition-colors"
@@ -441,7 +475,7 @@ export default function LoginPage() {
                 <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
               )}
             </div>
-            
+
             {/* Password */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -450,7 +484,9 @@ export default function LoginPage() {
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
-                  placeholder={t("passwordPlaceholder") || "Enter your password"}
+                  placeholder={
+                    t("passwordPlaceholder") || "Enter your password"
+                  }
                   value={formData.password}
                   onChange={handlePasswordChange}
                   className="w-full px-4 py-3 bg-gray-100 border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 transition-colors pr-12"
@@ -473,10 +509,12 @@ export default function LoginPage() {
                 <p className="text-red-500 text-xs mt-1">{errors.password}</p>
               )}
             </div>
-            
+
             <button
               type="submit"
-              disabled={isLoading || formData.phone.length !== 10 || !formData.password}
+              disabled={
+                isLoading || formData.phone.length !== 10 || !formData.password
+              }
               className="w-full py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold hover:from-green-600 hover:to-emerald-600 focus:outline-none transition-all duration-200 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ borderRadius: "0.75rem" }}
             >
@@ -490,7 +528,7 @@ export default function LoginPage() {
         </>
       );
     }
-    
+
     // OTP step commented out
     // if (role === "kisaan" && step === "otp") {
     //   return (
@@ -543,7 +581,7 @@ export default function LoginPage() {
     //     </>
     //   );
     // }
-    
+
     return null;
   };
 
@@ -573,7 +611,7 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
-      
+
       {/* Desktop: Left Side */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden shadow-lg">
         <div
@@ -595,12 +633,13 @@ export default function LoginPage() {
               </span>
             </h1>
             <p className="text-lg text-green-900 opacity-90">
-              {t("leftDescription") || "Connect with your farming community and grow together"}
+              {t("leftDescription") ||
+                "Connect with your farming community and grow together"}
             </p>
           </div>
         </div>
       </div>
-      
+
       {/* Desktop: Right/Form Side */}
       <div className="hidden lg:flex w-full lg:w-1/2 items-center justify-center p-8 bg-white">
         <div className="w-full max-w-md px-6">
@@ -618,8 +657,11 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
-      
-      <div onClick={() => navigate("/")} className="absolute top-4 left-4 z-50 cursor-pointer">
+
+      <div
+        onClick={() => navigate("/")}
+        className="absolute top-4 left-4 z-50 cursor-pointer"
+      >
         <img src={GLOBLE.ucf_logo} alt="Brand Logo" className="h-30 w-auto" />
       </div>
     </div>
