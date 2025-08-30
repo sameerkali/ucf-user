@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { X, Package, Loader2, CheckCircle } from 'lucide-react';
-import api from '../api/axios';
 import toast from 'react-hot-toast';
 
 interface Crop {
@@ -26,16 +25,16 @@ interface FulfillmentModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  fulfillmentMutation: any; // React Query mutation
 }
 
 const FulfillmentModal: React.FC<FulfillmentModalProps> = ({
   post,
   isOpen,
   onClose,
-  onSuccess,
+  fulfillmentMutation, // Use this instead of direct API calls
 }) => {
   const [selectedCrops, setSelectedCrops] = useState<FulfillmentCrop[]>([]);
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (isOpen && post.crops.length > 0) {
@@ -104,30 +103,19 @@ const FulfillmentModal: React.FC<FulfillmentModalProps> = ({
       return;
     }
 
-    setLoading(true);
+    const payload = {
+      postId: post._id,
+      crops: selectedCrops,
+    };
 
-    try {
-      const payload = {
-        postId: post._id,
-        crops: selectedCrops,
-      };
-
-      const response = await api.post('/api/fulfillments/create', payload);
-      
-      if (response.data.success || response.status === 200 || response.status === 201) {
-        onSuccess();
-      } else {
-        toast.error(response.data.message || 'Failed to submit fulfillment request');
-      }
-    } catch (error: any) {
-      console.error('Error submitting fulfillment:', error);
-      toast.error(error.response?.data?.message || 'Failed to submit fulfillment request');
-    }
-
-    setLoading(false);
+    // Use the React Query mutation instead of direct API call
+    fulfillmentMutation.mutate(payload);
   };
 
   const canAddMoreCrops = selectedCrops.length < post.crops.length;
+
+  // Use mutation loading state instead of local loading state
+  const loading = fulfillmentMutation.isLoading;
 
   if (!isOpen) return null;
 

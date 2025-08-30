@@ -5,6 +5,7 @@ import {
   Navigate,
   Outlet,
 } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import HomePage from "./pages/HomePage";
 import PostsPage from "./pages/PostsPage";
 import LoginPage from "./pages/LoginPage";
@@ -88,11 +89,24 @@ function RoleBasedHome() {
 export default function App() {
   const isLoading = useAppLoading();
 
+  const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
+
   if (isLoading) {
     return <LoadingScreen />;
   }
 
   return (
+    <QueryClientProvider client={queryClient}>
+
     <BrowserRouter>
       <Toaster
         position="top-right"
@@ -146,5 +160,6 @@ export default function App() {
         <Route path="*" element={<Navigate to="/404" replace />} />
       </Routes>
     </BrowserRouter>
+    </QueryClientProvider>
   );
 }
