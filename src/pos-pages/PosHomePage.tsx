@@ -1,194 +1,106 @@
-import { useTranslation } from "react-i18next";
+import React from 'react'
+import { useNavigate } from 'react-router-dom'
+import { UserPlus, ClipboardCheck, ArrowRight } from 'lucide-react'
 
-export default function PosHomePage() {
-  const { t } = useTranslation();
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
+const PosHomePage = () => {
+  const navigate = useNavigate()
 
-  const stats = [
-    {
-      title: t("todaySales") || "Today's Sales",
-      value: "₹12,450",
-      change: "+12%",
-      positive: true
-    },
-    {
-      title: t("transactions") || "Transactions",
-      value: "24",
-      change: "+8%",
-      positive: true
-    },
-    {
-      title: t("productsSold") || "Products Sold",
-      value: "156",
-      change: "+15%",
-      positive: true
-    },
-    {
-      title: t("customers") || "Customers",
-      value: "18",
-      change: "+5%",
-      positive: true
-    }
-  ];
+  const handleCreateFarmerAccount = () => {
+    navigate('/create-farmer-account')
+  }
 
-  const quickActions = [
-    {
-      title: t("newSale") || "New Sale",
-      icon: "🛒",
-      color: "bg-green-50 text-green-600"
-    },
-    {
-      title: t("viewReports") || "View Reports",
-      icon: "📊",
-      color: "bg-blue-50 text-blue-600"
-    },
-    {
-      title: t("manageStock") || "Manage Stock",
-      icon: "📦",
-      color: "bg-purple-50 text-purple-600"
-    },
-    {
-      title: t("transactionHistory") || "Transaction History",
-      icon: "💳",
-      color: "bg-orange-50 text-orange-600"
-    }
-  ];
-
-  const recentTransactions = [
-    {
-      id: "T001",
-      time: "10:30 AM",
-      items: "Rice (5kg), Oil (1L)",
-      amount: 450,
-      payment: "Cash"
-    },
-    {
-      id: "T002",
-      time: "09:15 AM",
-      items: "Wheat (10kg)",
-      amount: 320,
-      payment: "UPI"
-    },
-    {
-      id: "T003",
-      time: "08:45 AM",
-      items: "Sugar (2kg), Salt (1kg)",
-      amount: 180,
-      payment: "Card"
-    }
-  ];
+  const handleReviewRequests = () => {
+    navigate('/review-requests')
+  }
 
   return (
-    <div className="p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Welcome Section */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {t("welcomeBack") || "Welcome back"}, {user.name || "POS User"}!
+    <div className="min-h-screen bg-gray-50 px-4 py-6 sm:px-6 lg:px-8">
+      {/* Header Section */}
+      <div className="max-w-4xl mx-auto">
+        <div className="text-center mb-8 sm:mb-12">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-3">
+            POS Dashboard
           </h1>
-          <p className="text-gray-600">
-            {t("todayOverview") || "Here's what's happening in your store today"}
+          <p className="text-lg sm:text-xl text-gray-600 font-medium">
+            Farmer Management System
           </p>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {stats.map((stat, index) => (
-            <div key={index} className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-sm font-medium text-gray-500 mb-2">
-                {stat.title}
+        {/* Options Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 max-w-3xl mx-auto">
+          
+          {/* Create Farmer Account Card */}
+          <div 
+            onClick={handleCreateFarmerAccount}
+            className="group bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer border border-gray-200 hover:border-blue-300 hover:-translate-y-1 p-6 sm:p-8"
+          >
+            <div className="text-center">
+              {/* Icon */}
+              <div className="mx-auto w-16 h-16 sm:w-20 sm:h-20 bg-blue-100 rounded-2xl flex items-center justify-center mb-4 sm:mb-6 group-hover:bg-blue-200 transition-colors duration-300">
+                <UserPlus className="w-8 h-8 sm:w-10 sm:h-10 text-blue-600" />
+              </div>
+              
+              {/* Title */}
+              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-3 group-hover:text-blue-600 transition-colors duration-300">
+                Create Farmer Account
               </h3>
-              <div className="flex items-center justify-between">
-                <p className="text-2xl font-bold text-gray-900">
-                  {stat.value}
-                </p>
-                <span className={`text-sm font-medium ${
-                  stat.positive ? "text-green-600" : "text-red-600"
-                }`}>
-                  {stat.change}
-                </span>
+              
+              {/* Description */}
+              <p className="text-gray-600 text-base sm:text-lg leading-relaxed">
+                Register new farmers in the system and set up their profiles
+              </p>
+              
+              {/* Action Indicator */}
+              <div className="mt-4 sm:mt-6">
+                <div className="inline-flex items-center text-blue-600 font-medium group-hover:text-blue-700">
+                  <span className="text-sm sm:text-base">Get Started</span>
+                  <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform duration-300" />
+                </div>
               </div>
             </div>
-          ))}
-        </div>
+          </div>
 
-        {/* Quick Actions */}
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
-          <h2 className="text-xl font-semibold mb-4">
-            {t("quickActions") || "Quick Actions"}
-          </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {quickActions.map((action, index) => (
-              <button
-                key={index}
-                className={`p-4 text-center rounded-lg transition-colors hover:opacity-80 ${action.color}`}
-              >
-                <div className="text-2xl mb-2">{action.icon}</div>
-                <span className="text-sm font-medium">{action.title}</span>
-              </button>
-            ))}
+          {/* Review Requests Card */}
+          <div 
+            onClick={handleReviewRequests}
+            className="group bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer border border-gray-200 hover:border-green-300 hover:-translate-y-1 p-6 sm:p-8"
+          >
+            <div className="text-center">
+              {/* Icon */}
+              <div className="mx-auto w-16 h-16 sm:w-20 sm:h-20 bg-green-100 rounded-2xl flex items-center justify-center mb-4 sm:mb-6 group-hover:bg-green-200 transition-colors duration-300">
+                <ClipboardCheck className="w-8 h-8 sm:w-10 sm:h-10 text-green-600" />
+              </div>
+              
+              {/* Title */}
+              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-3 group-hover:text-green-600 transition-colors duration-300">
+                Review Requests
+              </h3>
+              
+              {/* Description */}
+              <p className="text-gray-600 text-base sm:text-lg leading-relaxed">
+                Approve or reject pending farmer applications and requests
+              </p>
+              
+              {/* Action Indicator */}
+              <div className="mt-4 sm:mt-6">
+                <div className="inline-flex items-center text-green-600 font-medium group-hover:text-green-700">
+                  <span className="text-sm sm:text-base">Review Now</span>
+                  <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform duration-300" />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Recent Transactions */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold mb-4">
-            {t("recentTransactions") || "Recent Transactions"}
-          </h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-2 font-medium text-gray-500">
-                    {t("transactionId") || "ID"}
-                  </th>
-                  <th className="text-left py-3 px-2 font-medium text-gray-500">
-                    {t("time") || "Time"}
-                  </th>
-                  <th className="text-left py-3 px-2 font-medium text-gray-500">
-                    {t("items") || "Items"}
-                  </th>
-                  <th className="text-left py-3 px-2 font-medium text-gray-500">
-                    {t("amount") || "Amount"}
-                  </th>
-                  <th className="text-left py-3 px-2 font-medium text-gray-500">
-                    {t("payment") || "Payment"}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentTransactions.map((transaction) => (
-                  <tr key={transaction.id} className="border-b border-gray-100">
-                    <td className="py-3 px-2 font-mono text-gray-900">
-                      {transaction.id}
-                    </td>
-                    <td className="py-3 px-2 text-gray-600">
-                      {transaction.time}
-                    </td>
-                    <td className="py-3 px-2 text-gray-900">
-                      {transaction.items}
-                    </td>
-                    <td className="py-3 px-2 font-semibold text-gray-900">
-                      ₹{transaction.amount}
-                    </td>
-                    <td className="py-3 px-2">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        transaction.payment === 'Cash' 
-                          ? 'bg-green-100 text-green-800'
-                          : transaction.payment === 'UPI'
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-purple-100 text-purple-800'
-                      }`}>
-                        {transaction.payment}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        {/* Optional Footer Section */}
+        <div className="text-center mt-12 sm:mt-16">
+          <p className="text-gray-500 text-sm sm:text-base">
+            Need help? Contact support or check the user guide
+          </p>
         </div>
       </div>
     </div>
-  );
+  )
 }
+
+export default PosHomePage

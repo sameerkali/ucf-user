@@ -1,4 +1,4 @@
-1.delete api in kisaab post 
-2. pos after login details like account and other 
-3. kisaan fullfillment api
+1. GET: api/requests/getAll || PATCH: api/requests/updateStatus (for accepting and rejecting the kisaan's profiles after signup) 
+2.make farmers acc from POS PODT :/api/pos/farmers
 
+3.  POST intent: buy: /api/posts/create || intent: sell: /api/posts/create
