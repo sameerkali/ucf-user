@@ -38,7 +38,6 @@ const SettingsPage: React.FC = () => {
   const appVersion = "v1.2.3";
 
   useEffect(() => {
-    // Get profile data from localStorage instead of API call
     const getProfileFromStorage = () => {
       setLoading(true);
       try {

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Camera, Video, X, Calendar, Package, IndianRupee, Loader2, Upload, MapPin, Trash2 } from "lucide-react";
+import { Camera, Video, X, Calendar, Package, IndianRupee, Loader2, Upload, MapPin, Trash2, AlertTriangle } from "lucide-react";
 import { ILLUSTRATIONS } from "../assets/assets";
 // import { useTranslation } from "react-i18next";
 import api from "../api/axios";
 import toast from "react-hot-toast";
+import DeleteModal from "../components/DeleteModal";
 
 interface Crop {
   name: string;
@@ -83,6 +84,10 @@ interface User {
   updatedAt: string;
 }
 
+
+
+
+
 export default function PostPage() {
   const navigate = useNavigate();
   // const { t } = useTranslation();
@@ -91,8 +96,15 @@ export default function PostPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [fetchingPosts, setFetchingPosts] = useState(true);
   const [kisaanId, setKisaanId] = useState<string | null>(null);
+  
+  // Delete modal states
+  const [deleteModal, setDeleteModal] = useState({
+    isOpen: false,
+    postId: "",
+    postTitle: "",
+    isDeleting: false,
+  });
 
-  // Initial form state
   const initialFormState: FormData = {
     title: "",
     description: "",
@@ -352,14 +364,8 @@ export default function PostPage() {
       console.log("Response data:", response.data);
       console.log("Response status:", response.status);
 
-      // Check for different success conditions
-      const isSuccess = 
-        response.data?.success === true || 
-        response.data?.status_code === 200 || 
-        response.status === 200 || 
-        response.status === 201;
-
-      if (isSuccess) {
+      // Check for the exact success message from your API
+      if (response.data?.message === "Post created successfully") {
         console.log("Post created successfully");
         
         // Show success toast
@@ -400,17 +406,67 @@ export default function PostPage() {
     setIsLoading(false);
   };
 
-  const handleDeletePost = async (postId: string) => {
-    if (!confirm("Are you sure you want to delete this post?")) return;
+  // Open delete modal
+  const openDeleteModal = (postId: string, postTitle: string) => {
+    setDeleteModal({
+      isOpen: true,
+      postId,
+      postTitle,
+      isDeleting: false,
+    });
+  };
+
+  // Close delete modal
+  const closeDeleteModal = () => {
+    if (!deleteModal.isDeleting) {
+      setDeleteModal({
+        isOpen: false,
+        postId: "",
+        postTitle: "",
+        isDeleting: false,
+      });
+    }
+  };
+
+  // Confirm delete post with the new API
+  const confirmDeletePost = async () => {
+    if (!deleteModal.postId) return;
+
+    setDeleteModal(prev => ({ ...prev, isDeleting: true }));
 
     try {
-      const { data } = await api.delete(`/api/posts/${postId}`);
-      if (data.success || data.status_code === 200) {
-        toast.success("Post deleted successfully!");
-        setPosts((prev) => prev.filter((post) => post._id !== postId));
+      const response = await api.delete("/api/posts/delete", {
+        data: {
+          postId: deleteModal.postId
+        }
+      });
+
+      if (response.data?.success || response.data?.message || response.status === 200) {
+        toast.success("Post deleted successfully!", {
+          duration: 3000,
+          position: 'top-center',
+        });
+        
+        // Remove the post from the local state
+        setPosts((prev) => prev.filter((post) => post._id !== deleteModal.postId));
+        
+        // Close the modal
+        closeDeleteModal();
+      } else {
+        throw new Error("Unexpected response format");
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to delete post");
+      console.error("Error deleting post:", error);
+      toast.error(
+        error.response?.data?.message || 
+        error.message || 
+        "Failed to delete post. Please try again.", 
+        {
+          duration: 4000,
+          position: 'top-center',
+        }
+      );
+      setDeleteModal(prev => ({ ...prev, isDeleting: false }));
     }
   };
 
@@ -858,7 +914,7 @@ export default function PostPage() {
                 </div>
                 
                 <button
-                  onClick={() => handleDeletePost(post._id)}
+                  onClick={() => openDeleteModal(post._id, post.title)}
                   className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-colors"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -923,37 +979,48 @@ export default function PostPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 py-4 lg:py-8">
-      <div className="max-w-7xl mx-auto px-4">
-        {/* Enhanced Tab Navigation */}
-        <div className="bg-white rounded-2xl shadow-sm mb-8 p-2 flex max-w-md mx-auto lg:max-w-lg">
-          <button
-            onClick={() => handleTabChange("view")}
-            className={`flex-1 py-3 px-6 rounded-xl font-semibold transition-all duration-200 ${
-              activeTab === "view"
-                ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-md"
-                : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-            }`}
-          >
-            Your Posts
-          </button>
-          <button
-            onClick={() => handleTabChange("create")}
-            className={`flex-1 py-3 px-6 rounded-xl font-semibold transition-all duration-200 ${
-              activeTab === "create"
-                ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-md"
-                : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-            }`}
-          >
-            Create Post
-          </button>
-        </div>
+    <>
+      <div className="min-h-screen bg-gray-50 py-4 lg:py-8">
+        <div className="max-w-7xl mx-auto px-4">
+          {/* Enhanced Tab Navigation */}
+          <div className="bg-white rounded-2xl shadow-sm mb-8 p-2 flex max-w-md mx-auto lg:max-w-lg">
+            <button
+              onClick={() => handleTabChange("view")}
+              className={`flex-1 py-3 px-6 rounded-xl font-semibold transition-all duration-200 ${
+                activeTab === "view"
+                  ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-md"
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+              }`}
+            >
+              Your Posts
+            </button>
+            <button
+              onClick={() => handleTabChange("create")}
+              className={`flex-1 py-3 px-6 rounded-xl font-semibold transition-all duration-200 ${
+                activeTab === "create"
+                  ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-md"
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+              }`}
+            >
+              Create Post
+            </button>
+          </div>
 
-        {/* Content */}
-        <div className="bg-white rounded-2xl shadow-sm p-6 lg:p-8">
-          {activeTab === "create" ? renderCreatePost() : renderViewPosts()}
+          {/* Content */}
+          <div className="bg-white rounded-2xl shadow-sm p-6 lg:p-8">
+            {activeTab === "create" ? renderCreatePost() : renderViewPosts()}
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Delete Modal */}
+      <DeleteModal
+        isOpen={deleteModal.isOpen}
+        onClose={closeDeleteModal}
+        onConfirm={confirmDeletePost}
+        postTitle={deleteModal.postTitle}
+        isDeleting={deleteModal.isDeleting}
+      />
+    </>
   );
 }
