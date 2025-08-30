@@ -81,7 +81,7 @@ const SettingsPage: React.FC = () => {
     localStorage.removeItem("user");
     localStorage.removeItem("role");
     localStorage.removeItem("_grecaptcha");
-    navigate("/login");
+    navigate(`/login?role=${role}`);
   };
 
   const handleLanguageSelect = (langCode: LanguageCode) => {
