@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Calendar, MapPin, Package, IndianRupee, Camera, Video, Loader2, Sprout, ShoppingCart, RefreshCw } from 'lucide-react';
+import { Calendar, MapPin, Package, IndianRupee, Camera, Video, Loader2, ShoppingCart } from 'lucide-react';
 import { ILLUSTRATIONS } from '../assets/assets';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
 import FulfillmentModal from '../components/FulfillmentModal';
 
-// Shared interfaces that both HomePage and FulfillmentModal will use
+// Shared interfaces - consistent with FulfillmentModal
 interface Crop {
   name: string;
   type: string;
-  quantity: number; // API returns number
-  pricePerQuintal: number; // API returns number
+  quantity: number; // Changed to number for consistency
+  pricePerQuintal: number; // Changed to number for consistency
 }
 
 interface Location {
@@ -83,8 +83,8 @@ const HomePage: React.FC = () => {
         throw new Error(data.message || 'Failed to fetch posts');
       }
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
 
@@ -127,10 +127,6 @@ const HomePage: React.FC = () => {
     setSelectedPost(null);
   };
 
-  const handleFulfillmentSuccess = (): void => {
-    // This will be handled by the mutation's onSuccess
-  };
-
   const handleRefresh = async (): Promise<void> => {
     try {
       await fetchPosts();
@@ -140,7 +136,6 @@ const HomePage: React.FC = () => {
     }
   };
 
-  // Handle error case with proper error handling
   React.useEffect(() => {
     if (error) {
       console.error('Error fetching posts:', error);
@@ -188,7 +183,6 @@ const HomePage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-4 lg:py-8">
       <div className="max-w-7xl mx-auto px-4">
-        {/* Posts Section */}
         {posts.length === 0 ? (
           <div className="text-center py-20 bg-white rounded-2xl shadow-sm">
             <img
@@ -370,7 +364,7 @@ const HomePage: React.FC = () => {
           post={selectedPost}
           isOpen={isModalOpen}
           onClose={handleCloseModal}
-          onSuccess={handleFulfillmentSuccess}
+          onSuccess={() => {}}
           fulfillmentMutation={fulfillmentMutation}
         />
       )}

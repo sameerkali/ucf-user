@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Camera, Video, X, Calendar, Package, IndianRupee, Loader2, Upload, MapPin, Trash2, AlertTriangle } from "lucide-react";
+import { Camera, Video, X, Calendar, Package, IndianRupee, Loader2, Upload, MapPin, Trash2 } from "lucide-react";
 import { ILLUSTRATIONS } from "../assets/assets";
 // import { useTranslation } from "react-i18next";
 import api from "../api/axios";
