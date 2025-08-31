@@ -253,7 +253,7 @@ export default function ProfileComplete() {
           formDataObj.append("maxCropCapacity", formData.maxCropCapacity);
         }
 
-        const response = await api.post("/api/other-details/add", formDataObj, {
+        const response = await api.post("/api/other-details/add", formDataObj, { 
           headers: {
             "Content-Type": "multipart/form-data",
           },
