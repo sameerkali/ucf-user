@@ -38,6 +38,7 @@ import { Toaster } from "react-hot-toast";
 import Profile from "./components/Profile";
 import PosCreatePost from "./pos-pages/PosCreatePost";
 import PosFulfillment from "./pos-pages/PosFulfillment";
+import CropDetailsPage from "./components/CropDetailsPage";
 
 
 // Authentication guard for protected routes
@@ -166,6 +167,7 @@ export default function App() {
           {/* Kisaan routes */}
           <Route element={<KisaanLayout />}>
             <Route path="/kisaan/home" element={<HomePage />} />
+            <Route path="/kisaan/crop-details/:id" element={<CropDetailsPage />} />
             <Route path="/kisaan/posts" element={<PostsPage />} />
             <Route path="/kisaan/settings" element={<SettingsPage />} />
             <Route path="/kisaan/help" element={<HelpAndSupportPage />} />
