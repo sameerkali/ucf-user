@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Calendar, MapPin, Package, IndianRupee, Camera, Video, Loader2, ShoppingCart } from 'lucide-react';
+import { Calendar, MapPin, Package, IndianRupee, Camera, Video, Loader2, ShoppingCart, ChevronDown, ChevronUp } from 'lucide-react';
 import { ILLUSTRATIONS } from '../assets/assets';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
@@ -11,8 +11,8 @@ import Carousel from '../components/Carousel';
 interface Crop {
   name: string;
   type: string;
-  quantity: number; // Changed to number for consistency
-  pricePerQuintal: number; // Changed to number for consistency
+  quantity: number;
+  pricePerQuintal: number;
 }
 
 interface Location {
@@ -65,16 +65,15 @@ const HomePage: React.FC = () => {
   const queryClient = useQueryClient();
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [expandedCard, setExpandedCard] = useState<string | null>(null);
 
   // carousel
-    const dummyImages = [
+  const dummyImages = [
     'https://picsum.photos/800/400?random=1',
     'https://picsum.photos/800/400?random=2',
     'https://picsum.photos/800/400?random=3',
     'https://picsum.photos/800/400?random=4'
   ];
-    // carousel
-
 
   // React Query for fetching posts
   const {
@@ -128,7 +127,8 @@ const HomePage: React.FC = () => {
     return `${location.village}, ${location.tehsil}, ${location.district}, ${location.state}`;
   };
 
-  const handleFulfillmentClick = (post: Post): void => {
+  const handleFulfillmentClick = (post: Post, e: React.MouseEvent): void => {
+    e.stopPropagation();
     setSelectedPost(post);
     setIsModalOpen(true);
   };
@@ -136,6 +136,10 @@ const HomePage: React.FC = () => {
   const handleCloseModal = (): void => {
     setIsModalOpen(false);
     setSelectedPost(null);
+  };
+
+  const toggleCardExpansion = (postId: string): void => {
+    setExpandedCard(expandedCard === postId ? null : postId);
   };
 
   const handleRefresh = async (): Promise<void> => {
@@ -193,13 +197,14 @@ const HomePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-4 lg:py-8">
-        <Carousel 
+      <Carousel 
         images={dummyImages}
         autoSlide={true}
         slideInterval={4000}
-        className="h-64 md:h-96 "
-         onImageClick={(index, url) => console.log('Product image clicked:',index, url)}
+        className="h-64 md:h-96 mb-6"
+        onImageClick={(index, url) => console.log('Product image clicked:', index, url)}
       />
+      
       <div className="max-w-7xl mx-auto px-4">
         {posts.length === 0 ? (
           <div className="text-center py-20 bg-white rounded-2xl shadow-sm">
@@ -224,153 +229,354 @@ const HomePage: React.FC = () => {
           </div>
         ) : (
           <>
-            {/* Stats Bar */}
-            <div className="bg-white rounded-2xl shadow-sm p-6 mb-8">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-green-600">{posts.length}</div>
-                  <div className="text-gray-600 font-medium">Total Posts</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-blue-600">
-                    {posts.filter((post: Post) => post.status === 'active').length}
-                  </div>
-                  <div className="text-gray-600 font-medium">Active Posts</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-orange-600">
-                    {posts.reduce((acc: number, post: Post) => acc + (post.crops?.length || 0), 0)}
-                  </div>
-                  <div className="text-gray-600 font-medium">Crop Varieties</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-purple-600">
-                    {posts.reduce((acc: number, post: Post) => acc + (post.photos?.length || 0) + (post.videos?.length || 0), 0)}
-                  </div>
-                  <div className="text-gray-600 font-medium">Media Files</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Posts Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-              {posts.map((post: Post) => (
-                <div
-                  key={post._id}
-                  className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all duration-200 hover:-translate-y-1"
-                >
-                  {/* Post Header */}
-                  <div className="mb-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        post.status === 'active' 
-                          ? 'bg-green-100 text-green-700' 
-                          : 'bg-gray-100 text-gray-700'
-                      }`}>
-                        {post.status.charAt(0).toUpperCase() + post.status.slice(1)}
-                      </span>
-                      <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
-                        {post.type.replace('_', ' ')}
-                      </span>
-                    </div>
-                    
-                    <h3 className="font-bold text-gray-900 text-xl mb-2 line-clamp-2">
-                      {post.title}
-                    </h3>
-                    <p className="text-gray-600 text-sm line-clamp-3 leading-relaxed">
-                      {post.description}
-                    </p>
-                  </div>
-
-                  {/* Post Details */}
-                  <div className="space-y-3 mb-4">
-                    <div className="flex items-center gap-2 text-sm text-gray-500">
-                      <Calendar className="w-4 h-4" />
-                      <span>Ready: {formatDate(post.readyByDate)}</span>
-                    </div>
-                    
-                    <div className="flex items-start gap-2 text-sm text-gray-500">
-                      <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                      <span className="line-clamp-2">{formatLocation(post.location)}</span>
-                    </div>
-                  </div>
-
-                  {/* Crop Details */}
-                  {post.crops && post.crops.length > 0 ? (
-                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 mb-4">
-                      <h4 className="font-semibold text-green-800 mb-3 flex items-center gap-2">
-                        <Package className="w-4 h-4" />
-                        Crop Details
-                      </h4>
-                      <div className="space-y-3">
-                        {post.crops.map((crop: Crop, index: number) => (
-                          <div key={index} className="bg-white rounded-lg p-3 shadow-sm">
-                            <div className="flex justify-between items-center mb-2">
-                              <h5 className="font-semibold text-green-800">{crop.name}</h5>
-                              <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
-                                {crop.type}
-                              </span>
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">Available Crops</h2>
+            
+            {/* Mobile: Horizontal Scrolling Cards */}
+            <div className="lg:hidden">
+              <div className="overflow-x-auto pb-4">
+                <div className="flex gap-4" style={{ scrollSnapType: 'x mandatory' }}>
+                  {posts.map((post: Post) => (
+                    <div key={post._id} className="flex-shrink-0" style={{ scrollSnapAlign: 'start' }}>
+                      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-200 w-72">
+                        {/* Compact Card Header */}
+                        <div 
+                          className="p-4 cursor-pointer"
+                          onClick={() => toggleCardExpansion(post._id)}
+                        >
+                          <div className="flex gap-3">
+                            {/* Image - 40% */}
+                            <div className="w-24 h-24 flex-shrink-0 rounded-xl overflow-hidden">
+                              <img 
+                                src={ILLUSTRATIONS.kisaan07} 
+                                alt="Crop illustration"
+                                className="w-full h-full object-cover"
+                              />
                             </div>
-                            <div className="grid grid-cols-2 gap-3 text-sm">
-                              <div className="flex items-center gap-2">
-                                <Package className="w-3 h-3 text-green-600" />
-                                <span className="text-gray-700">{crop.quantity} quintals</span>
+                            
+                            {/* Content - 60% */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                  post.status === 'active' 
+                                    ? 'bg-green-100 text-green-700' 
+                                    : 'bg-gray-100 text-gray-700'
+                                }`}>
+                                  {post.status}
+                                </span>
+                                <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                                  {post.type.replace('_', ' ')}
+                                </span>
                               </div>
-                              <div className="flex items-center gap-2">
-                                <IndianRupee className="w-3 h-3 text-green-600" />
-                                <span className="text-gray-700">₹{crop.pricePerQuintal}/quintal</span>
+                              
+                              <h3 className="font-bold text-gray-900 text-sm mb-1 line-clamp-1">
+                                {post.title}
+                              </h3>
+                              
+                              {/* Crop Info */}
+                              {post.crops && post.crops.length > 0 && (
+                                <div className="space-y-1">
+                                  <p className="text-sm font-semibold text-green-800">
+                                    {post.crops[0].name}
+                                  </p>
+                                  <p className="text-xs text-gray-600">
+                                    {post.crops[0].type}
+                                  </p>
+                                  <div className="flex items-center justify-between text-xs">
+                                    <span className="text-gray-700">
+                                      {post.crops[0].quantity} quintals
+                                    </span>
+                                    <span className="text-green-700 font-semibold">
+                                      ₹{post.crops[0].pricePerQuintal}/q
+                                    </span>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          
+                          {/* Expand/Collapse Indicator */}
+                          <div className="flex justify-center mt-3">
+                            {expandedCard === post._id ? (
+                              <ChevronUp className="w-4 h-4 text-gray-400" />
+                            ) : (
+                              <ChevronDown className="w-4 h-4 text-gray-400" />
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Expanded Details */}
+                        {expandedCard === post._id && (
+                          <div className="px-4 pb-4 border-t border-gray-100 bg-gray-50 rounded-b-2xl">
+                            <div className="pt-4 space-y-4">
+                              {/* Description */}
+                              <div>
+                                <p className="text-gray-600 text-sm leading-relaxed">
+                                  {post.description}
+                                </p>
+                              </div>
+
+                              {/* Date & Location */}
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2 text-sm text-gray-500">
+                                  <Calendar className="w-4 h-4" />
+                                  <span>Ready: {formatDate(post.readyByDate)}</span>
+                                </div>
+                                
+                                <div className="flex items-start gap-2 text-sm text-gray-500">
+                                  <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                                  <span className="line-clamp-2">{formatLocation(post.location)}</span>
+                                </div>
+                              </div>
+
+                              {/* All Crops */}
+                              {post.crops && post.crops.length > 1 && (
+                                <div className="bg-white rounded-xl p-3">
+                                  <h4 className="font-semibold text-green-800 mb-2 text-sm flex items-center gap-2">
+                                    <Package className="w-4 h-4" />
+                                    All Available Crops
+                                  </h4>
+                                  <div className="space-y-2">
+                                    {post.crops.slice(1).map((crop: Crop, index: number) => (
+                                      <div key={index} className="bg-green-50 rounded-lg p-2">
+                                        <div className="flex justify-between items-center mb-1">
+                                          <h5 className="font-semibold text-green-800 text-sm">{crop.name}</h5>
+                                          <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                                            {crop.type}
+                                          </span>
+                                        </div>
+                                        <div className="flex justify-between text-xs">
+                                          <span className="text-gray-700">{crop.quantity} quintals</span>
+                                          <span className="text-green-700 font-semibold">₹{crop.pricePerQuintal}/q</span>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Media Info */}
+                              {(post.photos.length > 0 || post.videos.length > 0) && (
+                                <div className="flex items-center gap-4 p-3 bg-white rounded-xl">
+                                  {post.photos.length > 0 && (
+                                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                                      <Camera className="w-4 h-4 text-blue-500" />
+                                      <span>{post.photos.length} photo{post.photos.length > 1 ? 's' : ''}</span>
+                                    </div>
+                                  )}
+                                  {post.videos.length > 0 && (
+                                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                                      <Video className="w-4 h-4 text-purple-500" />
+                                      <span>{post.videos.length} video{post.videos.length > 1 ? 's' : ''}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Action Button */}
+                              {post.status === 'active' && post.crops && post.crops.length > 0 && (
+                                <button
+                                  onClick={(e) => handleFulfillmentClick(post, e)}
+                                  className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold py-3 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+                                >
+                                  <ShoppingCart className="w-4 h-4" />
+                                  Request Fulfillment
+                                </button>
+                              )}
+
+                              {/* Post Footer */}
+                              <div className="pt-2 border-t border-gray-200">
+                                <div className="flex items-center justify-between text-xs text-gray-400">
+                                  <span>Posted {formatDate(post.createdAt)}</span>
+                                  <span>By {post.createdBy.role}</span>
+                                </div>
                               </div>
                             </div>
                           </div>
-                        ))}
+                        )}
                       </div>
                     </div>
-                  ) : (
-                    <div className="bg-gray-50 rounded-xl p-4 mb-4 text-center">
-                      <p className="text-gray-500 text-sm italic">No crop details available</p>
-                    </div>
-                  )}
-
-                  {/* Media Indicators */}
-                  {(post.photos.length > 0 || post.videos.length > 0) && (
-                    <div className="flex items-center gap-4 pt-4 border-t border-gray-100 mb-4">
-                      {post.photos.length > 0 && (
-                        <div className="flex items-center gap-2 text-sm text-gray-500">
-                          <Camera className="w-4 h-4 text-blue-500" />
-                          <span>{post.photos.length} photo{post.photos.length > 1 ? 's' : ''}</span>
-                        </div>
-                      )}
-                      {post.videos.length > 0 && (
-                        <div className="flex items-center gap-2 text-sm text-gray-500">
-                          <Video className="w-4 h-4 text-purple-500" />
-                          <span>{post.videos.length} video{post.videos.length > 1 ? 's' : ''}</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Fulfillment Button */}
-                  {post.status === 'active' && post.crops && post.crops.length > 0 && (
-                    <div className="mb-4">
-                      <button
-                        onClick={() => handleFulfillmentClick(post)}
-                        className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold py-3 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
-                      >
-                        <ShoppingCart className="w-4 h-4" />
-                        Request Fulfillment
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Post Footer */}
-                  <div className="pt-4 border-t border-gray-100">
-                    <div className="flex items-center justify-between text-xs text-gray-400">
-                      <span>Posted {formatDate(post.createdAt)}</span>
-                      <span>By {post.createdBy.role}</span>
-                    </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
+              </div>
+
+              {/* Scroll Indicator */}
+              <div className="text-center mt-4">
+                <p className="text-sm text-gray-500">← Swipe to see more crops →</p>
+              </div>
+            </div>
+
+            {/* Desktop: Grid Layout */}
+            <div className="hidden lg:block">
+              <div className="grid grid-cols-1 xl:grid-cols-1 gap-6">
+                {posts.map((post: Post) => (
+                  <div key={post._id} className="bg-white border border-gray-200 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-200">
+                    {/* Desktop Compact Card Header */}
+                    <div 
+                      className="p-6 cursor-pointer"
+                      onClick={() => toggleCardExpansion(post._id)}
+                    >
+                      <div className="flex gap-6">
+                        {/* Image - 40% on large screens */}
+                        <div className="w-32 h-32 flex-shrink-0 rounded-xl overflow-hidden">
+                          <img 
+                            src={ILLUSTRATIONS.kisaan07} 
+                            alt="Crop illustration"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        
+                        {/* Content - 60% */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                                post.status === 'active' 
+                                  ? 'bg-green-100 text-green-700' 
+                                  : 'bg-gray-100 text-gray-700'
+                              }`}>
+                                {post.status.charAt(0).toUpperCase() + post.status.slice(1)}
+                              </span>
+                              <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+                                {post.type.replace('_', ' ')}
+                              </span>
+                            </div>
+                            
+                            {/* Expand/Collapse Indicator */}
+                            {expandedCard === post._id ? (
+                              <ChevronUp className="w-5 h-5 text-gray-400" />
+                            ) : (
+                              <ChevronDown className="w-5 h-5 text-gray-400" />
+                            )}
+                          </div>
+                          
+                          <h3 className="font-bold text-gray-900 text-xl mb-2">
+                            {post.title}
+                          </h3>
+                          
+                          {/* Primary Crop Info */}
+                          {post.crops && post.crops.length > 0 && (
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                              <div>
+                                <p className="text-sm text-gray-500 mb-1">Crop</p>
+                                <p className="font-semibold text-green-800">{post.crops[0].name}</p>
+                              </div>
+                              <div>
+                                <p className="text-sm text-gray-500 mb-1">Type</p>
+                                <p className="font-medium text-gray-700">{post.crops[0].type}</p>
+                              </div>
+                              <div>
+                                <p className="text-sm text-gray-500 mb-1">Quantity</p>
+                                <p className="font-medium text-gray-700">{post.crops[0].quantity} quintals</p>
+                              </div>
+                              <div>
+                                <p className="text-sm text-gray-500 mb-1">Price</p>
+                                <p className="font-semibold text-green-700">₹{post.crops[0].pricePerQuintal}/quintal</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Desktop Expanded Details */}
+                    {expandedCard === post._id && (
+                      <div className="px-6 pb-6 border-t border-gray-100 bg-gray-50 rounded-b-2xl">
+                        <div className="pt-6 space-y-6">
+                          {/* Description */}
+                          <div>
+                            <h4 className="font-semibold text-gray-800 mb-2">Description</h4>
+                            <p className="text-gray-600 leading-relaxed">
+                              {post.description}
+                            </p>
+                          </div>
+
+                          {/* Date & Location */}
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                            <div className="flex items-center gap-2 text-gray-500">
+                              <Calendar className="w-4 h-4" />
+                              <span>Ready: {formatDate(post.readyByDate)}</span>
+                            </div>
+                            
+                            <div className="flex items-center gap-2 text-gray-500">
+                              <MapPin className="w-4 h-4" />
+                              <span>{formatLocation(post.location)}</span>
+                            </div>
+                          </div>
+
+                          {/* All Crops Details */}
+                          {post.crops && post.crops.length > 0 && (
+                            <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6">
+                              <h4 className="font-semibold text-green-800 mb-4 flex items-center gap-2">
+                                <Package className="w-5 h-5" />
+                                All Available Crops
+                              </h4>
+                              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                {post.crops.map((crop: Crop, index: number) => (
+                                  <div key={index} className="bg-white rounded-lg p-4 shadow-sm">
+                                    <div className="flex justify-between items-center mb-3">
+                                      <h5 className="font-semibold text-green-800 text-lg">{crop.name}</h5>
+                                      <span className="text-sm bg-green-100 text-green-700 px-3 py-1 rounded-full">
+                                        {crop.type}
+                                      </span>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                      <div className="flex items-center gap-2">
+                                        <Package className="w-4 h-4 text-green-600" />
+                                        <span className="text-gray-700">{crop.quantity} quintals</span>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <IndianRupee className="w-4 h-4 text-green-600" />
+                                        <span className="text-gray-700">₹{crop.pricePerQuintal}/quintal</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Media Info */}
+                          {(post.photos.length > 0 || post.videos.length > 0) && (
+                            <div className="flex items-center gap-6 p-4 bg-white rounded-xl">
+                              {post.photos.length > 0 && (
+                                <div className="flex items-center gap-2 text-gray-600">
+                                  <Camera className="w-4 h-4 text-blue-500" />
+                                  <span>{post.photos.length} photo{post.photos.length > 1 ? 's' : ''}</span>
+                                </div>
+                              )}
+                              {post.videos.length > 0 && (
+                                <div className="flex items-center gap-2 text-gray-600">
+                                  <Video className="w-4 h-4 text-purple-500" />
+                                  <span>{post.videos.length} video{post.videos.length > 1 ? 's' : ''}</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Action Button */}
+                          {post.status === 'active' && post.crops && post.crops.length > 0 && (
+                            <button
+                              onClick={(e) => handleFulfillmentClick(post, e)}
+                              className="w-full lg:w-auto px-8 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold py-4 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+                            >
+                              <ShoppingCart className="w-5 h-5" />
+                              Request Fulfillment
+                            </button>
+                          )}
+
+                          {/* Post Footer */}
+                          <div className="pt-4 border-t border-gray-200">
+                            <div className="flex items-center justify-between text-sm text-gray-400">
+                              <span>Posted {formatDate(post.createdAt)}</span>
+                              <span>By {post.createdBy.role}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           </>
         )}
