@@ -5,6 +5,7 @@ import { ILLUSTRATIONS } from '../assets/assets';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
 import FulfillmentModal from '../components/FulfillmentModal';
+import Carousel from '../components/Carousel';
 
 // Shared interfaces - consistent with FulfillmentModal
 interface Crop {
@@ -64,6 +65,16 @@ const HomePage: React.FC = () => {
   const queryClient = useQueryClient();
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+
+  // carousel
+    const dummyImages = [
+    'https://picsum.photos/800/400?random=1',
+    'https://picsum.photos/800/400?random=2',
+    'https://picsum.photos/800/400?random=3',
+    'https://picsum.photos/800/400?random=4'
+  ];
+    // carousel
+
 
   // React Query for fetching posts
   const {
@@ -182,6 +193,13 @@ const HomePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-4 lg:py-8">
+        <Carousel 
+        images={dummyImages}
+        autoSlide={true}
+        slideInterval={4000}
+        className="h-64 md:h-96 "
+         onImageClick={(index, url) => console.log('Product image clicked:',index, url)}
+      />
       <div className="max-w-7xl mx-auto px-4">
         {posts.length === 0 ? (
           <div className="text-center py-20 bg-white rounded-2xl shadow-sm">
