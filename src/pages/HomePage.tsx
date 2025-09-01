@@ -1,14 +1,13 @@
-import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Package, IndianRupee, Loader2, ShoppingCart } from 'lucide-react';
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Package, IndianRupee, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ILLUSTRATIONS } from '../assets/assets';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
-import FulfillmentModal from '../components/FulfillmentModal';
 import Carousel from '../components/Carousel';
 
-// Shared interfaces
+// Essential interfaces only
 interface Crop {
   name: string;
   type: string;
@@ -16,36 +15,12 @@ interface Crop {
   pricePerQuintal: number;
 }
 
-interface Location {
-  state: string;
-  district: string;
-  tehsil: string;
-  block: string;
-  village: string;
-  pincode: string;
-}
-
-interface CreatedBy {
-  id: string;
-  role: string;
-}
-
 interface Post {
   _id: string;
   type: string;
   title: string;
-  description: string;
   crops: Crop[];
-  readyByDate: string;
-  requiredByDate?: string;
-  photos: string[];
-  videos: string[];
-  location: Location;
   status: string;
-  createdAt: string;
-  updatedAt: string;
-  createdBy: CreatedBy;
-  __v?: number;
 }
 
 interface ApiResponse {
@@ -54,21 +29,10 @@ interface ApiResponse {
   data: Post[];
 }
 
-interface FulfillmentPayload {
-  postId: string;
-  crops: Array<{
-    name: string;
-    quantity: number;
-  }>;
-}
-
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
-  // carousel
+  // Carousel images
   const dummyImages = [
     'https://picsum.photos/800/400?random=1',
     'https://picsum.photos/800/400?random=2',
@@ -76,7 +40,7 @@ const HomePage: React.FC = () => {
     'https://picsum.photos/800/400?random=4'
   ];
 
-  // React Query for fetching posts
+  // Fetch posts
   const {
     data: posts = [],
     isLoading: loading,
@@ -98,34 +62,6 @@ const HomePage: React.FC = () => {
     gcTime: 10 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
-
-  // Fulfillment mutation
-  const fulfillmentMutation = useMutation({
-    mutationFn: async (fulfillmentData: FulfillmentPayload): Promise<any> => {
-      const { data } = await api.post('/api/fulfillments/create', fulfillmentData);
-      return data;
-    },
-    onSuccess: () => {
-      toast.success('Fulfillment request submitted successfully!');
-      handleCloseModal();
-      queryClient.invalidateQueries({ queryKey: ['posts'] });
-    },
-    onError: (error: any) => {
-      const errorMessage = error?.response?.data?.message || error.message || 'Failed to submit fulfillment request';
-      toast.error(errorMessage);
-    }
-  });
-
-  const handleFulfillmentClick = (post: Post, e: React.MouseEvent): void => {
-    e.stopPropagation();
-    setSelectedPost(post);
-    setIsModalOpen(true);
-  };
-
-  const handleCloseModal = (): void => {
-    setIsModalOpen(false);
-    setSelectedPost(null);
-  };
 
   const handleCardClick = (post: Post): void => {
     navigate(`/kisaan/crop-details/${post._id}`, { state: { post } });
@@ -230,7 +166,7 @@ const HomePage: React.FC = () => {
                         className="bg-white border border-gray-200 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-200 w-72 cursor-pointer overflow-hidden"
                         onClick={() => handleCardClick(post)}
                       >
-                        {/* Image - 40% height, no padding */}
+                        {/* Image - 40% height */}
                         <div className="h-32 w-full">
                           <img 
                             src={ILLUSTRATIONS.kisaan07} 
@@ -241,29 +177,11 @@ const HomePage: React.FC = () => {
                         
                         {/* Content - 60% */}
                         <div className="p-4 h-48 flex flex-col">
-                          {/* Status badges */}
-                          <div className="flex items-center gap-2 mb-3">
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              post.status === 'active' 
-                                ? 'bg-green-100 text-green-700' 
-                                : 'bg-gray-100 text-gray-700'
-                            }`}>
-                              {post.status}
-                            </span>
-                            <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
-                              {post.type.replace('_', ' ')}
-                            </span>
-                          </div>
                           
-                          {/* Title */}
-                          <h3 className="font-bold text-gray-900 text-sm mb-3 line-clamp-2">
-                            {post.title}
-                          </h3>
                           
-                          {/* Primary Crop Info - Only essential details */}
+                          {/* Crop Info */}
                           {post.crops && post.crops.length > 0 && (
                             <div className="flex-1 space-y-3">
-                              {/* Crop Name */}
                               <div>
                                 <p className="font-bold text-green-800 text-lg">
                                   {post.crops[0].name}
@@ -273,7 +191,6 @@ const HomePage: React.FC = () => {
                                 </p>
                               </div>
                               
-                              {/* Quantity and Price */}
                               <div className="space-y-2">
                                 <div className="flex items-center gap-2">
                                   <Package className="w-4 h-4 text-gray-500" />
@@ -307,7 +224,7 @@ const HomePage: React.FC = () => {
                     className="bg-white border border-gray-200 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-200 cursor-pointer overflow-hidden group"
                     onClick={() => handleCardClick(post)}
                   >
-                    {/* Image - 40% height, no padding */}
+                    {/* Image - 40% height */}
                     <div className="h-40 w-full relative">
                       <img 
                         src={ILLUSTRATIONS.kisaan07} 
@@ -319,25 +236,11 @@ const HomePage: React.FC = () => {
                     {/* Content - 60% */}
                     <div className="p-4 h-60 flex flex-col">
                       {/* Status badges */}
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          post.status === 'active' 
-                            ? 'bg-green-100 text-green-700' 
-                            : 'bg-gray-100 text-gray-700'
-                        }`}>
-                          {post.status}
-                        </span>
-                        <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
-                          {post.type.replace('_', ' ')}
-                        </span>
-                      </div>
+                     
                       
-                      {/* Title */}
-                      <h3 className="font-bold text-gray-900 text-sm mb-4 line-clamp-2">
-                        {post.title}
-                      </h3>
+                   
                       
-                      {/* Primary Crop Info - Only essential details */}
+                      {/* Crop Info */}
                       {post.crops && post.crops.length > 0 && (
                         <div className="flex-1 flex flex-col justify-center space-y-4">
                           {/* Crop Name & Type */}
@@ -380,17 +283,6 @@ const HomePage: React.FC = () => {
           </>
         )}
       </div>
-
-      {/* Fulfillment Modal */}
-      {isModalOpen && selectedPost && (
-        <FulfillmentModal
-          post={selectedPost}
-          isOpen={isModalOpen}
-          onClose={handleCloseModal}
-          onSuccess={() => {}}
-          fulfillmentMutation={fulfillmentMutation}
-        />
-      )}
     </div>
   );
 };
