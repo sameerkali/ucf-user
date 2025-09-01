@@ -7,11 +7,8 @@ import {
   MapPin, 
   Package, 
   IndianRupee, 
-  Camera, 
-  Video, 
   ShoppingCart,
   User,
-  Clock
 } from 'lucide-react';
 import { ILLUSTRATIONS } from '../assets/assets';
 import api from '../api/axios';
