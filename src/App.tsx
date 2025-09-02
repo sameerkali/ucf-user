@@ -16,7 +16,6 @@ import HelpAndSupportPage from "./pages/HelpAndSupportPage";
 import LandingPage from "./pages/LandingPage";
 import ProfileComplete from "./pages/profileComplete/ProfileCompletePage";
 
-
 // POS Pages
 import PosHomePage from "./pos-pages/PosHomePage";
 import PosTransactionsPage from "./pos-pages/PosTransactionsPage";
@@ -24,9 +23,8 @@ import PosHelpAndSupportPage from "./pos-pages/PosHelpAndSupportPage";
 import CreateFarmerAccount from "./pos-pages/CreateFarmerAccount";
 import ReviewRequests from "./pos-pages/ReviewRequests";
 
-
-
 import OfflineBanner from "./components/OfflineBanner";
+import VerificationPendingBanner from "./components/VerificationPendingBanner";
 import InstallBanner from "./components/InstallBanner";
 import Header from "./components/Headr";
 import PosHeader from "./components/PosHeader";
@@ -40,7 +38,6 @@ import PosCreatePost from "./pos-pages/PosCreatePost";
 import PosFulfillment from "./pos-pages/PosFulfillment";
 import CropDetailsPage from "./components/CropDetailsPage";
 import CreatePostPage from "./pages/CreatePostPage";
-
 
 // Authentication guard for protected routes
 function RequireAuth() {
@@ -64,10 +61,14 @@ function RedirectIfAuthenticated() {
   return <Outlet />;
 }
 
-
-// Role-based layout components
+// Role-based layout components with banners inside
 const KisaanLayout = () => (
   <>
+    {/* Banners at the top of the layout */}
+    <OfflineBanner />
+    <VerificationPendingBanner />
+    <InstallBanner />
+    
     <Header />
     <main className="min-h-screen pb-16 md:pb-0">
       <Outlet />
@@ -76,9 +77,13 @@ const KisaanLayout = () => (
   </>
 );
 
-
 const PosLayout = () => (
   <>
+    {/* Banners at the top of the layout */}
+    <OfflineBanner />
+    <VerificationPendingBanner />
+    <InstallBanner />
+    
     <PosHeader />
     <main className="min-h-screen pb-16 md:pb-0">
       <Outlet />
@@ -86,7 +91,6 @@ const PosLayout = () => (
     <PosDock />
   </>
 );
-
 
 // Role-based route wrapper
 function RoleBasedLayout() {
@@ -99,7 +103,6 @@ function RoleBasedLayout() {
   }
 }
 
-
 // Home page router based on role
 function RoleBasedHome() {
   const role = localStorage.getItem("role");
@@ -111,98 +114,86 @@ function RoleBasedHome() {
   }
 }
 
-
 export default function App() {
   const isLoading = useAppLoading();
 
-
   const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000,
-      gcTime: 10 * 60 * 1000,
-      refetchOnWindowFocus: false,
+    defaultOptions: {
+      queries: {
+        staleTime: 5 * 60 * 1000,
+        gcTime: 10 * 60 * 1000,
+        refetchOnWindowFocus: false,
+      },
     },
-  },
-});
-
+  });
 
   if (isLoading) {
     return <LoadingScreen />;
   }
 
-
   return (
     <QueryClientProvider client={queryClient}>
-
-
-    <BrowserRouter>
-      <Toaster
-        position="top-right"
-        toastOptions={{
-          duration: 3000,
-          style: {
-            background: "#363636",
-            color: "#fff",
-          },
-        }}
-      />
-      <OfflineBanner />
-      <InstallBanner />
-      <Routes>
-        {/* Redirect logged-in users from auth and landing pages */}
-        <Route element={<RedirectIfAuthenticated />}>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SignupPage />} />
-        </Route>
-
-        <Route path="/404" element={<NotFoundPage />} />
-
-
-        {/* Protected routes with role-based routing */}
-        <Route element={<RequireAuth />}>
-          {/* Role-based home redirect */}
-          <Route path="/home" element={<RoleBasedHome />} />
-          
-          {/* Kisaan routes */}
-          <Route element={<KisaanLayout />}>
-            <Route path="/kisaan/home" element={<HomePage />} />
-            <Route path="/kisaan/crop-details/:id" element={<CropDetailsPage />} />
-            <Route path="/kisaan/posts" element={<PostsPage />} />
-            <Route path="/kisaan/post-create" element={<CreatePostPage />} />
-            <Route path="/kisaan/settings" element={<SettingsPage />} />
-            <Route path="/kisaan/help" element={<HelpAndSupportPage />} />
-            <Route path="/kisaan/profile" element={<Profile />} />
+      <BrowserRouter>
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 3000,
+            style: {
+              background: "#363636",
+              color: "#fff",
+            },
+          }}
+        />
+        
+        <Routes>
+          {/* Redirect logged-in users from auth and landing pages */}
+          <Route element={<RedirectIfAuthenticated />}>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
           </Route>
 
+          <Route path="/404" element={<NotFoundPage />} />
 
-          {/* POS routes */}
-          <Route element={<PosLayout />}>
-            <Route path="/pos/home" element={<PosHomePage />} />
-            <Route path="/pos/transactions" element={<PosTransactionsPage />} />
-            <Route path="/pos/create-farmer-account" element={<CreateFarmerAccount />} />
-            <Route path="/pos/review-requests" element={<ReviewRequests />} />
-            <Route path="/pos/settings" element={<SettingsPage />} />
-            <Route path="/pos/help" element={<PosHelpAndSupportPage />} />
-            <Route path="/pos/profile" element={<Profile />} />
-            <Route path="/pos/create-post" element={<PosCreatePost />} />
-            <Route path="/pos/fulfillment-requests" element={<PosFulfillment />} />
+          {/* Protected routes with role-based routing */}
+          <Route element={<RequireAuth />}>
+            {/* Role-based home redirect */}
+            <Route path="/home" element={<RoleBasedHome />} />
             
+            {/* Kisaan routes */}
+            <Route element={<KisaanLayout />}>
+              <Route path="/kisaan/home" element={<HomePage />} />
+              <Route path="/kisaan/crop-details/:id" element={<CropDetailsPage />} />
+              <Route path="/kisaan/posts" element={<PostsPage />} />
+              <Route path="/kisaan/post-create" element={<CreatePostPage />} />
+              <Route path="/kisaan/settings" element={<SettingsPage />} />
+              <Route path="/kisaan/help" element={<HelpAndSupportPage />} />
+              <Route path="/kisaan/profile" element={<Profile />} />
+            </Route>
+
+            {/* POS routes */}
+            <Route element={<PosLayout />}>
+              <Route path="/pos/home" element={<PosHomePage />} />
+              <Route path="/pos/transactions" element={<PosTransactionsPage />} />
+              <Route path="/pos/create-farmer-account" element={<CreateFarmerAccount />} />
+              <Route path="/pos/review-requests" element={<ReviewRequests />} />
+              <Route path="/pos/settings" element={<SettingsPage />} />
+              <Route path="/pos/help" element={<PosHelpAndSupportPage />} />
+              <Route path="/pos/profile" element={<Profile />} />
+              <Route path="/pos/create-post" element={<PosCreatePost />} />
+              <Route path="/pos/fulfillment-requests" element={<PosFulfillment />} />
+            </Route>
+
+            {/* Shared routes with role-based layout */}
+            <Route element={<RoleBasedLayout />}>
+              <Route path="/complete-profile" element={<ProfileComplete />} />
+            </Route>
           </Route>
 
-
-          {/* Shared routes with role-based layout */}
-          <Route element={<RoleBasedLayout />}>
-            <Route path="/complete-profile" element={<ProfileComplete />} />
-          </Route>
-        </Route>
-
-
-        {/* Catch-all route */}
-        <Route path="*" element={<Navigate to="/404" replace />} />
-      </Routes>
-    </BrowserRouter>
+          {/* Catch-all route */}
+          <Route path="*" element={<Navigate to="/404" replace />} />
+        </Routes>
+      </BrowserRouter>
     </QueryClientProvider>
   );
 }

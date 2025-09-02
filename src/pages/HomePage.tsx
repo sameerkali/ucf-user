@@ -7,10 +7,9 @@ import toast from 'react-hot-toast';
 import Carousel from '../components/Carousel';
 import CropCardsList from '../components/CropCardsList';
 import DemandCategories from '../components/DemandCategories';
+import MobileHeader from '../components/MobileHeader';
 import type { Post } from '../components/CropCard';
 import { CarouselSkeleton, CategoriesSkeleton, PostsSkeleton } from '../utils/Skeletons';
-
-
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
@@ -85,25 +84,30 @@ const HomePage: React.FC = () => {
   // Error State (only for critical errors that prevent the entire page from loading)
   if (error && !posts.length && !postsLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto p-8">
-          <img
-            src={ILLUSTRATIONS.kisaan08}
-            alt="Error"
-            className="w-32 h-32 mx-auto mb-6 object-contain opacity-60"
-          />
-          <h3 className="text-xl font-semibold text-gray-700 mb-3">Something went wrong</h3>
-          <p className="text-gray-500 mb-6">
-            {error instanceof Error ? error.message : 'Network error occurred'}
-          </p>
-          <button
-            onClick={handleRefresh}
-            className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-xl hover:from-green-600 hover:to-emerald-600 transition-all shadow-lg"
-          >
-            Try Again
-          </button>
+      <>
+        {/* Mobile Header */}
+        
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center pt-16 md:pt-0">
+        <MobileHeader />
+          <div className="text-center max-w-md mx-auto p-8">
+            <img
+              src={ILLUSTRATIONS.kisaan08}
+              alt="Error"
+              className="w-32 h-32 mx-auto mb-6 object-contain opacity-60"
+            />
+            <h3 className="text-xl font-semibold text-gray-700 mb-3">Something went wrong</h3>
+            <p className="text-gray-500 mb-6">
+              {error instanceof Error ? error.message : 'Network error occurred'}
+            </p>
+            <button
+              onClick={handleRefresh}
+              className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-xl hover:from-green-600 hover:to-emerald-600 transition-all shadow-lg"
+            >
+              Try Again
+            </button>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
@@ -131,38 +135,43 @@ const HomePage: React.FC = () => {
 
   // Main Render
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Carousel Section */}
-      {!carouselLoaded ? (
-        <CarouselSkeleton />
-      ) : (
-        <Carousel 
-          images={carouselImages}
-          autoSlide={true}
-          slideInterval={4000}
-          className="mb-6"
-          onImageClick={(index, url) => console.log('Image clicked:', index, url)}
-        />
-      )}
+    <>
+      {/* Mobile Header - Only visible on mobile */}
+      <MobileHeader />
       
-      <div className="max-w-7xl mx-auto px-4 py-4 space-y-8">
-        {/* Posts Section */}
-        {postsLoading ? (
-          <PostsSkeleton />
-        ) : posts.length === 0 ? (
-          <EmptyPostsState />
+      <div className="min-h-screen bg-gray-50 pt-16 md:pt-0">
+        {/* Carousel Section */}
+        {!carouselLoaded ? (
+          <CarouselSkeleton />
         ) : (
-          <CropCardsList posts={posts} onCardClick={handleCardClick} />
+          <Carousel 
+            images={carouselImages}
+            autoSlide={true}
+            slideInterval={4000}
+            className="mb-6"
+            onImageClick={(index, url) => console.log('Image clicked:', index, url)}
+          />
         )}
         
-        {/* Demand Categories Section */}
-        {!categoriesLoaded ? (
-          <CategoriesSkeleton />
-        ) : (
-          <DemandCategories onCategoryClick={handleCategoryClick} />
-        )}
+        <div className="max-w-7xl mx-auto px-4 py-4 space-y-8">
+          {/* Posts Section */}
+          {postsLoading ? (
+            <PostsSkeleton />
+          ) : posts.length === 0 ? (
+            <EmptyPostsState />
+          ) : (
+            <CropCardsList posts={posts} onCardClick={handleCardClick} />
+          )}
+          
+          {/* Demand Categories Section */}
+          {!categoriesLoaded ? (
+            <CategoriesSkeleton />
+          ) : (
+            <DemandCategories onCategoryClick={handleCategoryClick} />
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
