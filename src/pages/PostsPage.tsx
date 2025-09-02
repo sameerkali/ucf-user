@@ -42,7 +42,6 @@ export default function PostsPage() {
     isOpen: false,
     postId: "",
     postTitle: "",
-    isDeleting: false,
   });
 
   useEffect(() => {
@@ -101,13 +100,16 @@ export default function PostsPage() {
         duration: 3000,
         position: "top-center",
       });
+
+      // Update cache to remove deleted post
       queryClient.setQueryData(
         ["user-posts", kisaanId],
-        (oldPosts: Post[] | undefined) => {
-          return oldPosts?.filter((post) => post._id !== postId) || [];
-        }
+        (oldPosts: Post[] | undefined) =>
+          oldPosts?.filter((post) => post._id !== postId) || []
       );
-      closeDeleteModal();
+
+      // Always close modal immediately after success
+      setDeleteModal({ isOpen: false, postId: "", postTitle: "" });
     },
     onError: (error: any) => {
       console.error("Error deleting post:", error);
@@ -117,40 +119,28 @@ export default function PostsPage() {
           "Failed to delete post. Please try again.",
         { duration: 4000, position: "top-center" }
       );
-      setDeleteModal((prev) => ({ ...prev, isDeleting: false }));
     },
   });
 
-  // Show error toast on fetch error once
   React.useEffect(() => {
     if (error) {
       console.error("Error fetching posts:", error);
-      toast.success("nO posts availabel! Create your first post.");
+      toast.success("No posts available! Create your first post.");
     }
   }, [error]);
 
   const openDeleteModal = (postId: string, postTitle: string) => {
-    setDeleteModal({
-      isOpen: true,
-      postId,
-      postTitle,
-      isDeleting: false,
-    });
+    setDeleteModal({ isOpen: true, postId, postTitle });
   };
+
   const closeDeleteModal = () => {
-    if (!deleteModal.isDeleting) {
-      setDeleteModal({
-        isOpen: false,
-        postId: "",
-        postTitle: "",
-        isDeleting: false,
-      });
-    }
+    // Close modal anytime this is called
+    setDeleteModal({ isOpen: false, postId: "", postTitle: "" });
   };
+
   const confirmDeletePost = () => {
     if (!deleteModal.postId) return;
 
-    setDeleteModal((prev) => ({ ...prev, isDeleting: true }));
     deleteMutation.mutate(deleteModal.postId);
   };
 
@@ -175,9 +165,9 @@ export default function PostsPage() {
             className="w-32 h-32 mx-auto mb-6 object-contain opacity-60"
           />
           <h3 className="text-xl font-semibold text-gray-700 mb-3">
-            no posts availabel! Create your first post.
+            no posts available! Create your first post.
           </h3>
-          
+
           <button
             onClick={() => navigate("/kisaan/post-create")}
             className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-xl hover:from-green-600 hover:to-emerald-600 transition-all shadow-lg"
@@ -193,9 +183,7 @@ export default function PostsPage() {
     <>
       <div className="min-h-screen bg-gray-50 py-4 lg:py-8">
         <div className="max-w-7xl mx-auto px-4">
-          
-
-          <div className=" ">
+          <div>
             {fetchingPosts ? (
               <div className="flex justify-center py-12">
                 <Loader2 className="animate-spin w-10 h-10 text-green-300" />
@@ -228,16 +216,15 @@ export default function PostsPage() {
                     key={post._id}
                     post={post}
                     onDelete={openDeleteModal}
-                    deletePending={deleteMutation.isPending}
+                    deletePending={deleteMutation.isLoading}
                   />
                 ))}
               </div>
             )}
           </div>
-          
         </div>
 
-         <button
+        <button
           onClick={() => navigate("/kisaan/post-create")}
           className="fixed bottom-8 right-8 z-50 flex items-center gap-3 px-6 py-4 text-lg font-bold text-white rounded-full bg-gradient-to-r from-green-600 to-emerald-600 shadow-2xl hover:from-green-700 hover:to-emerald-700 transition"
           aria-label="Create New Post"
@@ -252,7 +239,7 @@ export default function PostsPage() {
         onClose={closeDeleteModal}
         onConfirm={confirmDeletePost}
         postTitle={deleteModal.postTitle}
-        isDeleting={deleteModal.isDeleting || deleteMutation.isPending}
+        isDeleting={deleteMutation.isLoading}
       />
     </>
   );
