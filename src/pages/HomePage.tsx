@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { ILLUSTRATIONS } from '../assets/assets';
+import { CARAUSAL, ILLUSTRATIONS } from '../assets/assets';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
 import Carousel from '../components/Carousel';
@@ -19,12 +19,11 @@ const HomePage: React.FC = () => {
   const [categoriesLoaded, setCategoriesLoaded] = useState(false);
 
   const carouselImages = [
-    'https://picsum.photos/800/400?random=1',
-    'https://picsum.photos/800/400?random=2',
-    'https://picsum.photos/800/400?random=3',
-    'https://picsum.photos/800/400?random=4'
+    CARAUSAL.img1,
+    CARAUSAL.img2,
+    CARAUSAL.img3,
+    CARAUSAL.img4
   ];
-
   // Simulate carousel loading
   React.useEffect(() => {
     const timer = setTimeout(() => {
