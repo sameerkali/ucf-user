@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Send, Sprout, Package, Wrench, Truck, Droplets, Shield, Lightbulb, Users } from 'lucide-react';
+import { X, Send, Sprout, Package, Wrench, Truck, Droplets, Shield, Lightbulb } from 'lucide-react';
 
 interface Category {
   id: string;
