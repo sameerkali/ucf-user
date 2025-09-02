@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus } from "lucide-react";
@@ -73,7 +73,6 @@ export default function PostsPage() {
   const {
     data: posts = [],
     isLoading: fetchingPosts,
-    error,
   } = useQuery<Post[], Error>({
     queryKey: ["user-posts", kisaanId],
     queryFn: async (): Promise<Post[]> => {
@@ -102,7 +101,7 @@ export default function PostsPage() {
       });
       return response.data;
     },
-    onSuccess: (data, postId) => {
+    onSuccess: (postId) => {
       toast.success("Post deleted successfully!");
       // Optimistically update the cache
       queryClient.setQueryData<Post[] | undefined>(
@@ -180,7 +179,7 @@ export default function PostsPage() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
               {posts.map((post) => (
                 <PostCard
                   key={post._id}
