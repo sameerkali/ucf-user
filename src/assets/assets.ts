@@ -14,6 +14,8 @@ import kisaan08 from './illustration/kisaan8.webp';
 import kisaan09 from './illustration/kisaan9.webp';
 import kisaan10 from './illustration/kisaan10.webp';
 import kisaan11 from './illustration/kisaan11.webp';
+import wheat_placeholder from './images/wheat_placeholder.png';
+
 
 
 export const BGS = {
@@ -24,6 +26,7 @@ export const BGS = {
 };
 export const GLOBLE = {
   ucf_logo,
+  wheat_placeholder
 };
 
 export const ILLUSTRATIONS = {

@@ -1,18 +1,23 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ILLUSTRATIONS } from '../assets/assets';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
 import Carousel from '../components/Carousel';
 import CropCardsList from '../components/CropCardsList';
+import DemandCategories from '../components/DemandCategories';
 import type { Post } from '../components/CropCard';
+import { CarouselSkeleton, CategoriesSkeleton, PostsSkeleton } from '../utils/Skeletons';
 
 
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
+  
+  // Individual loading states
+  const [carouselLoaded, setCarouselLoaded] = useState(false);
+  const [categoriesLoaded, setCategoriesLoaded] = useState(false);
 
   const carouselImages = [
     'https://picsum.photos/800/400?random=1',
@@ -21,8 +26,24 @@ const HomePage: React.FC = () => {
     'https://picsum.photos/800/400?random=4'
   ];
 
-  // Fetch posts
-  const { data: posts = [], isLoading, error, refetch, isFetching } = useQuery({
+  // Simulate carousel loading
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setCarouselLoaded(true);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Simulate categories loading
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setCategoriesLoaded(true);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Fetch posts (existing React Query)
+  const { data: posts = [], isLoading: postsLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['posts'],
     queryFn: async (): Promise<Post[]> => {
       const { data } = await api.post('/api/posts/list');
@@ -38,6 +59,11 @@ const HomePage: React.FC = () => {
 
   const handleCardClick = (post: Post): void => {
     navigate(`/kisaan/crop-details/${post._id}`, { state: { post } });
+  };
+
+  const handleCategoryClick = (category: any): void => {
+    console.log('Category selected:', category);
+    toast.success(`Selected: ${category.name}`);
   };
 
   const handleRefresh = async (): Promise<void> => {
@@ -56,20 +82,8 @@ const HomePage: React.FC = () => {
     }
   }, [error]);
 
-  // Loading State
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="animate-spin w-12 h-12 text-green-500 mx-auto mb-4" />
-          <p className="text-gray-600 text-lg">Loading latest posts...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Error State
-  if (error) {
+  // Error State (only for critical errors that prevent the entire page from loading)
+  if (error && !posts.length && !postsLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-8">
@@ -93,8 +107,8 @@ const HomePage: React.FC = () => {
     );
   }
 
-  // Empty State
-  const EmptyState = () => (
+  // Empty State for Posts
+  const EmptyPostsState = () => (
     <div className="text-center py-20 bg-white rounded-2xl shadow-sm">
       <img
         src={ILLUSTRATIONS.kisaan03}
@@ -118,19 +132,34 @@ const HomePage: React.FC = () => {
   // Main Render
   return (
     <div className="min-h-screen bg-gray-50">
-      <Carousel 
-        images={carouselImages}
-        autoSlide={true}
-        slideInterval={4000}
-        className="mb-6"
-        onImageClick={(index, url) => console.log('Image clicked:', index, url)}
-      />
+      {/* Carousel Section */}
+      {!carouselLoaded ? (
+        <CarouselSkeleton />
+      ) : (
+        <Carousel 
+          images={carouselImages}
+          autoSlide={true}
+          slideInterval={4000}
+          className="mb-6"
+          onImageClick={(index, url) => console.log('Image clicked:', index, url)}
+        />
+      )}
       
-      <div className="max-w-7xl mx-auto px-4 py-4">
-        {posts.length === 0 ? (
-          <EmptyState />
+      <div className="max-w-7xl mx-auto px-4 py-4 space-y-8">
+        {/* Posts Section */}
+        {postsLoading ? (
+          <PostsSkeleton />
+        ) : posts.length === 0 ? (
+          <EmptyPostsState />
         ) : (
           <CropCardsList posts={posts} onCardClick={handleCardClick} />
+        )}
+        
+        {/* Demand Categories Section */}
+        {!categoriesLoaded ? (
+          <CategoriesSkeleton />
+        ) : (
+          <DemandCategories onCategoryClick={handleCategoryClick} />
         )}
       </div>
     </div>
