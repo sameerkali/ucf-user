@@ -137,7 +137,7 @@ export default function PostsPage() {
       });
       return response.data;
     },
-    onSuccess: (data, postId) => {
+    onSuccess: (postId) => {
       toast.success("Post deleted successfully!", {
         duration: 3000,
         position: 'top-center',

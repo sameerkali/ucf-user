@@ -133,7 +133,7 @@ export default function CreatePostPage() {
       return response.data;
     },
     onSuccess: (data) => {
-      console.log("Post created successfully");
+      console.log("Post created successfully", data);
       
       // Show success toast
       toast.success("Post created successfully!", {
