@@ -33,7 +33,7 @@ export default function Dock() {
         
         {/* Centered Floating Plus Button */}
         <NavLink
-          to="/kisaan/posts"
+          to="/kisaan/post-create"
           className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-green-600 hover:bg-green-700 text-white rounded-full w-16 h-16 flex items-center justify-center shadow-2xl border-4 border-white transition-all duration-300 hover:scale-110 z-10"
           aria-label="Add New Post"
         >

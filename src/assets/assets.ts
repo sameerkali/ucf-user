@@ -15,6 +15,10 @@ import kisaan09 from './illustration/kisaan9.webp';
 import kisaan10 from './illustration/kisaan10.webp';
 import kisaan11 from './illustration/kisaan11.webp';
 import wheat_placeholder from './images/wheat_placeholder.png';
+import img1 from './carausal/banner01.webp';
+import img2 from './carausal/banner02.webp';
+import img3 from './carausal/banner03.webp';
+import img4 from './carausal/banner04.webp';
 
 
 
@@ -41,4 +45,11 @@ kisaan08,
 kisaan09,
 kisaan10,
 kisaan11,
+}
+
+export const CARAUSAL = {
+img1,
+img2,
+img3,
+img4
 }
