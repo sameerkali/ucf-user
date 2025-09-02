@@ -19,6 +19,7 @@ import img1 from './carausal/banner01.webp';
 import img2 from './carausal/banner02.webp';
 import img3 from './carausal/banner03.webp';
 import img4 from './carausal/banner04.webp';
+import success from './carausal/check.png';
 
 
 
@@ -30,7 +31,8 @@ export const BGS = {
 };
 export const GLOBLE = {
   ucf_logo,
-  wheat_placeholder
+  wheat_placeholder,
+  success
 };
 
 export const ILLUSTRATIONS = {
