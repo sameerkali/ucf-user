@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 
 const MENU_ITEMS = [
   { labelKey: "home", to: "/kisaan/home" },
-  { labelKey: "post", to: "/kisaan/posts" },
+  { labelKey: "Dashboard", to: "/kisaan/posts" },
   { labelKey: "helpSupport", to: "/kisaan/help" },
   { labelKey: "settings", to: "/kisaan/settings" }
 ];

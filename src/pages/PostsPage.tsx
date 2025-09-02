@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus } from "lucide-react";
@@ -33,12 +33,18 @@ interface User {
   updatedAt: string;
 }
 
+interface DeleteModalState {
+  isOpen: boolean;
+  postId: string;
+  postTitle: string;
+}
+
 export default function PostsPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [kisaanId, setKisaanId] = useState<string | null>(null);
 
-  const [deleteModal, setDeleteModal] = useState({
+  const [deleteModal, setDeleteModal] = useState<DeleteModalState>({
     isOpen: false,
     postId: "",
     postTitle: "",
@@ -65,8 +71,7 @@ export default function PostsPage() {
     data: posts = [],
     isLoading: fetchingPosts,
     error,
-    refetch,
-  } = useQuery({
+  } = useQuery<Post[], Error>({
     queryKey: ["user-posts", kisaanId],
     queryFn: async (): Promise<Post[]> => {
       if (!kisaanId) throw new Error("No user ID available");
@@ -88,27 +93,29 @@ export default function PostsPage() {
     retry: 2,
   });
 
-  const deleteMutation = useMutation({
+  const deleteMutation = useMutation<
+    unknown,
+    any,
+    string
+  >({
     mutationFn: async (postId: string) => {
       const response = await api.delete("/api/posts/delete", {
         data: { postId },
       });
       return response.data;
     },
-    onSuccess: (data, postId) => {
+    onSuccess: ( postId) => {
       toast.success("Post deleted successfully!", {
         duration: 3000,
         position: "top-center",
       });
 
-      // Update cache to remove deleted post
-      queryClient.setQueryData(
+      queryClient.setQueryData<Post[] | undefined>(
         ["user-posts", kisaanId],
-        (oldPosts: Post[] | undefined) =>
+        (oldPosts) =>
           oldPosts?.filter((post) => post._id !== postId) || []
       );
 
-      // Always close modal immediately after success
       setDeleteModal({ isOpen: false, postId: "", postTitle: "" });
     },
     onError: (error: any) => {
@@ -122,7 +129,7 @@ export default function PostsPage() {
     },
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (error) {
       console.error("Error fetching posts:", error);
       toast.success("No posts available! Create your first post.");
@@ -134,8 +141,9 @@ export default function PostsPage() {
   };
 
   const closeDeleteModal = () => {
-    // Close modal anytime this is called
-    setDeleteModal({ isOpen: false, postId: "", postTitle: "" });
+    if (!deleteMutation.isPending) {
+      setDeleteModal({ isOpen: false, postId: "", postTitle: "" });
+    }
   };
 
   const confirmDeletePost = () => {
@@ -183,45 +191,43 @@ export default function PostsPage() {
     <>
       <div className="min-h-screen bg-gray-50 py-4 lg:py-8">
         <div className="max-w-7xl mx-auto px-4">
-          <div>
-            {fetchingPosts ? (
-              <div className="flex justify-center py-12">
-                <Loader2 className="animate-spin w-10 h-10 text-green-300" />
-              </div>
-            ) : posts.length === 0 ? (
-              <div className="text-center py-12 bg-gradient-to-br from-gray-50 to-green-50 rounded-2xl border border-gray-200">
-                <img
-                  src={ILLUSTRATIONS.kisaan08}
-                  alt="No Posts"
-                  className="w-28 lg:w-36 h-28 lg:h-36 mx-auto mb-6 object-contain opacity-60"
+          {fetchingPosts ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="animate-spin w-10 h-10 text-green-300" />
+            </div>
+          ) : posts.length === 0 ? (
+            <div className="text-center py-12 bg-gradient-to-br from-gray-50 to-green-50 rounded-2xl border border-gray-200">
+              <img
+                src={ILLUSTRATIONS.kisaan08}
+                alt="No Posts"
+                className="w-28 lg:w-36 h-28 lg:h-36 mx-auto mb-6 object-contain opacity-60"
+              />
+              <h3 className="text-lg lg:text-xl font-semibold text-gray-700 mb-3">
+                No posts yet
+              </h3>
+              <p className="text-gray-500 text-sm lg:text-base mb-6 max-w-md mx-auto">
+                Create your first post to start selling your crops and connect
+                with buyers in your area
+              </p>
+              <button
+                onClick={() => navigate("/kisaan/post-create")}
+                className="px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-xl hover:from-green-600 hover:to-emerald-600 transition-all shadow-lg hover:shadow-xl"
+              >
+                Create Your First Post
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              {posts.map((post) => (
+                <PostCard
+                  key={post._id}
+                  post={post}
+                  onDelete={openDeleteModal}
+                  deletePending={deleteMutation.isPending}
                 />
-                <h3 className="text-lg lg:text-xl font-semibold text-gray-700 mb-3">
-                  No posts yet
-                </h3>
-                <p className="text-gray-500 text-sm lg:text-base mb-6 max-w-md mx-auto">
-                  Create your first post to start selling your crops and connect
-                  with buyers in your area
-                </p>
-                <button
-                  onClick={() => navigate("/kisaan/post-create")}
-                  className="px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-xl hover:from-green-600 hover:to-emerald-600 transition-all shadow-lg hover:shadow-xl"
-                >
-                  Create Your First Post
-                </button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                {posts.map((post) => (
-                  <PostCard
-                    key={post._id}
-                    post={post}
-                    onDelete={openDeleteModal}
-                    deletePending={deleteMutation.isLoading}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <button
@@ -239,7 +245,7 @@ export default function PostsPage() {
         onClose={closeDeleteModal}
         onConfirm={confirmDeletePost}
         postTitle={deleteModal.postTitle}
-        isDeleting={deleteMutation.isLoading}
+        isDeleting={deleteMutation.isPending}
       />
     </>
   );
