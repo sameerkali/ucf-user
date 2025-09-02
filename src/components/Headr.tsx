@@ -1,11 +1,12 @@
 import { Link, NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { Plus } from "lucide-react";
 
 const MENU_ITEMS = [
   { labelKey: "home", to: "/kisaan/home" },
   { labelKey: "Dashboard", to: "/kisaan/posts" },
   { labelKey: "helpSupport", to: "/kisaan/help" },
-  { labelKey: "settings", to: "/kisaan/settings" }
+  { labelKey: "settings", to: "/kisaan/settings" },
 ];
 
 export default function Header() {
@@ -13,9 +14,11 @@ export default function Header() {
 
   return (
     <header className="hidden md:flex w-full items-center justify-between px-6 py-4 bg-white border-b border-gray-200 shadow z-50">
-      <Link to={`/home`}><div className="font-bold text-xl text-gray-900">{t("appName")}</div></Link>
-      <nav className="flex gap-8">
-        {MENU_ITEMS.map(item => (
+      <Link to={`/home`}>
+        <div className="font-bold text-xl text-gray-900">{t("appName")}</div>
+      </Link>
+      <nav className="flex items-center gap-8">
+        {MENU_ITEMS.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
@@ -29,6 +32,16 @@ export default function Header() {
             {t(item.labelKey)}
           </NavLink>
         ))}
+
+        {/* New Post Button */}
+        <Link
+          to="/kisaan/post-create"
+          className="ml-4 inline-flex items-center gap-2 px-4 py-2 rounded-md bg-green-600 text-white text-sm font-semibold hover:bg-green-700 transition"
+          aria-label={t("createNewPost")}
+        >
+          <Plus className="w-4 h-4" />
+          {t("newPost")}
+        </Link>
       </nav>
     </header>
   );

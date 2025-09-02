@@ -9,6 +9,7 @@ export interface FaqItem {
 }
 
 const faqData: FaqItem[] = [
+  // ... your faqData remains unchanged
   {
     id: 1,
     question: "How do I reset my password?",
@@ -36,7 +37,8 @@ const faqData: FaqItem[] = [
 ];
 
 const HelpAndSupportPage: FC = () => {
-  const [expanded, setExpanded] = useState<number | null>(null);
+  // Initialize with first FAQ open by default
+  const [expanded, setExpanded] = useState<number | null>(faqData[0]?.id ?? null);
   const [input, setInput] = useState("");
 
   return (
@@ -47,18 +49,19 @@ const HelpAndSupportPage: FC = () => {
           <h1 className="text-4xl font-extrabold text-green-700 tracking-tight">
             Support Center
           </h1>
-          <p className="mt-2 text-lg text-gray-500">
-            Your questions, answered.
-          </p>
+          <p className="mt-2 text-lg text-gray-500">Your questions, answered.</p>
         </header>
 
         <section className="space-y-3">
           {faqData.map((item) => {
             const isOpen = expanded === item.id;
             return (
-              <div key={item.id} className="border border-gray-200 rounded-lg bg-white shadow-sm transition-all">
+              <div
+                key={item.id}
+                className="border border-gray-200 rounded-lg bg-white shadow-sm transition-all"
+              >
                 <button
-                  className={`w-full text-left flex items-center justify-between p-5 focus-visible:ring-2 focus-visible:ring-green-700 transition group`}
+                  className="w-full text-left flex items-center justify-between p-5 focus-visible:ring-2 focus-visible:ring-green-700 transition group"
                   onClick={() => setExpanded(isOpen ? null : item.id)}
                   aria-expanded={isOpen}
                   aria-controls={`faq-content-${item.id}`}
@@ -86,7 +89,8 @@ const HelpAndSupportPage: FC = () => {
       </main>
 
       {/* Floating Chat Input Bar */}
-      <footer className="
+      <footer
+        className="
   fixed 
   left-0 
   right-0 
@@ -96,8 +100,9 @@ const HelpAndSupportPage: FC = () => {
   border-t 
   border-gray-200 
   bottom-0 
-  max-sm:bottom-[8%]  // Only for very small screens
-">
+  max-sm:bottom-[8%]
+"
+      >
         <div className="max-w-3xl mx-auto px-4 py-3 w-full">
           <form
             className="flex items-center gap-2 bg-gray-100 border border-gray-300 rounded-full shadow-sm p-2 focus-within:ring-2 focus-within:ring-green-700"
