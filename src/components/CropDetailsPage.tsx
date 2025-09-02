@@ -9,8 +9,9 @@ import {
   IndianRupee, 
   ShoppingCart,
   User,
+  ChevronRight,
 } from 'lucide-react';
-import { ILLUSTRATIONS } from '../assets/assets';
+import { GLOBLE, ILLUSTRATIONS } from '../assets/assets';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
 import FulfillmentModal from '../components/FulfillmentModal';
@@ -116,7 +117,7 @@ const CropDetailsPage: React.FC = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-8">
           <img
-            src={ILLUSTRATIONS.kisaan08}
+            src={GLOBLE.wheat_placeholder}
             alt="Error"
             className="w-32 h-32 mx-auto mb-6 object-contain opacity-60"
           />
@@ -140,22 +141,22 @@ const CropDetailsPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white shadow-sm sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={handleGoBack}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5 text-gray-600" />
-            </button>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">Crop Details</h1>
-              <p className="text-sm text-gray-500">Essential crop information</p>
-            </div>
-          </div>
-        </div>
-      </div>
+       <nav className="flex items-center text-sm text-gray-600 mx-20 my-5" aria-label="Breadcrumb">
+            <ol className="flex items-center space-x-1 md:space-x-2">
+              <li>
+                <a
+                  href="/kisaan/home"
+                  className="hover:text-blue-600 font-medium"
+                >
+                  Home
+                </a>
+              </li>
+              <li>
+                <ChevronRight className="w-4 h-4 text-gray-400" />
+              </li>
+              <li className="text-gray-900 font-semibold">Crop Details</li>
+            </ol>
+          </nav>
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 py-8">
@@ -166,7 +167,7 @@ const CropDetailsPage: React.FC = () => {
             <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
               <div className="h-64 md:h-80">
                 <img 
-                  src={ILLUSTRATIONS.kisaan07} 
+                  src={GLOBLE.wheat_placeholder} 
                   alt="Crop illustration"
                   className="w-full h-full object-cover"
                 />
