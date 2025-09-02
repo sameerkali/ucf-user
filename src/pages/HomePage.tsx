@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { CARAUSAL, ILLUSTRATIONS } from '../assets/assets';
@@ -13,10 +13,6 @@ import { CarouselSkeleton, CategoriesSkeleton, PostsSkeleton } from '../utils/Sk
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
-  
-  // Individual loading states
-  const [carouselLoaded, setCarouselLoaded] = useState(false);
-  const [categoriesLoaded, setCategoriesLoaded] = useState(false);
 
   const carouselImages = [
     CARAUSAL.img1,
@@ -24,21 +20,27 @@ const HomePage: React.FC = () => {
     CARAUSAL.img3,
     CARAUSAL.img4
   ];
-  // Simulate carousel loading
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setCarouselLoaded(true);
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, []);
 
-  // Simulate categories loading
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setCategoriesLoaded(true);
-    }, 1500);
-    return () => clearTimeout(timer);
-  }, []);
+  // Use React Query to cache UI loading states
+  const { data: carouselLoaded = false } = useQuery({
+    queryKey: ['carousel-loaded'],
+    queryFn: async () => {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return true;
+    },
+    staleTime: Infinity, // Never refetch
+    gcTime: Infinity,    // Never remove from cache
+  });
+
+  const { data: categoriesLoaded = false } = useQuery({
+    queryKey: ['categories-loaded'],
+    queryFn: async () => {
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      return true;
+    },
+    staleTime: Infinity, // Never refetch
+    gcTime: Infinity,    // Never remove from cache
+  });
 
   // Fetch posts (existing React Query)
   const { data: posts = [], isLoading: postsLoading, error, refetch, isFetching } = useQuery({
@@ -80,14 +82,12 @@ const HomePage: React.FC = () => {
     }
   }, [error]);
 
-  // Error State (only for critical errors that prevent the entire page from loading)
+  // Error State
   if (error && !posts.length && !postsLoading) {
     return (
       <>
-        {/* Mobile Header */}
-        
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center pt-16 md:pt-0">
         <MobileHeader />
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center pt-16 md:pt-0">
           <div className="text-center max-w-md mx-auto p-8">
             <img
               src={ILLUSTRATIONS.kisaan08}
@@ -135,7 +135,6 @@ const HomePage: React.FC = () => {
   // Main Render
   return (
     <>
-      {/* Mobile Header - Only visible on mobile */}
       <MobileHeader />
       
       <div className="min-h-screen bg-gray-50 pt-16 md:pt-0">
