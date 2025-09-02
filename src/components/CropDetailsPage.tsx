@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { 
-  ArrowLeft, 
+import {  
   Calendar, 
   MapPin, 
   Package, 
@@ -11,7 +10,7 @@ import {
   User,
   ChevronRight,
 } from 'lucide-react';
-import { GLOBLE, ILLUSTRATIONS } from '../assets/assets';
+import { GLOBLE } from '../assets/assets';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
 import FulfillmentModal from '../components/FulfillmentModal';
