@@ -36,7 +36,7 @@ const CategoryImageWithFallback: React.FC<{
         />
       )}
       {(imageError || !imageLoaded) && (
-        <div className=" flex items-center justify-center">
+        <div className="absolute inset-0 bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center">
           <div className="text-white text-2xl">
             {icon}
           </div>
@@ -130,7 +130,7 @@ const DemandCategories: React.FC<DemandCategoriesProps> = ({ onCategoryClick }) 
 
   return (
     <>
-      <div className="bg-green-800 from-green-50 to-emerald-50 rounded-3xl p-8 shadow-lg border border-green-100 relative overflow-hidden">
+      <div className="bg-green-800 rounded-3xl p-8 shadow-lg border border-green-100 relative overflow-hidden">
         {/* Background decoration */}
         <div className="absolute top-0 right-0 w-32 h-32 bg-green-200 rounded-full opacity-20 transform translate-x-16 -translate-y-16"></div>
         <div className="absolute bottom-0 left-0 w-24 h-24 bg-emerald-200 rounded-full opacity-20 transform -translate-x-12 translate-y-12"></div>
@@ -142,8 +142,46 @@ const DemandCategories: React.FC<DemandCategoriesProps> = ({ onCategoryClick }) 
             <p className="text-gray-100">Browse categories or tell us your specific requirements</p>
           </div>
           
-          {/* Categories Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4 gap-6 max-w-5xl mx-auto">
+          {/* Mobile: Horizontal Scrolling Grid (2 columns, 2 rows) */}
+          <div className="block lg:hidden">
+            <div className="grid grid-flow-col auto-cols-[140px] grid-rows-2 gap-4 overflow-x-auto pb-4 scroll-snap-x-mandatory">
+              {categories.map((category) => (
+                <div
+                  key={category.id}
+                  className="flex flex-col items-center cursor-pointer group transform transition-all duration-300 hover:scale-105 scroll-snap-align-start"
+                  onClick={() => handleCategoryClick(category)}
+                >
+                  {/* Category Image with enhanced styling */}
+                  <div className="relative w-20 h-20 mb-3 group-hover:mb-2 transition-all duration-300">
+                    <div className="w-full h-full rounded-full overflow-hidden shadow-lg group-hover:shadow-2xl transition-shadow duration-300 border-2 border-white group-hover:border-green-300">
+                      <CategoryImageWithFallback
+                        src={category.image}
+                        alt={category.name}
+                        icon={category.icon}
+                        className="w-full h-full"
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Category Name */}
+                  <span className="text-xs font-semibold text-gray-100 text-center group-hover:text-green-100 transition-colors duration-300 leading-tight px-1 max-w-full">
+                    {category.name}
+                  </span>
+                  
+                  {/* Hover indicator */}
+                  <div className="w-0 group-hover:w-6 h-0.5 bg-white transition-all duration-300 mt-1"></div>
+                </div>
+              ))}
+            </div>
+            
+            {/* Scroll indicator for mobile */}
+            <div className="text-center mt-4">
+              <p className="text-xs text-gray-200">← Scroll to see more categories →</p>
+            </div>
+          </div>
+
+          {/* Desktop: Regular Grid (unchanged) */}
+          <div className="hidden lg:grid lg:grid-cols-4 xl:grid-cols-4 gap-6 max-w-5xl mx-auto">
             {categories.map((category) => (
               <div
                 key={category.id}
@@ -182,7 +220,7 @@ const DemandCategories: React.FC<DemandCategoriesProps> = ({ onCategoryClick }) 
         </div>
       </div>
 
-      {/* Enhanced Modal */}
+      {/* Enhanced Modal (unchanged) */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 bg-opacity-60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-3xl max-w-lg w-full mx-4 shadow-2xl transform transition-all duration-300">
