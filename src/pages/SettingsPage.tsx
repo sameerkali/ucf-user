@@ -6,11 +6,9 @@ import {
   User,
   Languages,
   LogOut,
-  HelpCircle,
-  Info,
-  Settings as SettingsIcon,
   ChevronDown,
   Check,
+  Tv,
 } from "lucide-react";
 
 type LanguageCode = "en" | "hi";
@@ -64,6 +62,9 @@ const SettingsPage: React.FC = () => {
     setShowLanguagePopup(true);
     setShowDropdown(false);
   };
+  const handleMyPosts = () => {
+    navigate("/kisaan/posts");
+  }
 
   const applyLanguageChange = () => {
     if (i18n.language !== pendingLang) {
@@ -114,23 +115,11 @@ const SettingsPage: React.FC = () => {
         onClick: openLanguagePopup,
         descriptionKey: "selectPreferredLanguage",
       },
-      {
-        labelKey: "faq",
-        icon: HelpCircle,
-        onClick: () => navigate("/faq"),
-        descriptionKey: "frequentlyAskedQuestions",
-      },
-      {
-        labelKey: "appVersion",
-        icon: Info,
-        onClick: () => {},
-        description: appVersion,
-      },
-      {
-        labelKey: "preferences",
-        icon: SettingsIcon,
-        onClick: () => navigate("/preferences"),
-        descriptionKey: "customizeExperience",
+       {
+        labelKey: "myposts",
+        icon: Tv,
+        onClick: handleMyPosts,
+        descriptionKey: "selectthistoseeallmyposts",
       },
       {
         labelKey: "logout",
@@ -173,22 +162,23 @@ const SettingsPage: React.FC = () => {
 
       <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {options.map((opt, idx) => (
-          <button
-            key={idx}
-            className="flex items-center sm:items-start sm:flex-col gap-3 p-4 rounded-xl bg-white shadow-sm border border-gray-200 hover:shadow-md hover:bg-gray-50 transition text-left"
-            onClick={opt.onClick}
-          >
-            <div className="p-3 bg-gray-100 rounded-full flex items-center justify-center">
-              <opt.icon className="w-6 h-6 text-gray-700" />
-            </div>
-            <div className="flex-1">
-              <div className="font-medium text-gray-900">{t(opt.labelKey)}</div>
-              <div className="text-sm text-gray-500">
-                {opt.description || t(opt.descriptionKey!)}
-              </div>
-            </div>
-          </button>
-        ))}
+  <button
+    key={idx}
+    className="flex items-center sm:items-start sm:flex-col gap-3 p-4 rounded-xl bg-white shadow-sm border border-gray-200 hover:shadow-md hover:bg-gray-50 transition text-left"
+    onClick={opt.onClick}
+  >
+    <div className="p-3 bg-gray-100 rounded-full flex items-center justify-center">
+      <opt.icon className="w-6 h-6 text-gray-700" />
+    </div>
+    <div className="flex-1">
+      <div className="font-medium text-gray-900">{t(opt.labelKey)}</div>
+      <div className="text-sm text-gray-500">
+        {t(opt.descriptionKey!)}
+      </div>
+    </div>
+  </button>
+))}
+
       </div>
 
       {showLanguagePopup && (
