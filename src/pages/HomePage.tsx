@@ -7,9 +7,8 @@ import api from '../api/axios';
 import toast from 'react-hot-toast';
 import Carousel from '../components/Carousel';
 import CropCardsList from '../components/CropCardsList';
+import DemandCategories from '../components/DemandCategories';
 import type { Post } from '../components/CropCard';
-
-
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
@@ -38,6 +37,12 @@ const HomePage: React.FC = () => {
 
   const handleCardClick = (post: Post): void => {
     navigate(`/kisaan/crop-details/${post._id}`, { state: { post } });
+  };
+
+  const handleCategoryClick = (category: any): void => {
+    console.log('Category selected:', category);
+    // Handle navigation or filtering based on category
+    toast.success(`Selected: ${category.name}`);
   };
 
   const handleRefresh = async (): Promise<void> => {
@@ -126,12 +131,16 @@ const HomePage: React.FC = () => {
         onImageClick={(index, url) => console.log('Image clicked:', index, url)}
       />
       
-      <div className="max-w-7xl mx-auto px-4 py-4">
+      <div className="max-w-7xl mx-auto px-4 py-4 space-y-8">
+        {/* Posts Section */}
         {posts.length === 0 ? (
           <EmptyState />
         ) : (
           <CropCardsList posts={posts} onCardClick={handleCardClick} />
         )}
+        
+        {/* Demand Categories Section */}
+        <DemandCategories onCategoryClick={handleCategoryClick} />
       </div>
     </div>
   );
