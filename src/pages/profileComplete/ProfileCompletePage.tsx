@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Loader2, Check } from "lucide-react";
-import { BGS } from "../../assets/assets";
+import { ArrowLeft, Loader2, Check, X } from "lucide-react";
+import { BGS, GLOBLE } from "../../assets/assets";
 import Modal from "../../components/Modal";
 import toast from 'react-hot-toast';
 import { useTranslation } from "react-i18next";
@@ -354,50 +354,36 @@ export default function ProfileComplete() {
             <span className="text-gray-600">{t("loading")}...</span>
           </div>
         ) : cropsList.length > 0 ? (
-          <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto bg-white p-3 rounded-lg border border-green-500">
+          <div className="flex flex-wrap gap-3 max-h-32 overflow-y-auto bg-gray-50 p-4 rounded-lg border border-gray-300">
             {cropsList.map((crop: any) => {
               const selected = selectedCropIds.includes(crop._id);
-              const showFallback = crop.image && crop.image.startsWith("http://localhost:5000");
               return (
-                <label
+                <div
                   key={crop._id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    cursor: 'pointer',
-                    userSelect: 'none',
-                    padding: '6px 14px',
-                    borderRadius: '22px',
-                    border: selected ? '2px solid #22c55e' : '2px solid #333',
-                    background: selected ? 'linear-gradient(90deg,#22c55e 0%,#059669 100%)' : '#f9f9f9',
-                    color: selected ? '#fff' : '#333',
-                    fontWeight: 500,
-                    boxShadow: selected ? '0 2px 8px 0 #05966988' : 'none',
-                    transition: 'all 0.2s'
-                  }}
-                  className="crop-chip"
+                  onClick={() => handleCropChange(crop._id)}
+                  className="relative cursor-pointer"
                 >
-                  {showFallback ? (
-                    <FallbackGreenCircle />
-                  ) : crop.image ? (
-                    <img src={crop.image} alt={crop.name} style={{
-                      width: 24, height: 24,
-                      objectFit: 'cover',
-                      borderRadius: '50%',
-                    }} />
-                  ) : (
-                    <FallbackGreenCircle />
+                  <div className={`w-16 h-16 rounded-full bg-white border-2 flex items-center justify-center overflow-hidden transition-all ${
+                    selected ? 'border-green-500' : 'border-gray-300'
+                  }`}>
+                    <img 
+                      src={crop.image || GLOBLE.ucf_logo} 
+                      alt={crop.name}
+                      className="w-10 h-10 object-cover rounded-full"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = GLOBLE.ucf_logo;
+                      }}
+                    />
+                  </div>
+                  {selected && (
+                    <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-600 rounded-full flex items-center justify-center">
+                      <X className="w-3 h-3 text-white" />
+                    </div>
                   )}
-                  <input
-                    type="checkbox"
-                    checked={selected}
-                    style={{ display: 'none' }}
-                    onChange={() => handleCropChange(crop._id)}
-                  />
-                  {crop.name}
-                  {selected && <Check className="ml-1" size={16} />}
-                </label>
+                  <p className="text-xs text-center mt-1 text-gray-700 font-medium truncate">
+                    {crop.name}
+                  </p>
+                </div>
               );
             })}
           </div>
