@@ -82,7 +82,6 @@ const PosLayout = () => (
   <>
     {/* Banners at the top of the layout */}
     <OfflineBanner />
-    <VerificationPendingBanner />
     <InstallBanner />
     
     <PosHeader />
