@@ -1,21 +1,56 @@
-import { Link } from "react-router-dom";
+import { useEffect, useState } from 'react';
 import { GLOBLE } from "../assets/assets";
 
-const SuccessPopup = () => {
+interface SuccessPopupProps {
+  onClose?: () => void;
+}
+
+const SuccessPopup = ({ onClose }: SuccessPopupProps) => {
+  const [isVisible, setIsVisible] = useState(true);
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  useEffect(() => {
+    setIsAnimating(true);
+    
+    const timer = setTimeout(() => {
+      handleClose();
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleClose = () => {
+    setIsAnimating(false);
+    setTimeout(() => {
+      setIsVisible(false);
+      onClose?.();
+    }, 300);
+  };
+
+  if (!isVisible) return null;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-      <div className="bg-white rounded-lg shadow-lg max-w-md w-full max-sm:h-full max-sm:rounded-none max-sm:flex max-sm:flex-col max-sm:justify-center max-sm:p-6">
-        <img
-          src={GLOBLE.success}
-          alt="Success"
-          className="max-w-xs w-full mx-auto mb-8"
-        />
-        <Link
-          to="/kisaan/home"
-          className="block text-center px-6 py-3 bg-green-600 text-white font-semibold rounded-md shadow hover:bg-green-700 transition max-sm:mt-auto"
-        >
-          Go to Home
-        </Link>
+    <div 
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 transition-opacity duration-300 ${
+        isAnimating ? 'opacity-100' : 'opacity-0'
+      }`}
+      onClick={handleClose}
+    >
+      <div 
+        className={`max-w-sm w-full p-6 transform transition-all duration-300 ease-out max-sm:max-w-xs ${
+          isAnimating 
+            ? 'scale-100 opacity-100' 
+            : 'scale-75 opacity-0'
+        }`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="text-center">
+          <img
+            src={GLOBLE.success}
+            alt="Success"
+            className="w-56 h-56 mx-auto mb-4 animate-bounce"
+          />
+        </div>
       </div>
     </div>
   );

@@ -38,6 +38,7 @@ import PosCreatePost from "./pos-pages/PosCreatePost";
 import PosFulfillment from "./pos-pages/PosFulfillment";
 import CropDetailsPage from "./components/CropDetailsPage";
 import CreatePostPage from "./pages/CreatePostPage";
+import DashboardPage from "./pages/DashboardPage";
 
 // Authentication guard for protected routes
 function RequireAuth() {
@@ -169,6 +170,7 @@ export default function App() {
               <Route path="/kisaan/settings" element={<SettingsPage />} />
               <Route path="/kisaan/help" element={<HelpAndSupportPage />} />
               <Route path="/kisaan/profile" element={<Profile />} />
+              <Route path="/kisaan/dashboard" element={<DashboardPage />} />
             </Route>
 
             {/* POS routes */}

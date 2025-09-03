@@ -11,7 +11,8 @@ import {
   CheckCircle,
   XCircle,
   UserCheck,
-  Mail
+  Mail,
+  Edit3
 } from "lucide-react";
 
 type Address = {
@@ -50,8 +51,6 @@ export default function Profile() {
   const [profile, setProfile] = useState<ProfileType | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
-
-  // Get user role from localStorage
   const [userRole, setUserRole] = useState<string>("");
 
   useEffect(() => {
@@ -64,7 +63,6 @@ export default function Profile() {
         if (userData) {
           const parsedProfile = JSON.parse(userData) as ProfileType;
           setProfile(parsedProfile);
-          // Set role based on profile.role (POS or Farmer)
           setUserRole(parsedProfile.role?.toLowerCase() || "");
         } else {
           setError("No profile data found");
@@ -84,7 +82,7 @@ export default function Profile() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-2 border-blue-200 border-t-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">{t("loading")}...</p>
         </div>
       </div>
@@ -93,13 +91,14 @@ export default function Profile() {
 
   if (error || !profile) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center">
           <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <p className="text-red-600 mb-4">{error || "No profile data available"}</p>
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">Profile Error</h2>
+          <p className="text-red-600 mb-6">{error || "No profile data available"}</p>
           <button 
             onClick={() => navigate(-1)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             {t("back")}
           </button>
@@ -117,130 +116,111 @@ export default function Profile() {
     {
       icon: User,
       title: t("name"),
-      value: profile?.name ?? "N/A",
-      description: t("fullName")
+      value: profile?.name ?? "N/A"
     },
-    // Only show father's name for kisaan (farmer) users
     ...(userRole === "farmer" && profile?.fatherName ? [{
       icon: UserCheck,
       title: t("fatherName"),
-      value: profile.fatherName,
-      description: t("fatherFullName")
+      value: profile.fatherName
     }] : []),
     {
       icon: Phone,
       title: t("mobile"),
-      value: profile?.mobile ?? "N/A",
-      description: t("registeredMobile")
+      value: profile?.mobile ?? "N/A"
     },
-    // Only show email for POS users (since they have email field)
     ...(userRole === "pos" && profile?.email ? [{
       icon: Mail,
       title: t("email"),
-      value: profile.email,
-      description: t("emailAddress")
+      value: profile.email
     }] : []),
     {
       icon: MapPin,
       title: t("address"),
-      value: formatAddress(profile?.address),
-      description: t("completeAddress")
+      value: formatAddress(profile?.address)
     },
     {
       icon: Shield,
       title: t("role"),
-      value: profile?.role ?? "N/A",
-      description: t("userRole")
+      value: profile?.role ?? "N/A"
     },
     {
       icon: Calendar,
       title: t("memberSince"),
-      value: profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString() : "N/A",
-      description: t("accountCreationDate")
+      value: profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString() : "N/A"
     }
   ];
 
   const statusItems = [
     {
       title: t("profileVerified"),
-      status: profile?.isVerified,
-      description: t("profileVerificationStatus")
-    },
-    {
-      title: t("mobileVerified"),
-      status: profile?.mobileVerified,
-      description: t("mobileVerificationStatus")
+      status: profile?.isVerified
     },
     {
       title: t("bankVerified"),
-      status: profile?.bankVerified,
-      description: t("bankVerificationStatus")
+      status: profile?.bankVerified
     },
     {
       title: t("otherDetailsVerified"),
-      status: profile?.otherDetailsVerified,
-      description: t("otherDetailsVerificationStatus")
+      status: profile?.otherDetailsVerified
     }
   ];
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="flex items-center gap-3 px-4 py-4">
-          <button
-            onClick={() => navigate(-1)}
-            className="p-2 hover:bg-gray-100 rounded-full transition"
-          >
-            <ArrowLeft className="w-6 h-6 text-gray-600" />
-          </button>
+      {/* Simple Header */}
+      <div className="bg-white shadow-sm">
+        <div className="flex items-center justify-between px-4 py-4 max-w-4xl mx-auto">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-              <User className="w-6 h-6 text-blue-600" />
+            <button
+              onClick={() => navigate(-1)}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5 text-gray-600" />
+            </button>
+            <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+              <User className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-semibold text-gray-900">{profile?.name ?? t("profile")}</h1>
-              <p className="text-sm text-gray-500">
+              <h1 className="text-lg font-semibold text-gray-900">{profile?.name}</h1>
+              <p className="text-sm text-gray-500 capitalize">
                 {userRole === "pos" ? "POS Profile" : "Farmer Profile"}
               </p>
             </div>
           </div>
+          <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+            <Edit3 className="w-4 h-4 text-gray-500" />
+          </button>
         </div>
       </div>
 
-      <div className="px-4 py-6 space-y-6">
-        {/* Profile Information */}
+      <div className="max-w-4xl mx-auto px-4 py-6 space-y-8">
+        {/* Profile Information - Simple List */}
         <div>
           <h2 className="text-lg font-semibold text-gray-900 mb-4">{t("profileInformation")}</h2>
-          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="bg-white rounded-lg divide-y divide-gray-100">
             {profileItems.map((item, idx) => (
-              <div
-                key={idx}
-                className="flex items-start gap-3 p-4 rounded-xl bg-white shadow-sm border border-gray-200"
-              >
-                <div className="p-3 bg-gray-100 rounded-full flex items-center justify-center shrink-0">
-                  <item.icon className="w-6 h-6 text-gray-700" />
+              <div key={idx} className="flex items-center gap-4 px-4 py-4 hover:bg-gray-50 transition-colors">
+                <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center shrink-0">
+                  <item.icon className="w-5 h-5 text-gray-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium text-gray-900">{item.title}</div>
-                  <div className="text-sm text-gray-900 font-medium mt-1 break-words">{item.value}</div>
-                  <div className="text-xs text-gray-500 mt-1">{item.description}</div>
+                  <div className="text-sm font-medium text-gray-900">{item.title}</div>
+                  <div className="text-sm text-gray-600 break-words">{item.value}</div>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Verification Status */}
+        {/* Verification Status - Simple List */}
         <div>
           <h2 className="text-lg font-semibold text-gray-900 mb-4">{t("verificationStatus")}</h2>
-          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
+          <div className="bg-white rounded-lg divide-y divide-gray-100">
             {statusItems.map((item, idx) => (
-              <div
-                key={idx}
-                className="flex items-center gap-3 p-4 rounded-xl bg-white shadow-sm border border-gray-200"
-              >
-                <div className={`p-2 rounded-full ${item.status ? 'bg-green-100' : 'bg-red-100'}`}>
+              <div key={idx} className="flex items-center gap-4 px-4 py-4">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+                  item.status ? 'bg-green-100' : 'bg-red-100'
+                }`}>
                   {item.status ? (
                     <CheckCircle className="w-5 h-5 text-green-600" />
                   ) : (
@@ -248,69 +228,13 @@ export default function Profile() {
                   )}
                 </div>
                 <div className="flex-1">
-                  <div className="font-medium text-gray-900">{item.title}</div>
-                  <div className="text-sm text-gray-500">{item.description}</div>
-                  <div className={`text-xs font-medium mt-1 ${item.status ? 'text-green-600' : 'text-red-600'}`}>
+                  <div className="text-sm font-medium text-gray-900">{item.title}</div>
+                  <div className={`text-sm ${item.status ? 'text-green-600' : 'text-red-600'}`}>
                     {item.status ? t("verified") : t("notVerified")}
                   </div>
                 </div>
               </div>
             ))}
-          </div>
-        </div>
-
-        {/* Profile Status */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-3">{t("profileStatus")}</h3>
-          <div className="flex items-center gap-3">
-            <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-              profile?.profileStatus === 'completed' 
-                ? 'bg-green-100 text-green-800'
-                : profile?.profileStatus === 'pending'
-                ? 'bg-yellow-100 text-yellow-800'
-                : 'bg-gray-100 text-gray-800'
-            }`}>
-              {profile?.profileStatus ?? 'Unknown'}
-            </div>
-            <span className="text-sm text-gray-500">
-              {profile?.profileStatus === 'completed' 
-                ? t("profileCompleted")
-                : profile?.profileStatus === 'pending'
-                ? t("profilePending")
-                : t("profileIncomplete")
-              }
-            </span>
-          </div>
-        </div>
-
-        {/* Account Information */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">{t("accountInformation")}</h3>
-          <div className="space-y-3 text-sm">
-            <div className="flex justify-between">
-              <span className="text-gray-600">{t("userId")}:</span>
-              <span className="font-medium text-gray-900 font-mono">
-                {profile?._id ?? profile?.id ?? 'N/A'}
-              </span>
-            </div>
-            {profile?.authMethod && (
-              <div className="flex justify-between">
-                <span className="text-gray-600">{t("authMethod")}:</span>
-                <span className="font-medium text-gray-900 capitalize">{profile.authMethod}</span>
-              </div>
-            )}
-            <div className="flex justify-between">
-              <span className="text-gray-600">{t("accountCreated")}:</span>
-              <span className="font-medium text-gray-900">
-                {profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString() : 'N/A'}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">{t("lastUpdated")}:</span>
-              <span className="font-medium text-gray-900">
-                {profile?.updatedAt ? new Date(profile.updatedAt).toLocaleDateString() : 'N/A'}
-              </span>
-            </div>
           </div>
         </div>
       </div>
