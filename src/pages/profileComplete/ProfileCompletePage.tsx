@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Loader2, Check, X } from "lucide-react";
+import { ArrowLeft, Loader2, X } from "lucide-react";
 import { BGS, GLOBLE } from "../../assets/assets";
 import Modal from "../../components/Modal";
 import toast from 'react-hot-toast';
 import { useTranslation } from "react-i18next";
 import api from "../../api/axios";
 import imageCompression from 'browser-image-compression';
-import FallbackGreenCircle from "../../utils/FallbackGreenCircle";
 
 const ACCOUNT_NUMBER_REGEX = /^[0-9]{9,18}$/;
 const IFSC_REGEX = /^[A-Z]{4}0[0-9A-Z]{6}$/i;
