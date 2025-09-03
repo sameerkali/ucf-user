@@ -14,8 +14,7 @@ import { GLOBLE } from '../assets/assets';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
 import FulfillmentModal from '../components/FulfillmentModal';
-import SuccessPopup from '../components/SuccessPopup'; // Import your SuccessPopup component
-
+import SuccessPopup from '../components/SuccessPopup';
 
 interface Crop {
   name: string;
@@ -23,7 +22,6 @@ interface Crop {
   quantity: number;
   pricePerQuintal: number;
 }
-
 
 interface Location {
   state: string;
@@ -34,12 +32,10 @@ interface Location {
   pincode: string;
 }
 
-
 interface CreatedBy {
   id: string;
   role: string;
 }
-
 
 interface Post {
   _id: string;
@@ -59,7 +55,6 @@ interface Post {
   __v?: number;
 }
 
-
 interface FulfillmentPayload {
   postId: string;
   crops: Array<{
@@ -68,19 +63,16 @@ interface FulfillmentPayload {
   }>;
 }
 
-
 const CropDetailsPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [isSuccessPopupOpen, setIsSuccessPopupOpen] = useState<boolean>(false); // Success popup state
-
+  const [showSuccessPopup, setShowSuccessPopup] = useState<boolean>(false);
 
   // Get post data from props (passed via navigation state)
   const post: Post | null = location.state?.post || null;
-
 
   // Fulfillment mutation
   const fulfillmentMutation = useMutation({
@@ -89,9 +81,11 @@ const CropDetailsPage: React.FC = () => {
       return data;
     },
     onSuccess: () => {
-      toast.success('Fulfillment request submitted successfully!');
+      // Dismiss all existing toasts first
+      toast.dismiss();
+      
       setIsModalOpen(false);
-      setIsSuccessPopupOpen(true); // Show SuccessPopup on success
+      setShowSuccessPopup(true);
       queryClient.invalidateQueries({ queryKey: ['posts'] });
     },
     onError: (error: any) => {
@@ -99,7 +93,6 @@ const CropDetailsPage: React.FC = () => {
       toast.error(errorMessage);
     }
   });
-
 
   const formatDate = (dateString: string): string => {
     return new Date(dateString).toLocaleDateString("en-IN", {
@@ -109,11 +102,9 @@ const CropDetailsPage: React.FC = () => {
     });
   };
 
-
   const formatFullLocation = (locationData: Location): string => {
     return `${locationData.village}, ${locationData.block}, ${locationData.tehsil}, ${locationData.district}, ${locationData.state} - ${locationData.pincode}`;
   };
-
 
   const handleFulfillmentClick = (): void => {
     if (post) {
@@ -121,11 +112,13 @@ const CropDetailsPage: React.FC = () => {
     }
   };
 
-
   const handleGoBack = (): void => {
     navigate(-1);
   };
 
+  const handleSuccessPopupClose = (): void => {
+    setShowSuccessPopup(false);
+  };
 
   if (!post) {
     return (
@@ -153,7 +146,6 @@ const CropDetailsPage: React.FC = () => {
     );
   }
 
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -174,7 +166,6 @@ const CropDetailsPage: React.FC = () => {
         </ol>
       </nav>
 
-
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -191,7 +182,6 @@ const CropDetailsPage: React.FC = () => {
               </div>
             </div>
 
-
             {/* Post Basic Info */}
             <div className="bg-white rounded-2xl p-6 shadow-sm">
               <div className="flex items-center gap-3 mb-4">
@@ -207,16 +197,13 @@ const CropDetailsPage: React.FC = () => {
                 </span>
               </div>
 
-
               <h2 className="text-2xl font-bold text-gray-900 mb-4">
                 {post.title}
               </h2>
 
-
               <p className="text-gray-600 leading-relaxed mb-6">
                 {post.description}
               </p>
-
 
               {/* Essential Info Only */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-xl">
@@ -237,7 +224,6 @@ const CropDetailsPage: React.FC = () => {
                 </div>
               </div>
             </div>
-
 
             {/* Essential Crops Details - Only Name, Type, Quantity, Price */}
             {post.crops && post.crops.length > 0 && (
@@ -277,7 +263,6 @@ const CropDetailsPage: React.FC = () => {
                         </div>
                       </div>
 
-
                       {/* Total Value */}
                       <div className="mt-4 pt-4 border-t border-green-200">
                         <div className="text-center">
@@ -293,7 +278,6 @@ const CropDetailsPage: React.FC = () => {
               </div>
             )}
           </div>
-
 
           {/* Sidebar - Right Side */}
           <div className="space-y-6">
@@ -324,7 +308,6 @@ const CropDetailsPage: React.FC = () => {
                   </div>
                 </div>
 
-
                 <button
                   onClick={handleFulfillmentClick}
                   className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold py-4 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 mb-4"
@@ -333,13 +316,11 @@ const CropDetailsPage: React.FC = () => {
                   Request Fulfillment
                 </button>
 
-
                 <p className="text-xs text-gray-500 text-center">
                   Connect with the farmer to discuss terms
                 </p>
               </div>
             )}
-
 
             {/* Basic Seller Info */}
             <div className="bg-white rounded-2xl p-6 shadow-sm">
@@ -361,7 +342,6 @@ const CropDetailsPage: React.FC = () => {
         </div>
       </div>
 
-
       {/* Fulfillment Modal */}
       {isModalOpen && post && (
         <FulfillmentModal
@@ -374,12 +354,11 @@ const CropDetailsPage: React.FC = () => {
       )}
 
       {/* Success Popup */}
-      {isSuccessPopupOpen && (
-        <SuccessPopup />
+      {showSuccessPopup && (
+        <SuccessPopup onClose={handleSuccessPopupClose} />
       )}
     </div>
   );
 };
-
 
 export default CropDetailsPage;
