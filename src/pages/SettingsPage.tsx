@@ -96,20 +96,6 @@ const SettingsPage: React.FC = () => {
   const options = useMemo(
     () => [
       {
-        labelKey: "profile",
-        icon: User,
-        onClick: () => {
-          if (profile) {
-            if (role === "pos") {
-              navigate("/pos/profile");
-            } else {
-              navigate("/kisaan/profile");
-            }
-          }
-        },
-        descriptionKey: "viewEditProfile",
-      },
-      {
         labelKey: "changeLanguage",
         icon: Languages,
         onClick: openLanguagePopup,
@@ -128,7 +114,7 @@ const SettingsPage: React.FC = () => {
         descriptionKey: "signOutAccount",
       },
     ],
-    [navigate, appVersion, profile, role] // Add profile and role as dependencies
+    [navigate, appVersion, profile, role]
   );
 
   return (

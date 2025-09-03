@@ -11,7 +11,6 @@ import {
 } from 'chart.js';
 import { useNavigate } from 'react-router-dom';
 
-// Register Chart.js components
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -98,7 +97,6 @@ const DashboardPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
-      {/* Header */}
       <div className="bg-white shadow-sm">
         <div className="flex items-center px-4 py-4 max-w-6xl mx-auto">
           <ArrowLeft onClick={() => navigate(-1)} className="w-6 h-6 text-gray-700 mr-3" />
@@ -107,7 +105,6 @@ const DashboardPage = () => {
       </div>
 
       <div className="px-4 py-6 max-w-6xl mx-auto space-y-6">
-        {/* Estimated Total Profit Card */}
         <div className="bg-blue-100 rounded-2xl p-6">
           <div className="flex items-center gap-2 mb-2">
             <h2 className="text-lg font-medium text-gray-800">Estimated total profit</h2>
@@ -117,7 +114,6 @@ const DashboardPage = () => {
         </div>
 
         <div className="lg:grid lg:grid-cols-2 lg:gap-6 space-y-6 lg:space-y-0">
-          {/* Calculate Profit Section */}
           <div className="bg-white rounded-2xl border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-semibold text-gray-900">Calculate profit</h3>
@@ -148,7 +144,6 @@ const DashboardPage = () => {
             </div>
           </div>
 
-          {/* Profit Breakdown Chart */}
           <div className="bg-white rounded-2xl border border-gray-200 p-6">
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-1">Profit breakdown</h3>
