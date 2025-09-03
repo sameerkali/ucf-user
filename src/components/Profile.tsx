@@ -213,6 +213,8 @@ export default function Profile() {
         </div>
 
         {/* Verification Status - Simple List */}
+        {userRole !== 'pos' && 
+       
         <div>
           <h2 className="text-lg font-semibold text-gray-900 mb-4">{t("verificationStatus")}</h2>
           <div className="bg-white rounded-lg divide-y divide-gray-100">
@@ -237,6 +239,7 @@ export default function Profile() {
             ))}
           </div>
         </div>
+         }
       </div>
     </div>
   );
