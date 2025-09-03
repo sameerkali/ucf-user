@@ -20,7 +20,7 @@ const t = (key: string) => {
 
 const leftDockItems = [
   { labelKey: "home", to: "/kisaan/home", icon: Home },
-  { labelKey: "Dashboard", to: "/kisaan/posts", icon: LayoutDashboard },
+  { labelKey: "Dashboard", to: "/kisaan/dashboard", icon: LayoutDashboard },
 ];
 
 const rightDockItems = [

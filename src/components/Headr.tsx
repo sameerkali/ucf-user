@@ -4,7 +4,7 @@ import { Plus } from "lucide-react";
 
 const MENU_ITEMS = [
   { labelKey: "home", to: "/kisaan/home" },
-  { labelKey: "Dashboard", to: "/kisaan/posts" },
+  { labelKey: "Dashboard", to: "/kisaan/dashboard" },
   { labelKey: "helpSupport", to: "/kisaan/help" },
   { labelKey: "settings", to: "/kisaan/settings" },
 ];
