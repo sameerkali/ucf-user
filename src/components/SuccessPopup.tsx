@@ -48,7 +48,7 @@ const SuccessPopup = ({ onClose }: SuccessPopupProps) => {
           <img
             src={GLOBLE.success}
             alt="Success"
-            className="w-24 h-24 mx-auto mb-4 animate-bounce"
+            className="w-56 h-56 mx-auto mb-4 animate-bounce"
           />
         </div>
       </div>
