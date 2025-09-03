@@ -30,10 +30,13 @@ const SettingsPage: React.FC = () => {
     { value: "en", label: "English" },
     { value: "hi", label: "हिन्दी" },
   ];
+
+  // Handle both "Farmer" and "kisaan" role values, and "POS" and "pos"
   const role = profile?.role ? profile.role.toLowerCase() : "kisaan";
+  const isFarmer = role === "farmer" || role === "kisaan";
+  const isPOS = role === "pos";
 
   const profileImgUrl = "https://randomuser.me/api/portraits/men/75.jpg";
-  const appVersion = "v1.2.3";
 
   useEffect(() => {
     const getProfileFromStorage = () => {
@@ -62,9 +65,10 @@ const SettingsPage: React.FC = () => {
     setShowLanguagePopup(true);
     setShowDropdown(false);
   };
+
   const handleMyPosts = () => {
     navigate("/kisaan/posts");
-  }
+  };
 
   const applyLanguageChange = () => {
     if (i18n.language !== pendingLang) {
@@ -81,7 +85,13 @@ const SettingsPage: React.FC = () => {
     localStorage.removeItem("user");
     localStorage.removeItem("role");
     localStorage.removeItem("_grecaptcha");
-    navigate(`/login?role=${role}`);
+    
+    // Navigate to appropriate login based on role
+    if (isPOS) {
+      navigate("/login?role=pos");
+    } else {
+      navigate("/login?role=kisaan");
+    }
   };
 
   const handleLanguageSelect = (langCode: LanguageCode) => {
@@ -93,29 +103,36 @@ const SettingsPage: React.FC = () => {
     (opt) => opt.value === pendingLang
   );
 
-  const options = useMemo(
-    () => [
+  const options = useMemo(() => {
+    const baseOptions = [
       {
         labelKey: "changeLanguage",
         icon: Languages,
         onClick: openLanguagePopup,
         descriptionKey: "selectPreferredLanguage",
-      },
-       {
+      }
+    ];
+
+    // Only show "My Posts" for farmers (both "Farmer" and "kisaan" roles)
+    if (isFarmer) {
+      baseOptions.push({
         labelKey: "myposts",
         icon: Tv,
         onClick: handleMyPosts,
         descriptionKey: "selectthistoseeallmyposts",
-      },
-      {
-        labelKey: "logout",
-        icon: LogOut,
-        onClick: () => setShowLogoutPopup(true),
-        descriptionKey: "signOutAccount",
-      },
-    ],
-    [navigate, appVersion, profile, role]
-  );
+      });
+    }
+
+    // Always show logout option last
+    baseOptions.push({
+      labelKey: "logout",
+      icon: LogOut,
+      onClick: () => setShowLogoutPopup(true),
+      descriptionKey: "signOutAccount",
+    });
+
+    return baseOptions;
+  }, [isFarmer, navigate, profile]);
 
   return (
     <div className="min-h-screen px-4 py-6">
@@ -123,7 +140,7 @@ const SettingsPage: React.FC = () => {
         className="flex items-center gap-3 mb-6 p-4 rounded-xl bg-white shadow hover:shadow-md transition cursor-pointer hover:bg-gray-50"
         onClick={() => {
           if (profile) {
-            if (role === "pos") {
+            if (isPOS) {
               navigate("/pos/profile");
             } else {
               navigate("/kisaan/profile");
@@ -141,30 +158,31 @@ const SettingsPage: React.FC = () => {
           <div className="font-semibold text-lg text-gray-900">
             {loading ? t("loading") + "..." : profile?.name || t("profile")}
           </div>
-          <div className="text-sm text-gray-500">{t("viewProfile")}</div>
+          <div className="text-sm text-gray-500">
+            {t("viewProfile")} • {profile?.role || "User"}
+          </div>
         </div>
         <ChevronRight className="w-5 h-5 text-gray-400" />
       </div>
 
       <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {options.map((opt, idx) => (
-  <button
-    key={idx}
-    className="flex items-center sm:items-start sm:flex-col gap-3 p-4 rounded-xl bg-white shadow-sm border border-gray-200 hover:shadow-md hover:bg-gray-50 transition text-left"
-    onClick={opt.onClick}
-  >
-    <div className="p-3 bg-gray-100 rounded-full flex items-center justify-center">
-      <opt.icon className="w-6 h-6 text-gray-700" />
-    </div>
-    <div className="flex-1">
-      <div className="font-medium text-gray-900">{t(opt.labelKey)}</div>
-      <div className="text-sm text-gray-500">
-        {t(opt.descriptionKey!)}
-      </div>
-    </div>
-  </button>
-))}
-
+          <button
+            key={idx}
+            className="flex items-center sm:items-start sm:flex-col gap-3 p-4 rounded-xl bg-white shadow-sm border border-gray-200 hover:shadow-md hover:bg-gray-50 transition text-left"
+            onClick={opt.onClick}
+          >
+            <div className="p-3 bg-gray-100 rounded-full flex items-center justify-center">
+              <opt.icon className="w-6 h-6 text-gray-700" />
+            </div>
+            <div className="flex-1">
+              <div className="font-medium text-gray-900">{t(opt.labelKey)}</div>
+              <div className="text-sm text-gray-500">
+                {t(opt.descriptionKey!)}
+              </div>
+            </div>
+          </button>
+        ))}
       </div>
 
       {showLanguagePopup && (
