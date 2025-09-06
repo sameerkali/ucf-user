@@ -69,6 +69,9 @@ const SettingsPage: React.FC = () => {
   const handleMyPosts = () => {
     navigate("/kisaan/posts");
   };
+  const handleMyfulfillments = () => {
+    navigate("/kisaan/fulfillments");
+  }
 
   const applyLanguageChange = () => {
     if (i18n.language !== pendingLang) {
@@ -120,6 +123,14 @@ const SettingsPage: React.FC = () => {
         icon: Tv,
         onClick: handleMyPosts,
         descriptionKey: "selectthistoseeallmyposts",
+      });
+    }
+     if (isFarmer) {
+      baseOptions.push({
+        labelKey: "myfulfillments",
+        icon: Tv,
+        onClick: handleMyfulfillments,
+        descriptionKey: "selectthistoseemyfulfillments",
       });
     }
 

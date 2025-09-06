@@ -1,1 +1,84 @@
 1. fullfillment 
+
+
+
+get post of POS 
+curl --location --globoff '{{baseURL}}/api/posts/details' \
+--header 'Content-Type: application/json' \
+--data '{
+  "id":"68b3dd0b90233bf9f06986fc"
+}
+'
+
+
+
+
+
+
+
+delete post of POS 
+curl --location --globoff --request DELETE '{{baseURL}}/api/posts/delete' \
+--data '{
+    "postId":"68a9efcac76a962b8460388a"
+}'
+
+
+
+
+
+
+
+list of all kisaans under a POS -> name, location, .. 
+curl --location --globoff --request GET '{{baseURL}}/api/pos/get-farmers' \
+--data '{
+    "filters":{
+        "_id": "68b6d3720773124213b928b4"
+    },
+    "page": 1
+}'
+
+
+
+(pos) get farmer details by id
+after that click -> get all information by id
+curl --location --globoff --request GET '{{baseURL}}/api/pos/get-farmer-details' \
+--data '{
+    "id":"68b483fc03258ac428ecb1b4"
+}'
+
+
+
+
+
+
+
+
+farmer Demand get api
+curl --location 'https://ufc-backend-seven.vercel.app/api/posts/details' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OGI0ODNmYzAzMjU4YWM0MjhlY2IxYjQiLCJyb2xlIjoiRmFybWVyIiwiaWF0IjoxNzU3MTcyOTY2LCJleHAiOjE3NTc2MDQ5NjZ9.tHBXKsDD6t5wOawQWvwxKsIn7loWLUAkHk3p0zvpst4' \
+--data '{
+  "id":"68b483fc03258ac428ecb1b4"
+}
+'
+
+
+
+get all fulfillment of a farmer :
+['pending', 'approve', 'reject', 'pending for verification']
+curl --location 'fulfillments/my' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OGE5ZDNjMWNiNjIwZTYxNDQyZWZiYmUiLCJyb2xlIjoiRmFybWVyIiwiaWF0IjoxNzU1OTYwMjY4LCJleHAiOjE3NTYzOTIyNjh9.lizzh6WDA9bxT1RZ36ULmdhlJIIWaEUyJ2YMPCVMnRM' \
+--data '{
+  "filters": {
+    
+  }
+}'
+
+
+
+POS csv sheet (payment all info)
+
+get profile (API) -> pending
+
+stats for POS and farmer

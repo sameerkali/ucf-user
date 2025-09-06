@@ -39,6 +39,7 @@ import PosFulfillment from "./pos-pages/PosFulfillment";
 import CropDetailsPage from "./components/CropDetailsPage";
 import CreatePostPage from "./pages/CreatePostPage";
 import DashboardPage from "./pages/DashboardPage";
+import FulfillmentPage from "./pages/FulfillmentPage";
 
 // Authentication guard for protected routes
 function RequireAuth() {
@@ -165,6 +166,7 @@ export default function App() {
               <Route path="/kisaan/home" element={<HomePage />} />
               <Route path="/kisaan/crop-details/:id" element={<CropDetailsPage />} />
               <Route path="/kisaan/posts" element={<PostsPage />} />
+              <Route path="/kisaan/fulfillments" element={<FulfillmentPage />} />
               <Route path="/kisaan/post-create" element={<CreatePostPage />} />
               <Route path="/kisaan/settings" element={<SettingsPage />} />
               <Route path="/kisaan/help" element={<HelpAndSupportPage />} />
