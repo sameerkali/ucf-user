@@ -174,6 +174,7 @@ const PosFarmersUnderMe: React.FC = () => {
     queryFn: async () => {
       if (!posId) return { status_code: 200, message: "", data: [], totalPages: 1 };
       const { data } = await api.get<ApiResponseList>("/api/pos/get-farmers", {
+        data: { filters: { _id: posId }, page },
         headers: { "Content-Type": "application/json" },
       });
       if (data.status_code !== 200) throw new Error(data.message || "Failed to load farmers");
