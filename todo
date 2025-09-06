@@ -39,7 +39,7 @@ curl --location --globoff --request GET '{{baseURL}}/api/pos/get-farmers' \
 
 
 
-(pos) get farmer details by id
+(pos) get farmer details by farmer_id
 after that click -> get all information by id
 curl --location --globoff --request GET '{{baseURL}}/api/pos/get-farmer-details' \
 --data '{
