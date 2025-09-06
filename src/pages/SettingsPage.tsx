@@ -72,6 +72,9 @@ const SettingsPage: React.FC = () => {
   const handleMyfulfillments = () => {
     navigate("/kisaan/fulfillments");
   }
+  const handleMyFarmers = () => {
+    navigate("/pos/all-farmers-under-me");
+  }
 
   const applyLanguageChange = () => {
     if (i18n.language !== pendingLang) {
@@ -133,6 +136,15 @@ const SettingsPage: React.FC = () => {
         descriptionKey: "selectthistoseemyfulfillments",
       });
     }
+        if (role === "pos") {
+      baseOptions.push({
+        labelKey: "My Farmers",
+        icon: Tv,
+        onClick: handleMyFarmers,
+        descriptionKey: "selectthistoseemyfulfillments",
+      });
+    }
+    
 
     // Always show logout option last
     baseOptions.push({

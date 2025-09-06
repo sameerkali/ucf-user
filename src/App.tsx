@@ -40,7 +40,8 @@ import CropDetailsPage from "./components/CropDetailsPage";
 import CreatePostPage from "./pages/CreatePostPage";
 import DashboardPage from "./pages/DashboardPage";
 import FulfillmentPage from "./pages/FulfillmentPage";
-import PosFarmersPosts from "./pos-pages/PosFarmersPosts";
+import PosPosts from "./pos-pages/PosPosts";
+import PosFarmersUnderMe from "./pos-pages/PosFarmersUnderMe";
 
 // Authentication guard for protected routes
 function RequireAuth() {
@@ -186,7 +187,8 @@ export default function App() {
               <Route path="/pos/profile" element={<Profile />} />
               <Route path="/pos/create-post" element={<PosCreatePost />} />
               <Route path="/pos/fulfillment-requests" element={<PosFulfillment />} />
-              <Route path="/pos/farmers-posts" element={<PosFarmersPosts />} />
+              <Route path="/pos/posts" element={<PosPosts />} />
+              <Route path="//pos/all-farmers-under-me" element={<PosFarmersUnderMe />} />
             </Route>
 
             {/* Shared routes with role-based layout */}

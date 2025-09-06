@@ -17,8 +17,8 @@ const handlePost = () => {
 const handleFulfillment = () => { 
   navigate('/pos/fulfillment-requests')
 }
-const handleFermersPosts = () => {
-  navigate('/pos/farmers-posts')
+const handleMyPosts = () => {
+  navigate('/pos/posts')
 }
 
 
@@ -162,7 +162,7 @@ const handleFermersPosts = () => {
 
               {/* show fulfillment requests  */}
           <div 
-            onClick={handleFermersPosts}
+            onClick={handleMyPosts}
             className="group bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer border border-gray-200 hover:border-green-300 hover:-translate-y-1 p-6 sm:p-8"
           >
             <div className="text-center">
@@ -173,12 +173,12 @@ const handleFermersPosts = () => {
               
               {/* Title */}
               <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-3 group-hover:text-green-600 transition-colors duration-300">
-                All farmers posts
+                My posts 
               </h3>
               
               {/* Description */}
               <p className="text-gray-600 text-base sm:text-lg leading-relaxed">
-                View all posts by your area farmers 
+                View all posts created by me 
               </p>
               
               {/* Action Indicator */}
