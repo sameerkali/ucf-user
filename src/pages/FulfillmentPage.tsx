@@ -5,12 +5,51 @@ import api from "../api/axios";
 
 type FulfillmentStatus = "pending" | "approve" | "reject" | "pending for verification";
 
+interface UserRef {
+  id: string;
+  role: string;
+}
+
+interface CropDetail {
+  name: string;
+  type?: string;
+  quantity: number;
+  pricePerQuintal?: number;
+}
+
+interface Location {
+  state: string;
+  district: string;
+  tehsil: string;
+  block: string;
+  village: string;
+  pincode: string;
+}
+
+interface Post {
+  _id: string;
+  createdBy: UserRef;
+  type: string;
+  crops: CropDetail[];
+  title: string;
+  description: string;
+  requiredByDate: string;
+  photos: string[];
+  videos: string[];
+  location: Location;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface Fulfillment {
   _id: string;
-  productName: string;
-  quantity: number;
-  date: string;
+  requestedBy: UserRef;
+  post: Post;
+  crops: { name: string; quantity: number }[];
   status: FulfillmentStatus;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface ProfileType {
@@ -21,39 +60,33 @@ interface ProfileType {
 export default function FulfillmentPage() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<ProfileType | null>(null);
-  const [loadingProfile, setLoadingProfile] = useState<boolean>(false);
-  const [profileError, setProfileError] = useState<string>("");
-
+  const [loadingProfile, setLoadingProfile] = useState(false);
+  const [profileError, setProfileError] = useState("");
   const [filterStatus, setFilterStatus] = useState<FulfillmentStatus | "">("");
 
   // Load user profile from localStorage
   useEffect(() => {
-    const getProfileFromStorage = () => {
-      setLoadingProfile(true);
-      setProfileError("");
-
-      try {
-        const userData = localStorage.getItem("user");
-        if (userData) {
-          const parsedProfile = JSON.parse(userData) as ProfileType;
-          setProfile(parsedProfile);
-        } else {
-          setProfileError("No profile data found, please login.");
-          navigate("/login");
-        }
-      } catch (err) {
-        console.error("Error parsing user data from localStorage:", err);
-        setProfileError("Error loading profile data, please login.");
+    setLoadingProfile(true);
+    setProfileError("");
+    try {
+      const userData = localStorage.getItem("user");
+      if (userData) {
+        const parsedProfile = JSON.parse(userData) as ProfileType;
+        setProfile(parsedProfile);
+      } else {
+        setProfileError("No profile data found, please login.");
         navigate("/login");
-      } finally {
-        setLoadingProfile(false);
       }
-    };
-
-    getProfileFromStorage();
+    } catch (err) {
+      console.error("Error parsing user data from localStorage:", err);
+      setProfileError("Error loading profile data, please login.");
+      navigate("/login");
+    } finally {
+      setLoadingProfile(false);
+    }
   }, [navigate]);
 
-  // React Query to fetch fulfillments
+  // Fetch fulfillments with React Query
   const {
     data: fulfillments = [],
     isLoading: loadingFulfillments,
@@ -64,7 +97,7 @@ export default function FulfillmentPage() {
     queryFn: async () => {
       if (!profile?._id) return [];
       const { data } = await api.post(
-        "/fulfillments/my",
+        "/api/fulfillments/my",
         { filters: filterStatus ? { status: filterStatus } : {} },
         { headers: { "Content-Type": "application/json" } }
       );
@@ -125,40 +158,80 @@ export default function FulfillmentPage() {
           No fulfillments found.
         </div>
       ) : (
-        <table className="w-full border-collapse border border-gray-300">
-          <thead>
-            <tr className="bg-green-100">
-              <th className="border border-gray-300 px-4 py-2 text-left">Product</th>
-              <th className="border border-gray-300 px-4 py-2 text-center">Quantity</th>
-              <th className="border border-gray-300 px-4 py-2 text-center">Date</th>
-              <th className="border border-gray-300 px-4 py-2 text-center">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {fulfillments.map(({ _id, productName, quantity, date, status }) => (
-              <tr key={_id} className="hover:bg-green-50 transition-colors even:bg-gray-50">
-                <td className="border border-gray-300 px-4 py-2">{productName}</td>
-                <td className="border border-gray-300 px-4 py-2 text-center">{quantity}</td>
-                <td className="border border-gray-300 px-4 py-2 text-center">
-                  {new Date(date).toLocaleDateString()}
-                </td>
-                <td
-                  className={`border border-gray-300 px-4 py-2 text-center font-semibold ${
-                    status === "approve"
-                      ? "text-green-700"
-                      : status === "reject"
-                      ? "text-red-700"
-                      : status === "pending for verification"
-                      ? "text-yellow-600"
-                      : "text-gray-700"
+        <div className="space-y-6">
+          {fulfillments.map((fulfillment) => (
+            <div
+              key={fulfillment._id}
+              className="border border-gray-300 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">
+                  {fulfillment.post.title}
+                </h2>
+                <span
+                  className={`px-3 py-1 rounded-full font-semibold text-sm ${
+                    fulfillment.status === "approve"
+                      ? "bg-green-100 text-green-700"
+                      : fulfillment.status === "reject"
+                      ? "bg-red-100 text-red-700"
+                      : fulfillment.status === "pending for verification"
+                      ? "bg-yellow-100 text-yellow-700"
+                      : "bg-gray-100 text-gray-700"
                   }`}
                 >
-                  {status.charAt(0).toUpperCase() + status.slice(1)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  {fulfillment.status.charAt(0).toUpperCase() +
+                    fulfillment.status.slice(1)}
+                </span>
+              </div>
+
+              <p className="mb-4 text-gray-700">{fulfillment.post.description}</p>
+
+              <div className="mb-4">
+                <span className="font-semibold">Requested By:</span>{" "}
+                {fulfillment.requestedBy.role.charAt(0).toUpperCase() +
+                  fulfillment.requestedBy.role.slice(1)}{" "}
+                (ID: {fulfillment.requestedBy.id})
+              </div>
+
+              <div className="mb-4">
+                <span className="font-semibold">Crops Requested:</span>
+                <ul className="list-disc list-inside">
+                  {fulfillment.crops.map(({ name, quantity }, i) => (
+                    <li key={i}>
+                      {name} - {quantity}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="mb-4">
+                <span className="font-semibold">Post Details:</span>
+                <ul className="mt-2 space-y-1 text-gray-700">
+                  <li>
+                    <strong>Type:</strong> {fulfillment.post.type}
+                  </li>
+                  <li>
+                    <strong>Status:</strong>{" "}
+                    {fulfillment.post.status.charAt(0).toUpperCase() +
+                      fulfillment.post.status.slice(1)}
+                  </li>
+                  <li>
+                    <strong>Required By:</strong>{" "}
+                    {new Date(fulfillment.post.requiredByDate).toLocaleDateString()}
+                  </li>
+                  <li>
+                    <strong>Location:</strong>{" "}
+                    {`${fulfillment.post.location.village}, ${fulfillment.post.location.block}, ${fulfillment.post.location.tehsil}, ${fulfillment.post.location.district}, ${fulfillment.post.location.state} - ${fulfillment.post.location.pincode}`}
+                  </li>
+                  <li>
+                    <strong>Created At:</strong>{" "}
+                    {new Date(fulfillment.post.createdAt).toLocaleDateString()}
+                  </li>
+                </ul>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );

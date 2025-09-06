@@ -2,13 +2,13 @@
 
 
 
-get post of POS 
-curl --location --globoff '{{baseURL}}/api/posts/details' \
---header 'Content-Type: application/json' \
---data '{
-  "id":"68b3dd0b90233bf9f06986fc"
-}
-'
+  get post of POS 
+  curl --location --globoff '{{baseURL}}/api/posts/details' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "id":"68b3dd0b90233bf9f06986fc"
+  }
+  '
 
 
 
