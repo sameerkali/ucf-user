@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import api from "../api/axios";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -9,6 +9,7 @@ interface Farmer {
   name: string;
   fatherName: string;
   mobile: string;
+  adharNo: string;
   address: {
     state: string;
     district: string;
@@ -17,9 +18,6 @@ interface Farmer {
     village: string;
     pincode: string;
   };
-}
-
-interface FarmerDetails extends Farmer {
   authMethod: string;
   role: string;
   isVerified: boolean;
@@ -29,6 +27,49 @@ interface FarmerDetails extends Farmer {
   profileStatus: string;
   createdAt: string;
   updatedAt: string;
+  isVerifiedBy?: { userId: string; role: string };
+}
+
+interface ApiResponseList {
+  success: boolean;
+  page: number;
+  totalPages: number;
+  totalUsers: number;
+  users: Farmer[];
+  message?: string;
+}
+
+interface BankDetails {
+  _id: string;
+  bankName: string;
+  accountHolderName: string;
+  accountNumber: string;
+  ifscCode: string;
+  branch: string;
+  user: string;
+  role: string;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+}
+
+interface OtherDetails {
+  _id: string;
+  user: string;
+  role: string;
+  cropsHandled: any[];
+  crops: any[];
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+}
+
+interface FarmerDetailResponse {
+  success: boolean;
+  data: (Farmer & {
+    bankDetails?: BankDetails[];
+    otherDetails?: OtherDetails[];
+  })[];
 }
 
 interface ProfileType {
@@ -36,109 +77,121 @@ interface ProfileType {
   role: string;
 }
 
-interface ApiResponseList {
-  status_code: number;
-  message: string;
-  data: Farmer[];
-  totalPages: number;
-}
-
-interface ApiResponseDetail {
-  status_code: number;
-  message: string;
-  data: FarmerDetails;
-}
-
 const FarmerDetailsModal: React.FC<{
   isOpen: boolean;
   onClose: () => void;
   farmerId: string | null;
 }> = ({ isOpen, onClose, farmerId }) => {
-  const query = useQuery<ApiResponseDetail, Error>(
-    ["farmer-details", farmerId],
-    async () => {
+  const token = localStorage.getItem("token");
+
+  const { data, isLoading, isError, error } = useQuery<FarmerDetailResponse, Error>({
+    queryKey: ["farmer-details", farmerId],
+    queryFn: async () => {
       if (!farmerId) throw new Error("Invalid farmer Id");
-      const { data } = await api.get<ApiResponseDetail>("/api/pos/get-farmer-details", {
-        data: { id: farmerId },
-        headers: { "Content-Type": "application/json" },
-      });
-      if (data.status_code !== 200) {
-        throw new Error(data.message || "Failed to fetch farmer details");
-      }
+      const { data } = await api.post<FarmerDetailResponse>(
+        "/api/pos/get-farmer-details",
+        { id: farmerId },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        }
+      );
+      if (!data.success || !data.data?.length) throw new Error("Failed to fetch or decode farmer details");
       return data;
     },
-    {
-      enabled: !!farmerId && isOpen,
-      refetchOnWindowFocus: false,
-    }
-  );
+    enabled: !!farmerId && isOpen,
+    refetchOnWindowFocus: false,
+  });
 
   if (!isOpen) return null;
 
+  const details = data?.data?.[0];
+
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 relative">
+    <div className="fixed inset-0 bg-black/70  bg-opacity-60 flex items-center justify-center z-50">
+      <div className="bg-white rounded-xl max-w-lg w-full p-6 relative shadow-2xl border border-green-100">
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 font-bold text-gray-600 hover:text-gray-900"
+          className="absolute top-3 right-3 font-bold text-gray-500 hover:text-red-500 text-2xl"
           aria-label="Close modal"
-        >
-          &#x2715;
-        </button>
-
-        {query.isLoading ? (
-          <p className="text-center">Loading details...</p>
-        ) : query.isError ? (
-          <p className="text-center text-red-600">
-            Error: {query.error?.message || "Failed to load details"}
-          </p>
-        ) : (
-          <>
-            <h2 className="text-2xl font-bold mb-4">{query.data?.data.name}</h2>
-
-            <div className="space-y-2 text-gray-700">
-              <p>
-                <strong>Father Name:</strong> {query.data?.data.fatherName}
-              </p>
-              <p>
-                <strong>Mobile:</strong> {query.data?.data.mobile}
-              </p>
-              <p>
-                <strong>Address:</strong>{" "}
-                {`${query.data?.data.address.village}, ${query.data?.data.address.block}, ${query.data?.data.address.tehsil}, ${query.data?.data.address.district}, ${query.data?.data.address.state} - ${query.data?.data.address.pincode}`}
-              </p>
-              <p>
-                <strong>Verified:</strong> {query.data?.data.isVerified ? "Yes" : "No"}
-              </p>
-              <p>
-                <strong>Mobile Verified:</strong> {query.data?.data.mobileVerified ? "Yes" : "No"}
-              </p>
-              <p>
-                <strong>Bank Verified:</strong> {query.data?.data.bankVerified ? "Yes" : "No"}
-              </p>
-              <p>
-                <strong>Other Details Verified:</strong>{" "}
-                {query.data?.data.otherDetailsVerified ? "Yes" : "No"}
-              </p>
-              <p>
-                <strong>Profile Status:</strong> {query.data?.data.profileStatus}
-              </p>
-              <p>
-                <strong>Auth Method:</strong> {query.data?.data.authMethod}
-              </p>
-              <p>
-                <strong>Role:</strong> {query.data?.data.role}
-              </p>
-              <p>
-                <strong>Joined:</strong>{" "}
-                {new Date(query.data?.data.createdAt).toLocaleDateString()}
-              </p>
-              <p>
-                <strong>Last Updated:</strong>{" "}
-                {new Date(query.data?.data.updatedAt).toLocaleDateString()}
-              </p>
+        >×</button>
+        {isLoading ? (
+          <div className="flex items-center justify-center my-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+          </div>
+        ) : isError ? (
+          <p className="text-center text-red-600">{error?.message || "Failed to load details"}</p>
+        ) : details ? (
+          <div>
+            <h2 className="text-2xl font-bold mb-2 text-green-800">{details.name}</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-gray-800 mb-2">
+              <div><span className="font-semibold">Father Name:</span> {details.fatherName}</div>
+              <div><span className="font-semibold">Mobile:</span> {details.mobile}</div>
+              <div><span className="font-semibold">Adhar No:</span> {details.adharNo}</div>
+              <div><span className="font-semibold">Role:</span> {details.role}</div>
+              <div>
+                <span className="font-semibold">Verified:</span>{" "}
+                <span className={details.isVerified ? "text-green-600 font-bold" : "text-red-600 font-bold"}>
+                  {details.isVerified ? "Yes" : "No"}
+                </span>
+              </div>
+              <div>
+                <span className="font-semibold">Profile Status:</span> {details.profileStatus}
+              </div>
+              <div>
+                <span className="font-semibold">Mobile Verified:</span>{" "}
+                {details.mobileVerified ? "Yes" : "No"}
+              </div>
+              <div>
+                <span className="font-semibold">Bank Verified:</span>{" "}
+                {details.bankVerified ? "Yes" : "No"}
+              </div>
+              <div>
+                <span className="font-semibold">Other Verified:</span>{" "}
+                {details.otherDetailsVerified ? "Yes" : "No"}
+              </div>
+              <div>
+                <span className="font-semibold">Auth:</span> {details.authMethod}
+              </div>
+              <div>
+                <span className="font-semibold">Created:</span> {new Date(details.createdAt).toLocaleDateString()}
+              </div>
+              <div>
+                <span className="font-semibold">Updated:</span> {new Date(details.updatedAt).toLocaleDateString()}
+              </div>
             </div>
-          </>
+            <div className="mb-2">
+              <span className="font-semibold">Address:</span><br />
+              <span className="text-gray-700">{details.address.village}, {details.address.block}, {details.address.tehsil}, {details.address.district}, {details.address.state} - {details.address.pincode}</span>
+            </div>
+            {details.bankDetails && details.bankDetails.length > 0 && (
+              <div className="mt-3 mb-2">
+                <h3 className="font-semibold text-lg text-green-700 mb-1">Bank Details</h3>
+                <ul className="text-gray-700 pl-4 list-disc">
+                  {details.bankDetails.map((bd: BankDetails) => (
+                    <li key={bd._id}>
+                      <span><strong>Bank:</strong> {bd.bankName}</span>, <span><strong>Account:</strong> {bd.accountNumber}</span>, <span><strong>Branch:</strong> {bd.branch}</span>, <span><strong>IFSC:</strong> {bd.ifscCode}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {details.otherDetails && details.otherDetails.length > 0 && (
+              <div className="mt-2 mb-2">
+                <h3 className="font-semibold text-lg text-green-700 mb-1">Other Details</h3>
+                <span><strong>Crops handled:</strong> {details.otherDetails[0].cropsHandled?.join(", ") || "-"}</span>
+              </div>
+            )}
+            {details.isVerifiedBy &&
+              <div className="mt-2">
+                <p className="font-semibold text-green-700">Verified By: {details.isVerifiedBy.role} (ID: {details.isVerifiedBy.userId})</p>
+              </div>
+            }
+          </div>
+        ) : (
+          <p className="text-center text-gray-700">No details found.</p>
         )}
       </div>
     </div>
@@ -168,37 +221,43 @@ const PosFarmersUnderMe: React.FC = () => {
   }, [navigate]);
 
   const posId = profile?._id;
+  const token = localStorage.getItem("token");
 
+  // Use placeholderData for pagination instead of keepPreviousData
   const { data, isLoading, isError, error } = useQuery<ApiResponseList, Error>({
     queryKey: ["pos-farmers", posId, page],
     queryFn: async () => {
-      if (!posId) return { status_code: 200, message: "", data: [], totalPages: 1 };
-      const { data } = await api.get<ApiResponseList>("/api/pos/get-farmers", {
-        data: { filters: { _id: posId }, page },
-        headers: { "Content-Type": "application/json" },
-      });
-      if (data.status_code !== 200) throw new Error(data.message || "Failed to load farmers");
+      if (!posId) return { success: true, page, totalPages: 1, totalUsers: 0, users: [] };
+      const { data } = await api.post<ApiResponseList>(
+        "/api/pos/get-farmers",
+        { data: { filters: { _id: posId }, page } },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          }
+        }
+      );
+      if (!data.success) throw new Error(data.message || "Failed to load farmers");
       return data;
     },
     enabled: !!posId,
-    keepPreviousData: true,
+    placeholderData: { success: true, page, totalPages: 1, totalUsers: 0, users: [] },
     refetchOnWindowFocus: false,
   });
 
-  const totalPages = data?.totalPages || 1;
-
-  const farmers = data?.data || [];
+  const totalPages = data?.totalPages ?? 1;
+  const farmers: Farmer[] = Array.isArray(data?.users) ? data.users : [];
 
   return (
     <div className="max-w-5xl mx-auto p-4">
       <h1 className="text-2xl font-bold mb-6">Farmers Under Me</h1>
-
       {isLoading ? (
         <div className="flex justify-center items-center min-h-[200px]">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600"></div>
         </div>
       ) : isError ? (
-        <div className="text-center text-red-600 font-semibold">{error.message}</div>
+        <div className="text-center text-red-600 font-semibold">{error?.message}</div>
       ) : farmers.length === 0 ? (
         <div className="text-center text-gray-600 font-medium">
           No farmers found under you.
@@ -206,7 +265,7 @@ const PosFarmersUnderMe: React.FC = () => {
       ) : (
         <>
           <ul className="divide-y border border-gray-300 rounded-md">
-            {farmers.map((farmer) => (
+            {farmers.map((farmer: Farmer) => (
               <li
                 key={farmer._id}
                 className="p-4 cursor-pointer hover:bg-green-50 transition flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2"
@@ -216,16 +275,13 @@ const PosFarmersUnderMe: React.FC = () => {
                   <p className="font-semibold text-lg">{farmer.name}</p>
                   <p className="text-gray-600 text-sm">{farmer.fatherName}</p>
                 </div>
-                <div className="text-gray-600">
-                  {farmer.mobile}
-                </div>
+                <div className="text-gray-600">{farmer.mobile}</div>
                 <div className="text-gray-600 text-sm">
                   {`${farmer.address.village}, ${farmer.address.block}, ${farmer.address.tehsil}, ${farmer.address.district}, ${farmer.address.state}, ${farmer.address.pincode}`}
                 </div>
               </li>
             ))}
           </ul>
-
           {/* Pagination */}
           <div className="flex justify-center mt-6 space-x-4">
             <button
@@ -248,13 +304,11 @@ const PosFarmersUnderMe: React.FC = () => {
           </div>
         </>
       )}
-
-      {/* Farmer details modal */}
-      {/* <FarmerDetailsModal
+      <FarmerDetailsModal
         isOpen={!!selectedFarmerId}
         onClose={() => setSelectedFarmerId(null)}
         farmerId={selectedFarmerId}
-      /> */}
+      />
     </div>
   );
 };

@@ -24,7 +24,7 @@ type Address = {
   pincode: string;
 };
 
-type ProfileType = {
+export type ProfileType = {
   _id: string;
   id?: string;
   name: string;

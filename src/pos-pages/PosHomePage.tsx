@@ -20,6 +20,9 @@ const handleFulfillment = () => {
 const handleMyPosts = () => {
   navigate('/pos/posts')
 }
+const handleFarmersPosts = () => {
+  navigate('/pos/farmers-posts')  
+}
 
 
   return (
@@ -179,6 +182,36 @@ const handleMyPosts = () => {
               {/* Description */}
               <p className="text-gray-600 text-base sm:text-lg leading-relaxed">
                 View all posts created by me 
+              </p>
+              
+              {/* Action Indicator */}
+              <div className="mt-4 sm:mt-6">
+                <div className="inline-flex items-center text-green-600 font-medium group-hover:text-green-700">
+                  <span className="text-sm sm:text-base">See now </span>
+                  <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform duration-300" />
+                </div>
+              </div>
+            </div>
+          </div>
+              {/* show fulfillment requests  */}
+          <div 
+            onClick={handleFarmersPosts}
+            className="group bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer border border-gray-200 hover:border-green-300 hover:-translate-y-1 p-6 sm:p-8"
+          >
+            <div className="text-center">
+              {/* Icon */}
+              <div className="mx-auto w-16 h-16 sm:w-20 sm:h-20 bg-green-100 rounded-2xl flex items-center justify-center mb-4 sm:mb-6 group-hover:bg-green-200 transition-colors duration-300">
+                <FunnelPlus className="w-8 h-8 sm:w-10 sm:h-10 text-green-600" />
+              </div>
+              
+              {/* Title */}
+              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-3 group-hover:text-green-600 transition-colors duration-300">
+                All posts by area farmers
+              </h3>
+              
+              {/* Description */}
+              <p className="text-gray-600 text-base sm:text-lg leading-relaxed">
+                View all posts created by area farmers 
               </p>
               
               {/* Action Indicator */}
