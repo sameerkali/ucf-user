@@ -1,7 +1,5 @@
 import { AlertTriangle, Loader2, Trash2 } from "lucide-react";
 
-
-// Delete Modal Component
 interface DeleteModalProps {
   isOpen: boolean;
   onClose: () => void;

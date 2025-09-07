@@ -69,6 +69,12 @@ const SettingsPage: React.FC = () => {
   const handleMyPosts = () => {
     navigate("/kisaan/posts");
   };
+  const handleMyfulfillments = () => {
+    navigate("/kisaan/fulfillments");
+  }
+  const handleMyFarmers = () => {
+    navigate("/pos/all-farmers-under-me");
+  }
 
   const applyLanguageChange = () => {
     if (i18n.language !== pendingLang) {
@@ -122,6 +128,23 @@ const SettingsPage: React.FC = () => {
         descriptionKey: "selectthistoseeallmyposts",
       });
     }
+     if (isFarmer) {
+      baseOptions.push({
+        labelKey: "myfulfillments",
+        icon: Tv,
+        onClick: handleMyfulfillments,
+        descriptionKey: "selectthistoseemyfulfillments",
+      });
+    }
+        if (role === "pos") {
+      baseOptions.push({
+        labelKey: "My Farmers",
+        icon: Tv,
+        onClick: handleMyFarmers,
+        descriptionKey: "selectthistoseemyfulfillments",
+      });
+    }
+    
 
     // Always show logout option last
     baseOptions.push({
