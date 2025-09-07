@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../api/axios";
-import type{ UseMutationResult } from "@tanstack/react-query";
-
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { Trash2 } from "lucide-react";
@@ -66,8 +64,6 @@ const PosPosts: React.FC = () => {
   const [deletePostId, setDeletePostId] = useState<string>("");
   const [deletePostTitle, setDeletePostTitle] = useState<string>("");
 
-  // Profile loading handled implicitly via state, no separate loading boolean needed here
-
   useEffect(() => {
     try {
       const userData = localStorage.getItem("user");
@@ -101,8 +97,11 @@ const PosPosts: React.FC = () => {
         { headers: { "Content-Type": "application/json" } }
       );
       if (data.status_code === 200) {
-        // Sort posts descending by createdAt (latest first)
-        return (data.data || []).slice().sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        return (data.data || []).slice().sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() -
+            new Date(a.createdAt).getTime()
+        );
       }
       throw new Error(data.message || "Failed to fetch posts");
     },
@@ -112,8 +111,7 @@ const PosPosts: React.FC = () => {
     retry: 2,
   });
 
-  // Fix TS issue by typing deleteMutation to accept isLoading explicitly
-  const deleteMutation: UseMutationResult<unknown, Error, string, unknown> = useMutation({
+  const deleteMutation = useMutation({
     mutationFn: async (postId: string) => {
       const response = await api.delete("/api/posts/delete", {
         data: { postId },
@@ -124,11 +122,12 @@ const PosPosts: React.FC = () => {
       toast.success("Post deleted successfully!");
       queryClient.setQueryData<Post[] | undefined>(
         ["pos-posts", posId],
-        (oldPosts) => oldPosts?.filter((post) => post._id !== postId) || []
+        (oldPosts) =>
+          oldPosts?.filter((post) => post._id !== postId) || []
       );
       closeDeleteModal();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error(error.message || "Failed to delete post. Please try again.");
     },
   });
@@ -140,7 +139,7 @@ const PosPosts: React.FC = () => {
   };
 
   const closeDeleteModal = () => {
-    if (!deleteMutation.isLoading) {
+    if (!deleteMutation.isPending) {
       setDeleteModalOpen(false);
       setDeletePostId("");
       setDeletePostTitle("");
@@ -201,7 +200,7 @@ const PosPosts: React.FC = () => {
                 className="absolute top-4 right-4 text-red-600 hover:text-red-800 transition"
                 aria-label={`Delete post ${post.title}`}
                 title="Delete Post"
-                disabled={deleteMutation.isLoading}
+                disabled={deleteMutation.isPending}
               >
                 <Trash2 size={20} />
               </button>
@@ -234,10 +233,13 @@ const PosPosts: React.FC = () => {
                   Status:{" "}
                   <span
                     className={`font-semibold ${
-                      post.status === "active" ? "text-green-600" : "text-red-600"
+                      post.status === "active"
+                        ? "text-green-600"
+                        : "text-red-600"
                     }`}
                   >
-                    {post.status.charAt(0).toUpperCase() + post.status.slice(1)}
+                    {post.status.charAt(0).toUpperCase() +
+                      post.status.slice(1)}
                   </span>
                 </div>
                 <div>Required By: {formatDateToReadable(post.requiredByDate)}</div>
@@ -254,7 +256,7 @@ const PosPosts: React.FC = () => {
         onClose={closeDeleteModal}
         onConfirm={confirmDeletePost}
         postTitle={deletePostTitle}
-        isDeleting={deleteMutation.isLoading}
+        isDeleting={deleteMutation.isPending}
       />
     </>
   );
