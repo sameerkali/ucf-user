@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
-import type { ProfileType } from "../components/Profile";
+import React, { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import api from "../api/axios";
+import { LoadingSkeleton } from "../utils/Skeletons";
+import PostCard from "../components/PosPostCard";
 
 interface CreatedBy {
   id: string;
@@ -31,7 +32,7 @@ interface Post {
   crops: Crop[];
   title: string;
   description: string;
-  requiredByDate: string;
+  readyByDate: string;
   photos: string[];
   videos: string[];
   location: Location;
@@ -40,58 +41,86 @@ interface Post {
   updatedAt: string;
 }
 
-interface ApiResponse {
-  status_code: number;
-  message: string;
+interface ApiResponseData {
+  totalCount: number;
+  totalPages: number;
+  currentPage: number;
+  limit: number;
   data: Post[];
 }
 
-const PosFarmersPost = () => {
-  const [userRole, setUserRole] = useState<string>("");
+interface ApiResponse {
+  status_code: number;
+  message: string;
+  data: ApiResponseData;
+}
+
+interface ProfileType {
+  _id: string;
+  role: string;
+}
+
+const PosFarmersPost: React.FC = () => {
   const [profile, setProfile] = useState<ProfileType | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loadingProfile, setLoadingProfile] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
+
+  const [page, setPage] = useState<number>(1);
+  const limit = 6;
 
   useEffect(() => {
     const getProfileFromStorage = () => {
-      setLoading(true);
+      setLoadingProfile(true);
       setError("");
       try {
         const userData = localStorage.getItem("user");
         if (userData) {
           const parsedProfile = JSON.parse(userData) as ProfileType;
           setProfile(parsedProfile);
-          setUserRole(parsedProfile.role?.toLowerCase() || "");
         } else {
           setError("No profile data found");
         }
-      } catch (err) {
-        console.error("Error parsing user data from localStorage:", err);
+      } catch {
         setError("Error loading profile data");
       } finally {
-        setLoading(false);
+        setLoadingProfile(false);
       }
     };
     getProfileFromStorage();
   }, []);
 
-  // Query posts when profile is loaded
   const {
-    data: posts = [],
-    isLoading: postsLoading,
-    isError: postsError,
+    data: response,
+    isLoading,
+    isError,
     error: postsErrorObj,
-  } = useQuery<Post[], Error>({
-    queryKey: ["farmer-demand-posts", profile?._id],
+    isFetching,
+  } = useQuery<ApiResponse, Error>({
+    queryKey: ["farmer-demand-posts", profile?._id, page],
     queryFn: async () => {
-      if (!profile?._id) return [];
+      if (!profile?._id)
+        return {
+          status_code: 200,
+          message: "",
+          data: {
+            totalCount: 0,
+            totalPages: 0,
+            currentPage: 1,
+            limit,
+            data: [],
+          },
+        };
       const { data } = await api.post<ApiResponse>(
-        "/api/posts/details",
-        { id: profile._id },
+        "/api/posts/list",
+        {
+          filters: {},
+          page,
+          limit,
+        },
         { headers: { "Content-Type": "application/json" } }
       );
       if (data.status_code === 200) {
-        return data.data || [];
+        return data;
       }
       throw new Error(data.message || "Failed to fetch posts");
     },
@@ -101,64 +130,95 @@ const PosFarmersPost = () => {
     retry: 2,
   });
 
-  if (loading)
+  const posts = response?.data?.data || [];
+  const totalPages = response?.data?.totalPages || 1;
+
+  if (loadingProfile || isLoading) return <LoadingSkeleton limit={limit} />;
+
+  if (error || isError)
     return (
-      <div className="min-h-screen flex justify-center items-center">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-500"></div>
+      <div className="min-h-screen p-4 bg-gray-50 flex justify-center items-center">
+        <p className="text-red-600 text-center text-lg">
+          {error || postsErrorObj?.message || "Failed to load posts"}
+        </p>
       </div>
     );
 
-  if (error)
-    return <div className="text-center text-red-600 mt-8">{error}</div>;
+  if (posts.length === 0)
+    return (
+      <div className="min-h-screen p-4 bg-gray-50 flex justify-center items-center">
+        <p className="text-gray-600 text-center text-lg">
+          No posts found for this POS.
+        </p>
+      </div>
+    );
 
   return (
-    <div className="max-w-4xl mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">My Role: <span className="capitalize">{userRole}</span></h1>
-      {postsLoading ? (
-        <div className="flex justify-center items-center min-h-[200px]">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-500"></div>
-        </div>
-      ) : postsError ? (
-        <div className="text-center text-red-600">{postsErrorObj?.message || "Failed to load posts"}</div>
-      ) : posts.length === 0 ? (
-        <div className="text-center text-gray-600">No posts found for this POS.</div>
-      ) : (
-        <ul className="space-y-6">
-          {posts.map((post) => (
-            <li key={post._id} className="border border-gray-300 rounded-lg p-6 bg-white hover:shadow transition-shadow">
-              <h2 className="text-xl font-semibold mb-2">{post.title}</h2>
-              <p className="mb-3 text-gray-700">{post.description}</p>
-              <div className="mb-2">
-                <span className="font-semibold">Crops: </span>
-                <ul className="list-disc list-inside space-y-1">
-                  {post.crops.map((crop, idx) => (
-                    <li key={idx}>
-                      {crop.name} ({crop.type}) - Quantity: {crop.quantity} Quintals @ ₹{crop.pricePerQuintal} per Quintal
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="mb-2">
-                <span className="font-semibold">Required By: </span>
-                {post.requiredByDate && new Date(post.requiredByDate).toLocaleDateString(undefined, {
-                  day: "numeric",
-                  month: "long",
-                  year: "numeric",
-                })}
-              </div>
-              <div className="mb-2">
-                <span className="font-semibold">Location: </span>
-                {post.location.village}, {post.location.block}, {post.location.tehsil}, {post.location.district}, {post.location.state} - {post.location.pincode}
-              </div>
-              <div className="flex flex-wrap gap-2 text-gray-600 text-sm mt-2">
-                <div>Status: <span className={`font-semibold ${post.status === "active" ? "text-green-600" : "text-red-600"}`}>{post.status.charAt(0).toUpperCase() + post.status.slice(1)}</span></div>
-                <div>Created: {new Date(post.createdAt).toLocaleDateString()}</div>
-                <div>Updated: {new Date(post.updatedAt).toLocaleDateString()}</div>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-8 text-center md:text-left">
+        All posts by your area farmer
+      </h1>
+      <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+        {posts.map((post) => (
+          <PostCard key={post._id} post={post} />
+        ))}
+      </ul>
+
+      <nav
+        aria-label="Pagination"
+        className="mt-10 flex justify-center space-x-3 flex-wrap gap-3"
+      >
+        <button
+          onClick={() => setPage((p) => Math.max(1, p - 1))}
+          disabled={page <= 1 || isFetching}
+          className="px-4 py-2 rounded-lg bg-gray-200 text-gray-700 disabled:opacity-50 disabled:pointer-events-none hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
+          type="button"
+          aria-disabled={page <= 1}
+        >
+          Previous
+        </button>
+        {[...Array(totalPages)].map((_, i) => {
+          const num = i + 1;
+          if (
+            num === 1 ||
+            num === totalPages ||
+            (num >= page - 1 && num <= page + 1)
+          ) {
+            return (
+              <button
+                key={num}
+                onClick={() => setPage(num)}
+                aria-current={page === num ? "page" : undefined}
+                className={`px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
+                  page === num
+                    ? "bg-green-600 text-white"
+                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                }`}
+                type="button"
+              >
+                {num}
+              </button>
+            );
+          }
+          if (num === page - 2 || num === page + 2) {
+            return (
+              <span key={"dots" + num} className="px-2 py-2 select-none">
+                ...
+              </span>
+            );
+          }
+          return null;
+        })}
+        <button
+          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+          disabled={page >= totalPages || isFetching}
+          className="px-4 py-2 rounded-lg bg-gray-200 text-gray-700 disabled:opacity-50 disabled:pointer-events-none hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
+          type="button"
+          aria-disabled={page >= totalPages}
+        >
+          Next
+        </button>
+      </nav>
     </div>
   );
 };
