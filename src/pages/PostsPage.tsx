@@ -4,13 +4,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus } from "lucide-react";
 import toast from "react-hot-toast";
 
-// Assuming your project structure includes these imports
 import api from "../api/axios";
 import { ILLUSTRATIONS } from "../assets/assets";
 import DeleteModal from "../components/DeleteModal";
 import PostCard, { type Post } from "../components/PostCard";
 
-// --- INTERFACES --- //
 interface User {
   _id: string;
   name: string;
@@ -41,7 +39,6 @@ interface DeleteModalState {
   postTitle: string;
 }
 
-// --- MAIN PAGE COMPONENT --- //
 export default function PostsPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -57,7 +54,10 @@ export default function PostsPage() {
     const userData = localStorage.getItem("user");
     if (userData) {
       try {
-        const user: User = JSON.parse(userData);
+        const parsed = JSON.parse(userData);
+        // If user data is an array as per new format, take the first element
+        const user: User =
+          Array.isArray(parsed) && parsed.length > 0 ? parsed[0] : parsed;
         setKisaanId(user._id);
       } catch (error) {
         console.error("Error parsing user data:", error);
@@ -101,9 +101,8 @@ export default function PostsPage() {
       });
       return response.data;
     },
-    onSuccess: (postId) => {
+    onSuccess: (_, postId) => {
       toast.success("Post deleted successfully!");
-      // Optimistically update the cache
       queryClient.setQueryData<Post[] | undefined>(
         ["user-posts", kisaanId],
         (oldPosts) => oldPosts?.filter((post) => post._id !== postId) || []
@@ -117,20 +116,20 @@ export default function PostsPage() {
           error.message ||
           "Failed to delete post. Please try again."
       );
-      // If the mutation fails, you might want to refetch to get the correct state
       queryClient.invalidateQueries({ queryKey: ["user-posts", kisaanId] });
     },
   });
-  
+
   const openDeleteModal = (postId: string, postTitle: string) => {
     setDeleteModal({ isOpen: true, postId, postTitle });
   };
 
-  const closeDeleteModal = () => {
-    if (!deleteMutation.isPending) {
-      setDeleteModal({ isOpen: false, postId: "", postTitle: "" });
-    }
-  };
+const closeDeleteModal = () => {
+  // Use only isLoading (no isFetching on mutations)
+  if (!deleteMutation.isPending) {
+    setDeleteModal({ isOpen: false, postId: "", postTitle: "" });
+  }
+};
 
   const confirmDeletePost = () => {
     if (deleteModal.postId) {
@@ -138,14 +137,14 @@ export default function PostsPage() {
     }
   };
 
-  if (fetchingPosts && !posts.length) {
+  if (fetchingPosts && posts.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Loader2 className="animate-spin w-10 h-10 text-green-500" />
       </div>
     );
   }
-  
+
   return (
     <>
       <div className="min-h-screen bg-gray-50 pb-24 md:pb-8">
@@ -185,7 +184,9 @@ export default function PostsPage() {
                   key={post._id}
                   post={post}
                   onDelete={openDeleteModal}
-                  deletePending={deleteMutation.isPending && deleteModal.postId === post._id}
+                  deletePending={
+                    deleteMutation.isPending && deleteModal.postId === post._id
+                  }
                 />
               ))}
             </div>
@@ -202,4 +203,3 @@ export default function PostsPage() {
     </>
   );
 }
-

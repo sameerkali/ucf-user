@@ -21,7 +21,7 @@ const SettingsPage: React.FC = () => {
 
   const [showLanguagePopup, setShowLanguagePopup] = useState(false);
   const [pendingLang, setPendingLang] = useState<LanguageCode>(
-    i18n.language as LanguageCode
+    (i18n.language as LanguageCode) || "en"
   );
   const [showLogoutPopup, setShowLogoutPopup] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -31,20 +31,23 @@ const SettingsPage: React.FC = () => {
     { value: "hi", label: "हिन्दी" },
   ];
 
-  // Handle both "Farmer" and "kisaan" role values, and "POS" and "pos"
-  const role = profile?.role ? profile.role.toLowerCase() : "kisaan";
-  const isFarmer = role === "farmer" || role === "kisaan";
-  const isPOS = role === "pos";
-
-  const profileImgUrl = "https://randomuser.me/api/portraits/men/75.jpg";
-
   useEffect(() => {
     const getProfileFromStorage = () => {
       setLoading(true);
       try {
         const userData = localStorage.getItem("user");
         if (userData) {
-          const parsedProfile = JSON.parse(userData);
+          let parsedProfile: any = null;
+          try {
+            const parsed = JSON.parse(userData);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              parsedProfile = parsed[0];
+            } else if (typeof parsed === "object" && parsed !== null) {
+              parsedProfile = parsed;
+            }
+          } catch {
+            parsedProfile = null;
+          }
           setProfile(parsedProfile);
         } else {
           setProfile(null);
@@ -60,6 +63,17 @@ const SettingsPage: React.FC = () => {
     getProfileFromStorage();
   }, []);
 
+  const role = useMemo(() => {
+    if (!profile?.role) return "kisaan";
+    const r = String(profile.role).toLowerCase();
+    return r === "farmer" || r === "kisaan" ? "kisaan" : r === "pos" ? "pos" : "kisaan";
+  }, [profile]);
+
+  const isFarmer = role === "kisaan";
+  const isPOS = role === "pos";
+
+  const profileImgUrl = "https://randomuser.me/api/portraits/men/75.jpg";
+
   const openLanguagePopup = () => {
     setPendingLang((i18n.language as LanguageCode) || "en");
     setShowLanguagePopup(true);
@@ -71,10 +85,10 @@ const SettingsPage: React.FC = () => {
   };
   const handleMyfulfillments = () => {
     navigate("/kisaan/fulfillments");
-  }
+  };
   const handleMyFarmers = () => {
     navigate("/pos/all-farmers-under-me");
-  }
+  };
 
   const applyLanguageChange = () => {
     if (i18n.language !== pendingLang) {
@@ -91,8 +105,7 @@ const SettingsPage: React.FC = () => {
     localStorage.removeItem("user");
     localStorage.removeItem("role");
     localStorage.removeItem("_grecaptcha");
-    
-    // Navigate to appropriate login based on role
+
     if (isPOS) {
       navigate("/login?role=pos");
     } else {
@@ -116,27 +129,26 @@ const SettingsPage: React.FC = () => {
         icon: Languages,
         onClick: openLanguagePopup,
         descriptionKey: "selectPreferredLanguage",
-      }
+      },
     ];
 
-    // Only show "My Posts" for farmers (both "Farmer" and "kisaan" roles)
     if (isFarmer) {
-      baseOptions.push({
-        labelKey: "myposts",
-        icon: Tv,
-        onClick: handleMyPosts,
-        descriptionKey: "selectthistoseeallmyposts",
-      });
+      baseOptions.push(
+        {
+          labelKey: "myposts",
+          icon: Tv,
+          onClick: handleMyPosts,
+          descriptionKey: "selectthistoseeallmyposts",
+        },
+        {
+          labelKey: "myfulfillments",
+          icon: Tv,
+          onClick: handleMyfulfillments,
+          descriptionKey: "selectthistoseemyfulfillments",
+        }
+      );
     }
-     if (isFarmer) {
-      baseOptions.push({
-        labelKey: "myfulfillments",
-        icon: Tv,
-        onClick: handleMyfulfillments,
-        descriptionKey: "selectthistoseemyfulfillments",
-      });
-    }
-        if (role === "pos") {
+    if (isPOS) {
       baseOptions.push({
         labelKey: "My Farmers",
         icon: Tv,
@@ -144,9 +156,7 @@ const SettingsPage: React.FC = () => {
         descriptionKey: "selectthistoseemyfulfillments",
       });
     }
-    
 
-    // Always show logout option last
     baseOptions.push({
       labelKey: "logout",
       icon: LogOut,
@@ -155,7 +165,7 @@ const SettingsPage: React.FC = () => {
     });
 
     return baseOptions;
-  }, [isFarmer, navigate, profile]);
+  }, [isFarmer, isPOS, navigate, profile]);
 
   return (
     <div className="min-h-screen px-4 py-6">
@@ -200,9 +210,7 @@ const SettingsPage: React.FC = () => {
             </div>
             <div className="flex-1">
               <div className="font-medium text-gray-900">{t(opt.labelKey)}</div>
-              <div className="text-sm text-gray-500">
-                {t(opt.descriptionKey!)}
-              </div>
+              <div className="text-sm text-gray-500">{t(opt.descriptionKey!)}</div>
             </div>
           </button>
         ))}
