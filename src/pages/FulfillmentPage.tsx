@@ -45,7 +45,7 @@ interface Post {
 interface Fulfillment {
   _id: string;
   requestedBy: UserRef;
-  post: Post;
+  post: Post | null; // post can be null or undefined
   crops: { name: string; quantity: number }[];
   status: FulfillmentStatus;
   createdAt: string;
@@ -64,15 +64,33 @@ export default function FulfillmentPage() {
   const [profileError, setProfileError] = useState("");
   const [filterStatus, setFilterStatus] = useState<FulfillmentStatus | "">("");
 
-  // Load user profile from localStorage
   useEffect(() => {
     setLoadingProfile(true);
     setProfileError("");
     try {
       const userData = localStorage.getItem("user");
       if (userData) {
-        const parsedProfile = JSON.parse(userData) as ProfileType;
-        setProfile(parsedProfile);
+        let parsedProfile: ProfileType | null = null;
+        try {
+          const parsed = JSON.parse(userData);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            parsedProfile = parsed[0];
+          } else if (typeof parsed === "object" && parsed !== null) {
+            parsedProfile = parsed;
+          }
+        } catch {
+          setProfileError("Invalid profile data format, please login.");
+          navigate("/login");
+          setLoadingProfile(false);
+          return;
+        }
+
+        if (parsedProfile) {
+          setProfile(parsedProfile);
+        } else {
+          setProfileError("No profile data found, please login.");
+          navigate("/login");
+        }
       } else {
         setProfileError("No profile data found, please login.");
         navigate("/login");
@@ -86,7 +104,6 @@ export default function FulfillmentPage() {
     }
   }, [navigate]);
 
-  // Fetch fulfillments with React Query
   const {
     data: fulfillments = [],
     isLoading: loadingFulfillments,
@@ -138,7 +155,9 @@ export default function FulfillmentPage() {
         <select
           className="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
           value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value as FulfillmentStatus | "")}
+          onChange={(e) =>
+            setFilterStatus(e.target.value as FulfillmentStatus | "")
+          }
         >
           <option value="">All</option>
           {statuses.map((status) => (
@@ -166,7 +185,7 @@ export default function FulfillmentPage() {
             >
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold">
-                  {fulfillment.post.title}
+                  {fulfillment.post?.title ?? "Untitled Post"}
                 </h2>
                 <span
                   className={`px-3 py-1 rounded-full font-semibold text-sm ${
@@ -184,7 +203,9 @@ export default function FulfillmentPage() {
                 </span>
               </div>
 
-              <p className="mb-4 text-gray-700">{fulfillment.post.description}</p>
+              <p className="mb-4 text-gray-700">
+                {fulfillment.post?.description ?? "No description available."}
+              </p>
 
               <div className="mb-4">
                 <span className="font-semibold">Requested By:</span>{" "}
@@ -204,31 +225,33 @@ export default function FulfillmentPage() {
                 </ul>
               </div>
 
-              <div className="mb-4">
-                <span className="font-semibold">Post Details:</span>
-                <ul className="mt-2 space-y-1 text-gray-700">
-                  <li>
-                    <strong>Type:</strong> {fulfillment.post.type}
-                  </li>
-                  <li>
-                    <strong>Status:</strong>{" "}
-                    {fulfillment.post.status.charAt(0).toUpperCase() +
-                      fulfillment.post.status.slice(1)}
-                  </li>
-                  <li>
-                    <strong>Required By:</strong>{" "}
-                    {new Date(fulfillment.post.requiredByDate).toLocaleDateString()}
-                  </li>
-                  <li>
-                    <strong>Location:</strong>{" "}
-                    {`${fulfillment.post.location.village}, ${fulfillment.post.location.block}, ${fulfillment.post.location.tehsil}, ${fulfillment.post.location.district}, ${fulfillment.post.location.state} - ${fulfillment.post.location.pincode}`}
-                  </li>
-                  <li>
-                    <strong>Created At:</strong>{" "}
-                    {new Date(fulfillment.post.createdAt).toLocaleDateString()}
-                  </li>
-                </ul>
-              </div>
+              {fulfillment.post && (
+                <div className="mb-4">
+                  <span className="font-semibold">Post Details:</span>
+                  <ul className="mt-2 space-y-1 text-gray-700">
+                    <li>
+                      <strong>Type:</strong> {fulfillment.post.type}
+                    </li>
+                    <li>
+                      <strong>Status:</strong>{" "}
+                      {fulfillment.post.status.charAt(0).toUpperCase() +
+                        fulfillment.post.status.slice(1)}
+                    </li>
+                    <li>
+                      <strong>Required By:</strong>{" "}
+                      {new Date(fulfillment.post.requiredByDate).toLocaleDateString()}
+                    </li>
+                    <li>
+                      <strong>Location:</strong>{" "}
+                      {`${fulfillment.post.location.village}, ${fulfillment.post.location.block}, ${fulfillment.post.location.tehsil}, ${fulfillment.post.location.district}, ${fulfillment.post.location.state} - ${fulfillment.post.location.pincode}`}
+                    </li>
+                    <li>
+                      <strong>Created At:</strong>{" "}
+                      {new Date(fulfillment.post.createdAt).toLocaleDateString()}
+                    </li>
+                  </ul>
+                </div>
+              )}
             </div>
           ))}
         </div>

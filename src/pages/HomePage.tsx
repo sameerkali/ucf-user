@@ -43,19 +43,21 @@ const HomePage: React.FC = () => {
   });
 
   // Fetch posts (existing React Query)
-  const { data: posts = [], isLoading: postsLoading, error, refetch, isFetching } = useQuery({
-    queryKey: ['posts'],
-    queryFn: async (): Promise<Post[]> => {
-      const { data } = await api.post('/api/posts/list');
-      if (data.status_code === 200) {
-        return data.data || [];
-      }
-      throw new Error(data.message || 'Failed to fetch posts');
-    },
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-    refetchOnWindowFocus: false,
-  });
+const { data: posts = [], isLoading: postsLoading, error, refetch, isFetching } = useQuery({
+  queryKey: ['posts'],
+  queryFn: async (): Promise<Post[]> => {
+    const { data } = await api.post('/api/posts/list');
+    if (data.status_code === 200) {
+      // Return the inner data array of posts here
+      return data.data.data || [];
+    }
+    throw new Error(data.message || 'Failed to fetch posts');
+  },
+  staleTime: 5 * 60 * 1000,
+  gcTime: 10 * 60 * 1000,
+  refetchOnWindowFocus: false,
+});
+
 
   const handleCardClick = (post: Post): void => {
     navigate(`/kisaan/crop-details/${post._id}`, { state: { post } });

@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { 
-  ArrowLeft, 
-  User, 
-  Phone, 
-  MapPin, 
+import {
+  ArrowLeft,
+  User,
+  Phone,
+  MapPin,
   Calendar,
   Shield,
   CheckCircle,
@@ -61,9 +61,26 @@ export default function Profile() {
       try {
         const userData = localStorage.getItem("user");
         if (userData) {
-          const parsedProfile = JSON.parse(userData) as ProfileType;
-          setProfile(parsedProfile);
-          setUserRole(parsedProfile.role?.toLowerCase() || "");
+          let parsedProfile: ProfileType | null = null;
+          try {
+            const parsed = JSON.parse(userData);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              parsedProfile = parsed[0];
+            } else if (typeof parsed === "object" && parsed !== null) {
+              parsedProfile = parsed;
+            }
+          } catch {
+            setError("Invalid profile data format");
+            setLoading(false);
+            return;
+          }
+
+          if (parsedProfile) {
+            setProfile(parsedProfile);
+            setUserRole(parsedProfile.role?.toLowerCase() || "");
+          } else {
+            setError("No profile data found");
+          }
         } else {
           setError("No profile data found");
         }
@@ -96,7 +113,7 @@ export default function Profile() {
           <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
           <h2 className="text-lg font-semibold text-gray-900 mb-2">Profile Error</h2>
           <p className="text-red-600 mb-6">{error || "No profile data available"}</p>
-          <button 
+          <button
             onClick={() => navigate(-1)}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
@@ -213,33 +230,32 @@ export default function Profile() {
         </div>
 
         {/* Verification Status - Simple List */}
-        {userRole !== 'pos' && 
-       
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">{t("verificationStatus")}</h2>
-          <div className="bg-white rounded-lg divide-y divide-gray-100">
-            {statusItems.map((item, idx) => (
-              <div key={idx} className="flex items-center gap-4 px-4 py-4">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
-                  item.status ? 'bg-green-100' : 'bg-red-100'
-                }`}>
-                  {item.status ? (
-                    <CheckCircle className="w-5 h-5 text-green-600" />
-                  ) : (
-                    <XCircle className="w-5 h-5 text-red-600" />
-                  )}
-                </div>
-                <div className="flex-1">
-                  <div className="text-sm font-medium text-gray-900">{item.title}</div>
-                  <div className={`text-sm ${item.status ? 'text-green-600' : 'text-red-600'}`}>
-                    {item.status ? t("verified") : t("notVerified")}
+        {userRole !== 'pos' &&
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">{t("verificationStatus")}</h2>
+            <div className="bg-white rounded-lg divide-y divide-gray-100">
+              {statusItems.map((item, idx) => (
+                <div key={idx} className="flex items-center gap-4 px-4 py-4">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+                    item.status ? 'bg-green-100' : 'bg-red-100'
+                  }`}>
+                    {item.status ? (
+                      <CheckCircle className="w-5 h-5 text-green-600" />
+                    ) : (
+                      <XCircle className="w-5 h-5 text-red-600" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm font-medium text-gray-900">{item.title}</div>
+                    <div className={`text-sm ${item.status ? 'text-green-600' : 'text-red-600'}`}>
+                      {item.status ? t("verified") : t("notVerified")}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-         }
+        }
       </div>
     </div>
   );

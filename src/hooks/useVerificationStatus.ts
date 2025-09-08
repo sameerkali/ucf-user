@@ -20,8 +20,29 @@ export function useVerificationStatus(): boolean {
           return;
         }
 
-        const user: User = JSON.parse(userData);
-        setIsPending(user?.profileStatus !== 'completed');
+        // Parse userData as array or single object fallback
+        let userArray: User[] = [];
+        try {
+          const parsed = JSON.parse(userData);
+          if (Array.isArray(parsed)) {
+            userArray = parsed;
+          } else if (typeof parsed === 'object' && parsed !== null) {
+            // If somehow single object stored, wrap it in array
+            userArray = [parsed];
+          }
+        } catch {
+          // If parsing fails, treat as no user
+          setIsPending(false);
+          return;
+        }
+
+        const user = userArray[0];
+        if (!user) {
+          setIsPending(false);
+          return;
+        }
+
+        setIsPending(user.profileStatus !== 'completed');
       } catch (error) {
         console.error('Error checking verification status:', error);
         setIsPending(false);
@@ -30,7 +51,6 @@ export function useVerificationStatus(): boolean {
 
     checkVerificationStatus();
 
-    // Listen for localStorage changes to update status dynamically
     const handleStorageChange = (event: StorageEvent): void => {
       if (event.key === 'user') {
         checkVerificationStatus();
@@ -39,7 +59,6 @@ export function useVerificationStatus(): boolean {
 
     window.addEventListener('storage', handleStorageChange);
 
-    // Cleanup event listener on unmount
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
