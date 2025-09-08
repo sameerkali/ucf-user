@@ -51,7 +51,7 @@ curl --location --globoff --request GET '{{baseURL}}/api/pos/get-farmer-details'
 
 
 
-
+wrong api --->> 
 
 farmer Demand get api
 curl --location 'https://ufc-backend-seven.vercel.app/api/posts/details' \
