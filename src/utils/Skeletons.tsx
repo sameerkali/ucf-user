@@ -119,3 +119,38 @@ export const LoadingSkeleton: React.FC<{ limit: number }> = ({ limit }) => (
     ))}
   </div>
 )
+export const PosFarmerDetailsModalSkeleton: React.FC = () => (
+    <div className="space-y-6 animate-pulse">
+        <div className="p-4 bg-slate-100 rounded-lg">
+            <div className="h-7 w-2/3 bg-slate-200 rounded"></div>
+            <div className="h-5 w-1/3 bg-slate-200 rounded mt-2"></div>
+        </div>
+        {[1, 2, 3].map(i => (
+             <div key={i}>
+                <div className="h-6 w-1/3 bg-slate-200 rounded mb-4"></div>
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="h-5 w-full bg-slate-200 rounded"></div>
+                    <div className="h-5 w-full bg-slate-200 rounded"></div>
+                    <div className="h-5 w-full bg-slate-200 rounded"></div>
+                    <div className="h-5 w-full bg-slate-200 rounded"></div>
+                </div>
+            </div>
+        ))}
+    </div>
+);
+
+export const FarmerCardSkeleton: React.FC = () => (
+    <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 animate-pulse">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex-1 w-full sm:w-auto">
+                <div className="h-6 w-3/4 sm:w-1/2 bg-slate-200 rounded"></div>
+                <div className="h-4 w-1/2 sm:w-1/3 bg-slate-200 rounded mt-2"></div>
+            </div>
+            <div className="w-full sm:w-auto mt-3 sm:mt-0">
+                <div className="h-5 w-full sm:w-32 bg-slate-200 rounded"></div>
+                <div className="h-5 w-full sm:w-48 bg-slate-200 rounded mt-2"></div>
+            </div>
+            <div className="w-28 h-10 bg-slate-200 rounded-lg self-start sm:self-center mt-3 sm:mt-0"></div>
+        </div>
+    </div>
+);

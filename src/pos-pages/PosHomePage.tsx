@@ -1,9 +1,28 @@
 import { useNavigate } from 'react-router-dom'
 import { UserPlus, ClipboardCheck, PlusCircle, BarChart2, PieChart, Leaf } from 'lucide-react'
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, ArcElement, Title, Tooltip, Legend } from 'chart.js'
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js'
 import { Line, Doughnut } from 'react-chartjs-2'
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, ArcElement, Title, Tooltip, Legend)
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend
+)
 
 const PosHomePage = () => {
   const navigate = useNavigate()
@@ -24,37 +43,56 @@ const PosHomePage = () => {
     { title: 'Farmers Posts', icon: <Leaf />, onClick: handleFarmersPosts },
   ]
 
-  // Chart Data
   const lineChartData = {
     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'],
-    datasets: [{
-      label: 'Farmers Registered',
-      data: [20, 25, 30, 35, 40, 38, 45, 50],
-      borderColor: '#10B981', // Emerald-500
-      backgroundColor: 'rgba(16, 185, 129, 0.1)',
-      fill: true,
-      tension: 0.4,
-      pointBackgroundColor: '#10B981',
-      pointBorderColor: '#fff',
-      pointHoverRadius: 7,
-      pointHoverBackgroundColor: '#10B981',
-      pointHoverBorderColor: '#fff',
-    }],
+    datasets: [
+      {
+        label: 'Farmers Registered',
+        data: [20, 25, 30, 35, 40, 38, 45, 50],
+        borderColor: '#10B981',
+        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: '#10B981',
+        pointBorderColor: '#fff',
+        pointHoverRadius: 7,
+        pointHoverBackgroundColor: '#10B981',
+        pointHoverBorderColor: '#fff',
+      },
+    ],
   }
 
   const doughnutChartData = {
     labels: ['Wheat', 'Corn', 'Soybean', 'Vegetables', 'Fruits'],
-    datasets: [{
-      label: 'Crop Posts by Category',
-      data: [300, 250, 180, 400, 150],
-      backgroundColor: ['#34D399', '#6EE7B7', '#A7F3D0', '#059669', '#047857'],
-      borderColor: '#F9FAFB',
-      borderWidth: 2,
-      hoverOffset: 8,
-    }],
+    datasets: [
+      {
+        label: 'Crop Posts by Category',
+        data: [300, 250, 180, 400, 150],
+        backgroundColor: ['#34D399', '#6EE7B7', '#A7F3D0', '#059669', '#047857'],
+        borderColor: '#F9FAFB',
+        borderWidth: 2,
+        hoverOffset: 8,
+      },
+    ],
   }
-  
-  const chartOptions = { responsive: true, plugins: { legend: { position: 'top' } } }
+
+  const lineChartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+      },
+    },
+  }
+
+  const doughnutChartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'right' as const,
+      },
+    },
+  }
 
   return (
     <div className="min-h-screen bg-gray-50/50 p-6 sm:p-10 font-sans">
@@ -75,9 +113,7 @@ const PosHomePage = () => {
               onClick={onClick}
               className="group flex flex-col items-center justify-center p-4 bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-lg hover:border-emerald-300 transition-all duration-300 transform hover:-translate-y-1"
             >
-              <div className="text-emerald-600 group-hover:text-emerald-500 transition-colors mb-2">
-                {icon}
-              </div>
+              <div className="text-emerald-600 group-hover:text-emerald-500 transition-colors mb-2">{icon}</div>
               <span className="text-gray-700 font-medium text-sm text-center group-hover:text-emerald-800">{title}</span>
             </button>
           ))}
@@ -88,14 +124,14 @@ const PosHomePage = () => {
           {/* Growth Chart */}
           <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">Farmer Registration Growth</h2>
-            <Line data={lineChartData} options={chartOptions} />
+            <Line data={lineChartData} options={lineChartOptions} />
           </div>
 
           {/* Stats & Crop Distribution */}
           <div className="space-y-8">
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
               <h3 className="text-xl font-semibold text-gray-800 mb-4">Crop Distribution</h3>
-              <Doughnut data={doughnutChartData} options={{ responsive: true, plugins: { legend: { position: 'right' } } }} />
+              <Doughnut data={doughnutChartData} options={doughnutChartOptions} />
             </div>
             <div className="bg-emerald-600 text-white p-6 rounded-2xl shadow-lg">
               <h3 className="font-semibold opacity-90 mb-1">Total Farmers</h3>
@@ -108,7 +144,8 @@ const PosHomePage = () => {
   )
 }
 
-export default PosHomePage;
+export default PosHomePage
+
 
 
 

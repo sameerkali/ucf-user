@@ -1,64 +1,55 @@
 interface CreatedBy {
-  id: string
-  role: string
+  id: string;
+  role: string;
 }
 
 interface Crop {
-  name: string
-  type: string
-  quantity: number
-  pricePerQuintal: number
+  name: string;
+  type: string;
+  quantity: number;
+  pricePerQuintal: number;
 }
 
 interface Location {
-  state: string
-  district: string
-  tehsil: string
-  block: string
-  village: string
-  pincode: string
+  state: string;
+  district: string;
+  tehsil: string;
+  block: string;
+  village: string;
+  pincode: string;
 }
 
 interface Post {
-  _id: string
-  createdBy: CreatedBy
-  type: string
-  crops: Crop[]
-  title: string
-  description: string
-  readyByDate: string
-  photos: string[]
-  videos: string[]
-  location: Location
-  status: string
-  createdAt: string
-  updatedAt: string
+  _id: string;
+  createdBy: CreatedBy;
+  type: string;
+  crops: Crop[];
+  title: string;
+  description: string;
+  readyByDate: string;
+  photos: string[];
+  videos: string[];
+  location: Location;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
 }
-
-interface ApiResponseData {
-  totalCount: number
-  totalPages: number
-  currentPage: number
-  limit: number
-  data: Post[]
-}
-
 
 const PostCard: React.FC<{ post: Post }> = ({ post }) => {
   const formatDateToReadable = (dateStr: string) => {
-    if (!dateStr) return "Invalid Date"
+    if (!dateStr) return "Invalid Date";
     try {
-      const date = new Date(dateStr)
-      if (isNaN(date.getTime())) return "Invalid Date"
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return "Invalid Date";
       return date.toLocaleDateString("en-IN", {
         day: "numeric",
         month: "long",
         year: "numeric",
-      })
+      });
     } catch {
-      return "Invalid Date"
+      return "Invalid Date";
     }
-  }
+  };
 
   return (
     <li className="relative border border-gray-300 rounded-xl p-6 hover:shadow-lg transition-shadow bg-white flex flex-col">
@@ -84,8 +75,9 @@ const PostCard: React.FC<{ post: Post }> = ({ post }) => {
       <div className="mb-4">
         <h3 className="font-semibold mb-1">Location:</h3>
         <p className="text-gray-600 break-words text-sm">
-          {post.location.village}, {post.location.block}, {post.location.tehsil},{" "}
-          {post.location.district}, {post.location.state} - {post.location.pincode}
+          {post.location.village}, {post.location.block}, {post.location.tehsil}
+          , {post.location.district}, {post.location.state} -{" "}
+          {post.location.pincode}
         </p>
       </div>
 
@@ -105,6 +97,6 @@ const PostCard: React.FC<{ post: Post }> = ({ post }) => {
         <div>Updated: {formatDateToReadable(post.updatedAt)}</div>
       </div>
     </li>
-  )
-}
+  );
+};
 export default PostCard;
