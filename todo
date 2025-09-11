@@ -1,84 +1,15 @@
-1. fullfillment 
+status: { type: String, enum: ['pending', 'approve', 'reject', 'pending for verification'], default: 'pending' },
 
 
+api: fulfillments/incoming-fulfillment then mutatue the status to approve/reject/pending for verification through below api 
 
-  get post of POS 
-  curl --location --globoff '{{baseURL}}/api/posts/details' \
-  --header 'Content-Type: application/json' \
-  --data '{
-    "id":"68b3dd0b90233bf9f06986fc"
-  }
-  '
-
-
-
-
-
-
-
-delete post of POS 
-curl --location --globoff --request DELETE '{{baseURL}}/api/posts/delete' \
---data '{
-    "postId":"68a9efcac76a962b8460388a"
-}'
-
-
-
-
-
-
-
-list of all kisaans under a POS -> name, location, .. 
-curl --location --globoff --request GET '{{baseURL}}/api/pos/get-farmers' \
---data '{
-    "filters":{
-        "_id": "68b6d3720773124213b928b4"
-    },
-    "page": 1
-}'
-
-
-
-(pos) get farmer details by farmer_id
-after that click -> get all information by id
-curl --location --globoff --request GET '{{baseURL}}/api/pos/get-farmer-details' \
---data '{
-    "id":"68b483fc03258ac428ecb1b4"
-}'
-
-
-
-
-
-
-wrong api --->> 
-
-farmer Demand get api
-curl --location 'https://ufc-backend-seven.vercel.app/api/posts/details' \
+curl --location 'https://ufc-backend-seven.vercel.app/api/fulfillments/update' \
 --header 'Content-Type: application/json' \
---header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OGI0ODNmYzAzMjU4YWM0MjhlY2IxYjQiLCJyb2xlIjoiRmFybWVyIiwiaWF0IjoxNzU3MTcyOTY2LCJleHAiOjE3NTc2MDQ5NjZ9.tHBXKsDD6t5wOawQWvwxKsIn7loWLUAkHk3p0zvpst4' \
+--header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OGI0MGQyNTZjZjY3NTljZjliY2EzM2MiLCJyb2xlIjoiUE9TIiwiaWF0IjoxNzU2NzE3NDQ3LCJleHAiOjE3NTcxNDk0NDd9.jcgiuzD04fgSQG3M0K3QMpuWS8lgFXw4lbRG8ZSkCM4' \
 --data '{
-  "id":"68b483fc03258ac428ecb1b4"
-}
-'
-
-
-
-get all fulfillment of a farmer :
-['pending', 'approve', 'reject', 'pending for verification']
-curl --location 'fulfillments/my' \
---header 'Content-Type: application/json' \
---header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OGE5ZDNjMWNiNjIwZTYxNDQyZWZiYmUiLCJyb2xlIjoiRmFybWVyIiwiaWF0IjoxNzU1OTYwMjY4LCJleHAiOjE3NTYzOTIyNjh9.lizzh6WDA9bxT1RZ36ULmdhlJIIWaEUyJ2YMPCVMnRM' \
---data '{
-  "filters": {
-    
-  }
+  "fulfillmentId": "68b570677f98e1bd507694ab",
+  "status": "approve",
+  "crops":[{"name":"Rice", "quantity": 300}]
 }'
 
 
-
-POS csv sheet (payment all info)
-
-get profile (API) -> pending
-
-stats for POS and farmer
