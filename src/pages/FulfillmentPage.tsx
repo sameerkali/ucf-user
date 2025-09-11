@@ -9,14 +9,12 @@ interface UserRef {
   id: string;
   role: string;
 }
-
 interface CropDetail {
   name: string;
   type?: string;
   quantity: number;
   pricePerQuintal?: number;
 }
-
 interface Location {
   state: string;
   district: string;
@@ -25,7 +23,6 @@ interface Location {
   village: string;
   pincode: string;
 }
-
 interface Post {
   _id: string;
   createdBy: UserRef;
@@ -41,17 +38,25 @@ interface Post {
   createdAt: string;
   updatedAt: string;
 }
-
 interface Fulfillment {
   _id: string;
   requestedBy: UserRef;
-  post: Post | null; // post can be null or undefined
+  post: Post | null;
   crops: { name: string; quantity: number }[];
   status: FulfillmentStatus;
   createdAt: string;
   updatedAt: string;
 }
-
+interface Pagination {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+interface FulfillmentApiResponse {
+  fulfillments: Fulfillment[];
+  pagination: Pagination;
+}
 interface ProfileType {
   _id: string;
   role: string;
@@ -63,6 +68,7 @@ export default function FulfillmentPage() {
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [profileError, setProfileError] = useState("");
   const [filterStatus, setFilterStatus] = useState<FulfillmentStatus | "">("");
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     setLoadingProfile(true);
@@ -84,7 +90,6 @@ export default function FulfillmentPage() {
           setLoadingProfile(false);
           return;
         }
-
         if (parsedProfile) {
           setProfile(parsedProfile);
         } else {
@@ -104,22 +109,29 @@ export default function FulfillmentPage() {
     }
   }, [navigate]);
 
+  // Query now returns { fulfillments, pagination }
   const {
-    data: fulfillments = [],
+    data,
     isLoading: loadingFulfillments,
     isError,
     error,
-  } = useQuery<Fulfillment[], Error>({
-    queryKey: ["fulfillments-my", profile?._id, filterStatus],
+  } = useQuery<FulfillmentApiResponse, Error>({
+    queryKey: ["fulfillments-my", profile?._id, filterStatus, page],
     queryFn: async () => {
-      if (!profile?._id) return [];
+      if (!profile?._id) return { fulfillments: [], pagination: { total: 0, page: 1, limit: 10, totalPages: 1 } };
       const { data } = await api.post(
         "/api/fulfillments/my",
-        { filters: filterStatus ? { status: filterStatus } : {} },
+        {
+          filters: filterStatus ? { status: filterStatus } : {},
+          page
+        },
         { headers: { "Content-Type": "application/json" } }
       );
       if (data.status_code === 200) {
-        return data.data || [];
+        return {
+          fulfillments: data.data?.fulfillments || [],
+          pagination: data.data?.pagination || { total: 0, page: 1, limit: 10, totalPages: 1 }
+        };
       }
       throw new Error(data.message || "Failed to fetch fulfillments");
     },
@@ -128,6 +140,14 @@ export default function FulfillmentPage() {
     refetchOnWindowFocus: false,
     retry: 2,
   });
+
+  const fulfillments = data?.fulfillments || [];
+  const pagination = data?.pagination || { total: 0, page: 1, limit: 10, totalPages: 1 };
+
+  // Reset to page 1 when filter changes
+  useEffect(() => {
+    setPage(1);
+  }, [filterStatus]);
 
   if (loadingProfile)
     return (
@@ -150,22 +170,45 @@ export default function FulfillmentPage() {
     <div className="max-w-7xl mx-auto p-4">
       <h1 className="text-2xl font-bold mb-6">My Fulfillments</h1>
 
-      <div className="mb-6">
-        <label className="mr-3 font-semibold">Filter by Status:</label>
-        <select
-          className="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
-          value={filterStatus}
-          onChange={(e) =>
-            setFilterStatus(e.target.value as FulfillmentStatus | "")
-          }
-        >
-          <option value="">All</option>
-          {statuses.map((status) => (
-            <option key={status} value={status}>
-              {status.charAt(0).toUpperCase() + status.slice(1)}
-            </option>
-          ))}
-        </select>
+      <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div>
+          <label className="mr-3 font-semibold">Filter by Status:</label>
+          <select
+            className="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+            value={filterStatus}
+            onChange={(e) =>
+              setFilterStatus(e.target.value as FulfillmentStatus | "")
+            }
+          >
+            <option value="">All</option>
+            {statuses.map((status) => (
+              <option key={status} value={status}>
+                {status.charAt(0).toUpperCase() + status.slice(1)}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Pagination Info */}
+        <div className="flex items-center gap-2">
+          <span>
+            Page {pagination.page} of {pagination.totalPages} • Total: {pagination.total}
+          </span>
+          <button
+            onClick={() => setPage(page - 1)}
+            disabled={page <= 1}
+            className="px-2 py-1 rounded border border-gray-300 bg-white disabled:opacity-50 ml-2"
+          >
+            Prev
+          </button>
+          <button
+            onClick={() => setPage(page + 1)}
+            disabled={page >= pagination.totalPages}
+            className="px-2 py-1 rounded border border-gray-300 bg-white disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
       </div>
 
       {loadingFulfillments ? (
@@ -202,18 +245,15 @@ export default function FulfillmentPage() {
                     fulfillment.status.slice(1)}
                 </span>
               </div>
-
               <p className="mb-4 text-gray-700">
                 {fulfillment.post?.description ?? "No description available."}
               </p>
-
               <div className="mb-4">
                 <span className="font-semibold">Requested By:</span>{" "}
                 {fulfillment.requestedBy.role.charAt(0).toUpperCase() +
                   fulfillment.requestedBy.role.slice(1)}{" "}
                 (ID: {fulfillment.requestedBy.id})
               </div>
-
               <div className="mb-4">
                 <span className="font-semibold">Crops Requested:</span>
                 <ul className="list-disc list-inside">
@@ -224,7 +264,6 @@ export default function FulfillmentPage() {
                   ))}
                 </ul>
               </div>
-
               {fulfillment.post && (
                 <div className="mb-4">
                   <span className="font-semibold">Post Details:</span>
@@ -239,7 +278,9 @@ export default function FulfillmentPage() {
                     </li>
                     <li>
                       <strong>Required By:</strong>{" "}
-                      {new Date(fulfillment.post.requiredByDate).toLocaleDateString()}
+                      {new Date(
+                        fulfillment.post.requiredByDate
+                      ).toLocaleDateString()}
                     </li>
                     <li>
                       <strong>Location:</strong>{" "}
@@ -247,7 +288,9 @@ export default function FulfillmentPage() {
                     </li>
                     <li>
                       <strong>Created At:</strong>{" "}
-                      {new Date(fulfillment.post.createdAt).toLocaleDateString()}
+                      {new Date(
+                        fulfillment.post.createdAt
+                      ).toLocaleDateString()}
                     </li>
                   </ul>
                 </div>
