@@ -321,7 +321,6 @@ const ProgressBar: FC<{ status: Fulfillment['status'] }> = ({ status }) => {
             const StepIcon = step.icon;
             const isCompleted = currentStepIndex > index;
             const isActive = currentStepIndex === index;
-            const isUpcoming = currentStepIndex < index;
             
             return (
               <div key={step.key} className="flex flex-col items-center">
