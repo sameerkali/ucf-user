@@ -63,7 +63,7 @@ interface FarmerDetailResponse {
   })[];
 }
 
-const FarmerDetailsModal: React.FC<{
+export const FarmerDetailsModal: React.FC<{
   isOpen: boolean;
   onClose: () => void;
   farmerId: string | null;

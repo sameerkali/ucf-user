@@ -13,3 +13,15 @@ curl --location 'https://ufc-backend-seven.vercel.app/api/fulfillments/update' \
 }'
 
 
+
+in filter :  
+post : 'post ID'
+
+
+
+kisaan aaya -> pending
+physical verification 
+accept (kisaan se pos ke maal ko) editing (approve)
+--->  
+admin 
+paymetn done
