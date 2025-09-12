@@ -9,8 +9,6 @@ import {
   ChevronRight,
 } from "lucide-react";
 
-// --- INTERFACES ---
-
 interface Crop {
   name: string;
   type: string;
@@ -74,11 +72,15 @@ const MediaCarousel: React.FC<{ photos: string[]; videos: string[] }> = ({
   photos,
   videos,
 }) => {
+  // Fix: Ensure photos and videos are arrays
+  const safePhotos = photos || [];
+  const safeVideos = videos || [];
+  
   const mediaItems =
-    photos.length + videos.length > 0
+    safePhotos.length + safeVideos.length > 0
       ? [
-          ...photos.map((url) => ({ type: "photo" as const, url })),
-          ...videos.map((url) => ({ type: "video" as const, url })),
+          ...safePhotos.map((url) => ({ type: "photo" as const, url })),
+          ...safeVideos.map((url) => ({ type: "video" as const, url })),
         ]
       : FALLBACK_IMAGES.map((url) => ({ type: "photo" as const, url }));
 
@@ -183,7 +185,8 @@ const MediaCarousel: React.FC<{ photos: string[]; videos: string[] }> = ({
 
 const PostCard: React.FC<PostCardProps> = ({ post, onDelete, deletePending }) => (
   <div className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col md:flex-row h-full overflow-hidden max-w-5xl mx-auto">
-    <MediaCarousel photos={post.photos} videos={post.videos} />
+    {/* Fix: Pass safe arrays */}
+    <MediaCarousel photos={post.photos || []} videos={post.videos || []} />
 
     <div className="p-4 sm:p-5 flex flex-col flex-1">
       <div className="flex-1">
@@ -238,10 +241,10 @@ const PostCard: React.FC<PostCardProps> = ({ post, onDelete, deletePending }) =>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1">
-            <Camera className="w-4 h-4" /> {post.photos.length}
+            <Camera className="w-4 h-4" /> {(post.photos || []).length}
           </div>
           <div className="flex items-center gap-1">
-            <Video className="w-4 h-4" /> {post.videos.length}
+            <Video className="w-4 h-4" /> {(post.videos || []).length}
           </div>
           <button
             onClick={() => onDelete(post._id, post.title)}
