@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import api from "../api/axios"
 import { useNavigate } from "react-router-dom"
 import toast from "react-hot-toast"
-import { Trash2 } from "lucide-react"
+import { Trash2, Eye } from "lucide-react"
 
 import DeleteModal from "../components/DeleteModal"
 
@@ -150,6 +150,11 @@ const PosPosts: React.FC = () => {
     deleteMutation.mutate(deletePostId)
   }
 
+  const handleViewFulfillments = (postId: string) => {
+    navigate('/pos/fulfillment-requests', { state: { postId } })
+  }
+  console.log("postId in posts page:", posId)
+
   const formatDateToReadable = (dateStr: string) => {
     try {
       const date = new Date(dateStr)
@@ -225,6 +230,7 @@ const PosPosts: React.FC = () => {
               >
                 <Trash2 size={20} />
               </button>
+              
               <h2 className="text-xl font-semibold mb-3 truncate">{post.title}</h2>
               <p className="text-gray-700 mb-4 flex-grow line-clamp-3 break-words">{post.description}</p>
 
@@ -248,7 +254,7 @@ const PosPosts: React.FC = () => {
                 </p>
               </div>
 
-              <div className="flex flex-wrap gap-4 text-gray-600 text-xs break-words">
+              <div className="flex flex-wrap gap-4 text-gray-600 text-xs break-words mb-4">
                 <div>
                   Status:{" "}
                   <span
@@ -262,6 +268,18 @@ const PosPosts: React.FC = () => {
                 <div>Required By: {formatDateToReadable(post.requiredByDate)}</div>
                 <div>Created: {formatDateToReadable(post.createdAt)}</div>
                 <div>Updated: {formatDateToReadable(post.updatedAt)}</div>
+              </div>
+
+              {/* View All Fulfillments Button */}
+              <div className="mt-auto pt-2 border-t border-gray-100">
+                <button
+                  onClick={() => handleViewFulfillments(post._id)}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                  title="View all fulfillment requests for this post"
+                >
+                  <Eye size={16} />
+                  View All Fulfillments
+                </button>
               </div>
             </li>
           ))}
