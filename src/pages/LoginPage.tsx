@@ -4,8 +4,6 @@ import {
   Loader2,
   Eye,
   EyeOff,
-  ArrowBigLeftDashIcon,
-  ArrowRight,
   ArrowLeft,
 } from "lucide-react";
 import { BGS, GLOBLE, ILLUSTRATIONS } from "../assets/assets";
@@ -468,11 +466,10 @@ export default function LoginPage() {
 
       <div
         onClick={() => navigate("/")}
-        className="absolute top-4 left-4 z-50 cursor-pointer p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+        className="absolute top-4 left-4 z-50 cursor-pointer p-2 rounded-full   flex items-center gap-3"
       >
         <ArrowLeft className="h-6 w-6 text-gray-700 hover:text-gray-900" />
-
-        <img src={GLOBLE.ucf_logo} alt="Brand Logo" className="h-30 w-auto" />
+        <img src={GLOBLE.ucf_logo} alt="Brand Logo" className="h-15 w-auto" />
       </div>
     </div>
   );
