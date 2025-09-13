@@ -9,12 +9,14 @@ interface UserRef {
   id: string;
   role: string;
 }
+
 interface CropDetail {
   name: string;
   type?: string;
   quantity: number;
   pricePerQuintal?: number;
 }
+
 interface Location {
   state: string;
   district: string;
@@ -23,6 +25,7 @@ interface Location {
   village: string;
   pincode: string;
 }
+
 interface Post {
   _id: string;
   createdBy: UserRef;
@@ -38,6 +41,7 @@ interface Post {
   createdAt: string;
   updatedAt: string;
 }
+
 interface Fulfillment {
   _id: string;
   requestedBy: UserRef;
@@ -47,16 +51,19 @@ interface Fulfillment {
   createdAt: string;
   updatedAt: string;
 }
+
 interface Pagination {
   total: number;
   page: number;
   limit: number;
   totalPages: number;
 }
+
 interface FulfillmentApiResponse {
   fulfillments: Fulfillment[];
   pagination: Pagination;
 }
+
 interface ProfileType {
   _id: string;
   role: string;
@@ -109,7 +116,7 @@ export default function FulfillmentPage() {
     }
   }, [navigate]);
 
-  // Query now returns { fulfillments, pagination }
+  // Updated queryFn to match the actual API response structure
   const {
     data,
     isLoading: loadingFulfillments,
@@ -120,7 +127,7 @@ export default function FulfillmentPage() {
     queryFn: async () => {
       if (!profile?._id) return { fulfillments: [], pagination: { total: 0, page: 1, limit: 10, totalPages: 1 } };
       const { data } = await api.post(
-        "/api/fulfillments/my",
+        "/api/fulfillments/incoming-fulfillment",
         {
           filters: filterStatus ? { status: filterStatus } : {},
           page
@@ -129,8 +136,9 @@ export default function FulfillmentPage() {
       );
       if (data.status_code === 200) {
         return {
-          fulfillments: data.data?.fulfillments || [],
-          pagination: data.data?.pagination || { total: 0, page: 1, limit: 10, totalPages: 1 }
+          // Fixed: data.data contains the fulfillments array directly, not data.data.fulfillments
+          fulfillments: data.data || [],
+          pagination: data.pagination || { total: 0, page: 1, limit: 10, totalPages: 1 }
         };
       }
       throw new Error(data.message || "Failed to fetch fulfillments");

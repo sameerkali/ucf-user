@@ -37,6 +37,9 @@ export default function ProfileComplete() {
     bankName: "",
     bankBranch: "",
     ifsc: "",
+    passbookPhoto: null as File | null,
+    passbookPhotoUrl: "",
+    passbookPhotoPreview: "", // Added for preview
     // Farmer fields
     landHoldings: "",
     annualProduction: "",
@@ -49,6 +52,8 @@ export default function ProfileComplete() {
     aadhaarBack: null as File | null,
     aadhaarFrontUrl: "",
     aadhaarBackUrl: "",
+    aadhaarFrontPreview: "", // Added for preview
+    aadhaarBackPreview: "", // Added for preview
     // POS fields
     storageArea: "",
     sections: "",
@@ -82,27 +87,92 @@ export default function ProfileComplete() {
     );
   };
 
-  const handleFile = async (field: "aadhaarFront" | "aadhaarBack", file: File | null) => {
-    if (file && file.type.startsWith("image/")) {
+  // Enhanced file handling with better error handling and preview
+  const handleFile = async (field: "aadhaarFront" | "aadhaarBack" | "passbookPhoto", file: File | null) => {
+    if (!file) {
+      // Clear the file and preview when no file is selected
+      setFormData(prev => ({ 
+        ...prev, 
+        [field]: null,
+        [`${field}Preview`]: ""
+      }));
+      return;
+    }
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select a valid image file");
+      return;
+    }
+
+    // Validate file size (before compression)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Image size must be less than 10MB");
+      return;
+    }
+
+    try {
+      // Create preview URL
+      const previewUrl = URL.createObjectURL(file);
+      
+      // Compression options
       const options = {
         maxSizeMB: 5,
         maxWidthOrHeight: 1920,
         useWebWorker: true,
+        fileType: file.type,
       };
+
       let compressedFile = file;
-      try {
-        compressedFile = await imageCompression(file, options);
-      } catch (err) {
-        toast.error("Failed to compress image");
-        return;
+      
+      // Compress image if it's larger than 1MB
+      if (file.size > 1024 * 1024) {
+        try {
+          compressedFile = await imageCompression(file, options);
+          console.log(`Image compressed from ${(file.size / 1024 / 1024).toFixed(2)}MB to ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB`);
+        } catch (compressionError) {
+          console.error("Compression failed:", compressionError);
+          toast.error("Failed to compress image, using original");
+          compressedFile = file;
+        }
       }
+
+      // Final size check after compression
       if (compressedFile.size > 5 * 1024 * 1024) {
         toast.error("Image must be less than 5MB after compression");
+        URL.revokeObjectURL(previewUrl);
         return;
       }
-      setFormData(prev => ({ ...prev, [field]: compressedFile }));
+
+      // Update form data with file and preview
+      setFormData(prev => ({ 
+        ...prev, 
+        [field]: compressedFile,
+        [`${field}Preview`]: previewUrl
+      }));
+
+      toast.success("Image uploaded successfully");
+
+    } catch (error) {
+      console.error("File handling error:", error);
+      toast.error("Failed to process image");
     }
   };
+
+  // Clean up preview URLs when component unmounts
+  useEffect(() => {
+    return () => {
+      if (formData.passbookPhotoPreview) {
+        URL.revokeObjectURL(formData.passbookPhotoPreview);
+      }
+      if (formData.aadhaarFrontPreview) {
+        URL.revokeObjectURL(formData.aadhaarFrontPreview);
+      }
+      if (formData.aadhaarBackPreview) {
+        URL.revokeObjectURL(formData.aadhaarBackPreview);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const fetchCrops = async () => {
@@ -124,6 +194,7 @@ export default function ProfileComplete() {
           ]);
         }
       } catch (error) {
+        console.error("Failed to fetch crops:", error);
         setCropsList([
           { _id: "wheat", name: "Wheat" },
           { _id: "rice", name: "Rice" },
@@ -152,6 +223,7 @@ export default function ProfileComplete() {
       if (!formData.bankBranch) errors.bankBranch = "Bank branch is required.";
       if (!formData.ifsc) errors.ifsc = "IFSC code is required.";
       else if (!IFSC_REGEX.test(formData.ifsc)) errors.ifsc = "IFSC code must be in format: AAAA0123456";
+      if (!formData.passbookPhoto) errors.passbookPhoto = "Bank passbook photo is required.";
     } else if (step === 2) {
       if (role === "kisaan") {
         if (!formData.landHoldings) errors.landHoldings = "Land holdings is required.";
@@ -174,7 +246,6 @@ export default function ProfileComplete() {
   };
 
   const errors = validateStep();
-
   const isStepValid = () => Object.keys(errors).length === 0;
 
   const handleSkipConfirm = () => {
@@ -187,9 +258,10 @@ export default function ProfileComplete() {
     setShowErrors(false);
   };
 
-  function parseBankDetailError(message: string){
-    if(message.includes('accountNumber')) return "Invalid account number";
-    if(message.includes('ifscCode')) return "Invalid IFSC code";
+  function parseBankDetailError(message: string) {
+    if (message.includes('accountNumber')) return "Invalid account number";
+    if (message.includes('ifscCode')) return "Invalid IFSC code";
+    if (message.includes('photos')) return "Invalid passbook photo";
     return "Invalid bank details";
   }
 
@@ -199,14 +271,41 @@ export default function ProfileComplete() {
       if (isStepValid()) {
         setIsLoading(true);
         try {
-          const response = await api.post("/api/bank/addDetail", {
-            bankName: formData.bankName,
-            accountHolderName: formData.accountHolder,
-            accountNumber: formData.bankAccount,
-            ifscCode: formData.ifsc,
-            branch: formData.bankBranch,
+          // Create FormData for file upload
+          const bankFormData = new FormData();
+          bankFormData.append("bankName", formData.bankName);
+          bankFormData.append("accountHolderName", formData.accountHolder);
+          bankFormData.append("accountNumber", formData.bankAccount);
+          bankFormData.append("ifscCode", formData.ifsc);
+          bankFormData.append("branch", formData.bankBranch);
+          
+          // Add passbook photo to the API payload
+          if (formData.passbookPhoto) {
+            bankFormData.append("photos", formData.passbookPhoto);
+            console.log("Adding passbook photo:", {
+              name: formData.passbookPhoto.name,
+              size: formData.passbookPhoto.size,
+              type: formData.passbookPhoto.type
+            });
+          }
+
+          // Debug log
+          console.log("Sending bank form data:");
+          for (let [key, value] of bankFormData.entries()) {
+            if (value instanceof File) {
+              console.log(`${key}: File - ${value.name} (${value.size} bytes, ${value.type})`);
+            } else {
+              console.log(`${key}: ${value}`);
+            }
+          }
+
+          const response = await api.post("/api/bank/addDetail", bankFormData, {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
           });
-          if (response.status === 201) {
+
+          if (response.status === 201 || response.status === 200) {
             toast.success(response.data.message || "Bank details saved successfully!");
             setStep(2);
             setShowErrors(false);
@@ -214,8 +313,9 @@ export default function ProfileComplete() {
             toast.error(parseBankDetailError(response.data?.message || ""));
           }
         } catch (error: any) {
+          console.error("Bank detail submission error:", error);
           const msg = error?.response?.data?.message || "";
-          toast.error(parseBankDetailError(msg));
+          toast.error(parseBankDetailError(msg) || "Failed to save bank details");
         }
         setIsLoading(false);
       }
@@ -243,13 +343,38 @@ export default function ProfileComplete() {
           formDataObj.append("rainfedArea", formData.rainfedArea);
           formDataObj.append("irrigatedArea", formData.irrigatedArea);
           formDataObj.append("crops", JSON.stringify(formData.crops));
-          if (formData.aadhaarFront) formDataObj.append("aadhaarFront", formData.aadhaarFront);
-          if (formData.aadhaarBack) formDataObj.append("aadhaarBack", formData.aadhaarBack);
+          
+          if (formData.aadhaarFront) {
+            formDataObj.append("aadhaarFront", formData.aadhaarFront);
+            console.log("Adding aadhaar front:", {
+              name: formData.aadhaarFront.name,
+              size: formData.aadhaarFront.size,
+              type: formData.aadhaarFront.type
+            });
+          }
+          if (formData.aadhaarBack) {
+            formDataObj.append("aadhaarBack", formData.aadhaarBack);
+            console.log("Adding aadhaar back:", {
+              name: formData.aadhaarBack.name,
+              size: formData.aadhaarBack.size,
+              type: formData.aadhaarBack.type
+            });
+          }
         } else if (role === "pos") {
           formDataObj.append("storageArea", formData.storageArea);
           formDataObj.append("sections", formData.sections);
           formDataObj.append("cropsHandled", JSON.stringify(formData.cropsHandled));
           formDataObj.append("maxCropCapacity", formData.maxCropCapacity);
+        }
+
+        // Debug log
+        console.log("Sending form data:");
+        for (let [key, value] of formDataObj.entries()) {
+          if (value instanceof File) {
+            console.log(`${key}: File - ${value.name} (${value.size} bytes, ${value.type})`);
+          } else {
+            console.log(`${key}: ${value}`);
+          }
         }
 
         const response = await api.post("/api/other-details/add", formDataObj, { 
@@ -265,6 +390,7 @@ export default function ProfileComplete() {
           toast.error(response.data?.message || `Failed to save ${role === "kisaan" ? "farm" : "POS"} details`);
         }
       } catch (error: any) {
+        console.error("Form submission error:", error);
         toast.error(error?.response?.data?.message || `Failed to save ${role === "kisaan" ? "farm" : "POS"} details`);
       }
       setIsLoading(false);
@@ -299,25 +425,54 @@ export default function ProfileComplete() {
   ) => {
     const hasError = showErrors && errors[name];
     let patternMsg = errors[name] || "";
+    
     if (isFileInput) {
+      const previewUrl = formData[`${name}Preview` as keyof typeof formData] as string;
+      const file = formData[name as keyof typeof formData] as File | null;
+      
       return (
         <div>
           <label className={`block text-sm font-medium mb-2 ${hasError ? "text-red-400" : "text-black"}`}>
             {t(placeholder)}
           </label>
+          
+          {/* File Input */}
           <input
             type="file"
             accept="image/*"
-            onChange={e => handleFile(name as "aadhaarFront" | "aadhaarBack", e.target.files?.[0] ?? null)}
+            onChange={e => handleFile(name as "aadhaarFront" | "aadhaarBack" | "passbookPhoto", e.target.files?.[0] ?? null)}
             className={`w-full px-4 py-3 bg-white border text-black file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-green-600 file:text-white hover:file:bg-green-700 transition-colors ${
               hasError ? "border-red-500" : "border-green-500 focus:border-green-600"
             }`}
             style={{ borderRadius: '0.75rem' }}
           />
+          
+          {/* Image Preview */}
+          {previewUrl && file && (
+            <div className="mt-3 relative">
+              <img
+                src={previewUrl}
+                alt={`Preview of ${placeholder}`}
+                className="w-full max-w-xs h-32 object-cover rounded-lg border-2 border-green-200"
+              />
+              <div className="mt-1 text-xs text-gray-600">
+                {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
+              </div>
+              <button
+                type="button"
+                onClick={() => handleFile(name as "aadhaarFront" | "aadhaarBack" | "passbookPhoto", null)}
+                className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          )}
+          
           {hasError && <p className="text-red-400 text-xs mt-1">{patternMsg}</p>}
         </div>
       );
     }
+    
     return (
       <div>
         <label className={`block text-sm font-medium mb-2 ${hasError ? "text-red-400" : "text-black"}`}>
@@ -478,6 +633,8 @@ export default function ProfileComplete() {
                   {renderInput("bankName", "bankName")}
                   {renderInput("bankBranch", "bankBranch")}
                   {renderInput("ifsc", "ifscCode")}
+                  {/* Enhanced Bank Passbook Photo Field */}
+                  {renderInput("passbookPhoto", "Bank Passbook Photo", "file", true)}
                   <div className="flex justify-between pt-6">
                     <button
                       type="button"
