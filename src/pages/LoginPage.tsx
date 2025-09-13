@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Loader2, Eye, EyeOff } from "lucide-react";
+import {
+  Loader2,
+  Eye,
+  EyeOff,
+  ArrowLeft,
+} from "lucide-react";
 import { BGS, GLOBLE, ILLUSTRATIONS } from "../assets/assets";
 import { useTranslation } from "react-i18next";
 import api from "../api/axios";
@@ -101,7 +106,12 @@ export default function LoginPage() {
         password: formData.password,
       });
 
-      if (status === 200 && data.success && Array.isArray(data.result) && data.result.length > 0) {
+      if (
+        status === 200 &&
+        data.success &&
+        Array.isArray(data.result) &&
+        data.result.length > 0
+      ) {
         const user = data.result[0];
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(user));
@@ -278,11 +288,17 @@ export default function LoginPage() {
             </div>
             <button
               type="submit"
-              disabled={isLoading || formData.phone.length !== 10 || !formData.password}
+              disabled={
+                isLoading || formData.phone.length !== 10 || !formData.password
+              }
               className="w-full py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold hover:from-green-600 hover:to-emerald-600 focus:outline-none transition-all duration-200 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ borderRadius: "0.75rem" }}
             >
-              {isLoading ? <Loader2 className="animate-spin w-5 h-5" /> : t("login") || "Login"}
+              {isLoading ? (
+                <Loader2 className="animate-spin w-5 h-5" />
+              ) : (
+                t("login") || "Login"
+              )}
             </button>
           </form>
         </>
@@ -358,11 +374,17 @@ export default function LoginPage() {
             </div>
             <button
               type="submit"
-              disabled={isLoading || formData.phone.length !== 10 || !formData.password}
+              disabled={
+                isLoading || formData.phone.length !== 10 || !formData.password
+              }
               className="w-full py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold hover:from-green-600 hover:to-emerald-600 focus:outline-none transition-all duration-200 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ borderRadius: "0.75rem" }}
             >
-              {isLoading ? <Loader2 className="animate-spin w-5 h-5" /> : t("login") || "Login"}
+              {isLoading ? (
+                <Loader2 className="animate-spin w-5 h-5" />
+              ) : (
+                t("login") || "Login"
+              )}
             </button>
           </form>
         </>
@@ -444,9 +466,10 @@ export default function LoginPage() {
 
       <div
         onClick={() => navigate("/")}
-        className="absolute top-4 left-4 z-50 cursor-pointer"
+        className="absolute top-4 left-4 z-50 cursor-pointer p-2 rounded-full   flex items-center gap-3"
       >
-        <img src={GLOBLE.ucf_logo} alt="Brand Logo" className="h-30 w-auto" />
+        <ArrowLeft className="h-6 w-6 text-gray-700 hover:text-gray-900" />
+        <img src={GLOBLE.ucf_logo} alt="Brand Logo" className="h-15 w-auto" />
       </div>
     </div>
   );
