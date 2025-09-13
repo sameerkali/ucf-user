@@ -1,1 +1,43 @@
 1. add passbook photo in payment form 
+2. research about translation on frontend 
+3. make admin panel 
+
+
+
+
+
+api work :
+carausal api 
+profile crud for farmer/pos
+faq 
+
+
+
+
+
+
+
+
+
+
+
+I need to make a page fro user (farmers) management like CRUD so :
+i have a api to get all the farmers :
+curl --location --request GET 'https://ufc-backend-seven.vercel.app/api/admin/get-all-users' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODllNDQ4MTNhMjY5NWQ4YzEzMzFjOTMiLCJyb2xlIjoiQWRtaW4iLCJpYXQiOjE3NTY0NjkyODUsImV4cCI6MTc1NjkwMTI4NX0.iPl5ceyPVynsbtFDL0SviXo3g6lSAy8RpGYpGVW9nSE' \
+--data '{
+    "filters":{
+        "role":"Farmer", 
+        "name": "Kisaan hi kehde"
+    },
+    "limit":8,
+    "page": 1,
+    "sort":"asc"
+}'
+name is a filter use that as search and filter :
+use pagination in this :
+use green (01A63C) and white UI
+
+
+fro creating 
