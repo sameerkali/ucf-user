@@ -70,10 +70,10 @@ export default function PostsPage() {
     }
   }, [navigate]);
 
-  const {
-    data: posts = [],
-    isLoading: fetchingPosts,
-  } = useQuery<Post[], Error>({
+  const { data: posts = [], isLoading: fetchingPosts } = useQuery<
+    Post[],
+    Error
+  >({
     queryKey: ["user-posts", kisaanId],
     queryFn: async (): Promise<Post[]> => {
       if (!kisaanId) return [];
@@ -107,7 +107,8 @@ export default function PostsPage() {
         ["user-posts", kisaanId],
         (oldPosts) => oldPosts?.filter((post) => post._id !== postId) || []
       );
-      closeDeleteModal();
+      // Force close the modal regardless of pending state
+      setDeleteModal({ isOpen: false, postId: "", postTitle: "" });
     },
     onError: (error: any) => {
       console.error("Error deleting post:", error);
@@ -124,12 +125,12 @@ export default function PostsPage() {
     setDeleteModal({ isOpen: true, postId, postTitle });
   };
 
-const closeDeleteModal = () => {
-  // Use only isLoading (no isFetching on mutations)
-  if (!deleteMutation.isPending) {
-    setDeleteModal({ isOpen: false, postId: "", postTitle: "" });
-  }
-};
+  const closeDeleteModal = () => {
+    // Use only isLoading (no isFetching on mutations)
+    if (!deleteMutation.isPending) {
+      setDeleteModal({ isOpen: false, postId: "", postTitle: "" });
+    }
+  };
 
   const confirmDeletePost = () => {
     if (deleteModal.postId) {
@@ -174,7 +175,8 @@ const closeDeleteModal = () => {
                 You haven't created any posts yet.
               </h3>
               <p className="text-gray-500 text-sm lg:text-base mb-6 max-w-md mx-auto">
-                Click the "New Post" button to sell your crops and connect with buyers.
+                Click the "New Post" button to sell your crops and connect with
+                buyers.
               </p>
             </div>
           ) : (

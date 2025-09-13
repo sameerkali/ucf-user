@@ -533,7 +533,7 @@ export default function CreatePostPage() {
               <div className="bg-white rounded-2xl border border-gray-200 p-6 lg:p-8 shadow-sm">
                 <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
                   <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  Photos & Videos (Optional)
+                  Photos
                 </h3>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -596,65 +596,7 @@ export default function CreatePostPage() {
                     )}
                   </div>
 
-                  {/* Videos */}
-                  <div>
-                    <div className="flex items-center justify-between mb-4">
-                      <label className="text-sm font-medium text-gray-700">
-                        Videos (Max 2)
-                      </label>
-                      <span className="text-xs text-gray-500">
-                        {formData.videos.length}/2
-                      </span>
-                    </div>
-                    
-                    <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-green-400 transition-colors">
-                      <input
-                        type="file"
-                        multiple
-                        accept="video/*"
-                        onChange={handleVideoUpload}
-                        className="hidden"
-                        id="video-upload"
-                        disabled={formData.videos.length >= 2 || createPostMutation.isPending}
-                      />
-                      <label 
-                        htmlFor="video-upload" 
-                        className="cursor-pointer flex flex-col items-center"
-                      >
-                        <Video className="w-8 h-8 text-gray-400 mb-3" />
-                        <span className="text-sm text-gray-600 mb-1">
-                          Click to upload videos
-                        </span>
-                        <span className="text-xs text-gray-400">
-                          MP4, MOV up to 20MB each
-                        </span>
-                      </label>
-                    </div>
-
-                    {/* Video Preview */}
-                    {formData.videos.length > 0 && (
-                      <div className="mt-4 space-y-2">
-                        {formData.videos.map((video, index) => (
-                          <div key={index} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
-                            <div className="flex items-center gap-2">
-                              <Video className="w-4 h-4 text-gray-500" />
-                              <span className="text-sm text-gray-700 truncate">
-                                {video.name}
-                              </span>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => removeVideo(index)}
-                              className="text-red-500 hover:text-red-700 p-1"
-                              disabled={createPostMutation.isPending}
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                 
                 </div>
               </div>
 
