@@ -1,4 +1,132 @@
-1. pos stats
-curl --location 'https://ufc-backend-seven.vercel.app/api/pos/farmers-stats'
+{
+  "crops": [
+    {
+      "id": 1,
+      "category": "Wheat",
+      "image": "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=400",
+      "subcategories": [
+        {
+          "id": 1,
+          "name": "Mark2 Wheat",
+          "price": 25.50,
+          "unit": "per kg",
+          "description": "High-quality wheat variety with excellent yield"
+        },
+        {
+          "id": 2,
+          "name": "Durum Wheat",
+          "price": 28.75,
+          "unit": "per kg",
+          "description": "Premium wheat ideal for pasta making"
+        },
+        {
+          "id": 3,
+          "name": "Soft Red Winter Wheat",
+          "price": 23.25,
+          "unit": "per kg",
+          "description": "Versatile wheat for baking and general use"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "category": "Rice",
+      "image": "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400",
+      "subcategories": [
+        {
+          "id": 4,
+          "name": "Basmati Rice",
+          "price": 45.00,
+          "unit": "per kg",
+          "description": "Aromatic long-grain rice with distinctive flavor"
+        },
+        {
+          "id": 5,
+          "name": "Jasmine Rice",
+          "price": 38.50,
+          "unit": "per kg",
+          "description": "Fragrant Thai rice variety"
+        },
+        {
+          "id": 6,
+          "name": "Brown Rice",
+          "price": 35.75,
+          "unit": "per kg",
+          "description": "Nutritious whole grain rice"
+        },
+        {
+          "id": 7,
+          "name": "Arborio Rice",
+          "price": 42.25,
+          "unit": "per kg",
+          "description": "Short-grain rice perfect for risotto"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "category": "Corn",
+      "image": "https://images.unsplash.com/photo-1551754655-cd27e38d2076?w=400",
+      "subcategories": [
+        {
+          "id": 8,
+          "name": "Sweet Corn",
+          "price": 18.00,
+          "unit": "per kg",
+          "description": "Fresh sweet corn for direct consumption"
+        },
+        {
+          "id": 9,
+          "name": "Dent Corn",
+          "price": 15.50,
+          "unit": "per kg",
+          "description": "Field corn used for animal feed and processing"
+        },
+        {
+          "id": 10,
+          "name": "Popcorn",
+          "price": 22.75,
+          "unit": "per kg",
+          "description": "Specialty corn variety for popping"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "category": "Soybeans",
+      "image": "https://images.unsplash.com/photo-1590184948920-065b4013e299?w=400",
+      "subcategories": [
+        {
+          "id": 11,
+          "name": "Edamame Soybeans",
+          "price": 32.00,
+          "unit": "per kg",
+          "description": "Young soybeans harvested for fresh consumption"
+        },
+        {
+          "id": 12,
+          "name": "Commodity Soybeans",
+          "price": 28.50,
+          "unit": "per kg",
+          "description": "Standard soybeans for oil and meal production"
+        },
+        {
+          "id": 13,
+          "name": "Organic Soybeans",
+          "price": 38.75,
+          "unit": "per kg",
+          "description": "Certified organic soybeans with premium quality"
+        },
+        {
+          "id": 14,
+          "name": "High Protein Soybeans",
+          "price": 34.25,
+          "unit": "per kg",
+          "description": "Specialty variety with enhanced protein content"
+        }
+      ]
+    }
+  ]
+}
 
 
