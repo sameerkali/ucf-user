@@ -1,4 +1,1 @@
-1. pos stats
-curl --location 'https://ufc-backend-seven.vercel.app/api/pos/farmers-stats'
-
-
+1. delete crop in admin :  delete ki api me subId, catId body me deni hai 

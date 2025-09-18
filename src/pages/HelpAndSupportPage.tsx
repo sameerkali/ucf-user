@@ -1,47 +1,43 @@
 import type { FC } from "react";
 import { useState, useRef } from "react";
 import { Mic, ChevronDown, ChevronUp, Square, Send } from "lucide-react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-
 import api from "../api/axios";
 
 export interface FaqItem {
-  id: number;
+  id: string;
   question: string;
   answer: string;
 }
 
-const faqData: FaqItem[] = [
-  {
-    id: 1,
-    question: "How do I reset my password?",
-    answer:
-      "You can reset your password by going to the 'Account Settings' page and clicking on 'Forgot Password'. An email with instructions will be sent to you.",
-  },
-  {
-    id: 2,
-    question: "What payment methods do you accept?",
-    answer:
-      "We accept all major credit cards, including Visa, MasterCard, and American Express. We also support payments via PayPal and direct bank transfer.",
-  },
-  {
-    id: 3,
-    question: "Can I cancel my subscription at any time?",
-    answer:
-      "Yes, you can cancel your subscription at any time from your dashboard. Your subscription will remain active until the end of the current billing cycle.",
-  },
-  {
-    id: 4,
-    question: "How do I contact customer support?",
-    answer:
-      "You can contact our customer support team 24/7 by using the chat feature on this page or by sending an email to [support@example.com](mailto:support@example.com).",
-  },
-];
-
 const HelpAndSupportPage: FC = () => {
+  // Fetch FAQs from API
+  const {
+    data: faqResponse,
+    isLoading: faqLoading,
+    error: faqError,
+  } = useQuery({
+    queryKey: ["faqs"],
+    queryFn: async () => {
+      const response = await api.get("/api/faq/getAll");
+      return response.data;
+    },
+    retry: 3,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Transform API response to match component interface
+  const faqData: FaqItem[] = faqResponse?.success 
+    ? faqResponse.data.map((item: any) => ({
+        id: item._id,
+        question: item.question,
+        answer: item.answer,
+      }))
+    : [];
+
   // FAQ state
-  const [expanded, setExpanded] = useState<number | null>(faqData[0]?.id ?? null);
+  const [expanded, setExpanded] = useState<string | null>(faqData[0]?.id ?? null);
   
   // Chat input state
   const [input, setInput] = useState("");
@@ -187,6 +183,13 @@ const HelpAndSupportPage: FC = () => {
     }
   };
 
+  // Update expanded state when FAQ data loads
+  useState(() => {
+    if (faqData.length > 0 && !expanded) {
+      setExpanded(faqData[0].id);
+    }
+  });
+
   return (
     <div className="bg-white min-h-screen flex flex-col">
       {/* Scrollable Content Area */}
@@ -198,40 +201,70 @@ const HelpAndSupportPage: FC = () => {
           <p className="mt-2 text-lg text-gray-500">Your questions, answered.</p>
         </header>
 
-        <section className="space-y-3">
-          {faqData.map((item) => {
-            const isOpen = expanded === item.id;
-            return (
-              <div
-                key={item.id}
-                className="border border-gray-200 rounded-lg bg-white shadow-sm transition-all"
-              >
-                <button
-                  className="w-full text-left flex items-center justify-between p-5 focus-visible:ring-2 focus-visible:ring-green-700 transition group"
-                  onClick={() => setExpanded(isOpen ? null : item.id)}
-                  aria-expanded={isOpen}
-                  aria-controls={`faq-content-${item.id}`}
+        {/* FAQ Loading State */}
+        {faqLoading && (
+          <div className="text-center py-8">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-700"></div>
+            <p className="mt-2 text-gray-600">Loading FAQs...</p>
+          </div>
+        )}
+
+        {/* FAQ Error State */}
+        {faqError && (
+          <div className="text-center py-8">
+            <p className="text-red-600">Failed to load FAQs. Please try again later.</p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="mt-2 px-4 py-2 bg-green-700 text-white rounded hover:bg-green-600 transition-colors"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
+        {/* FAQ Content */}
+        {!faqLoading && !faqError && faqData.length === 0 && (
+          <div className="text-center py-8">
+            <p className="text-gray-600">No FAQs available at the moment.</p>
+          </div>
+        )}
+
+        {!faqLoading && !faqError && faqData.length > 0 && (
+          <section className="space-y-3">
+            {faqData.map((item) => {
+              const isOpen = expanded === item.id;
+              return (
+                <div
+                  key={item.id}
+                  className="border border-gray-200 rounded-lg bg-white shadow-sm transition-all"
                 >
-                  <span className="font-semibold text-gray-800">{item.question}</span>
-                  {isOpen ? (
-                    <ChevronUp className="text-green-700" aria-label="Collapse" />
-                  ) : (
-                    <ChevronDown className="text-green-700" aria-label="Expand" />
-                  )}
-                </button>
-                {isOpen && (
-                  <div
-                    id={`faq-content-${item.id}`}
-                    className="px-5 pb-5 text-gray-600 text-sm animate-fade"
-                    style={{ animation: "fadein 0.3s" }}
+                  <button
+                    className="w-full text-left flex items-center justify-between p-5 focus-visible:ring-2 focus-visible:ring-green-700 transition group"
+                    onClick={() => setExpanded(isOpen ? null : item.id)}
+                    aria-expanded={isOpen}
+                    aria-controls={`faq-content-${item.id}`}
                   >
-                    {item.answer}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </section>
+                    <span className="font-semibold text-gray-800">{item.question}</span>
+                    {isOpen ? (
+                      <ChevronUp className="text-green-700" aria-label="Collapse" />
+                    ) : (
+                      <ChevronDown className="text-green-700" aria-label="Expand" />
+                    )}
+                  </button>
+                  {isOpen && (
+                    <div
+                      id={`faq-content-${item.id}`}
+                      className="px-5 pb-5 text-gray-600 text-sm animate-fade"
+                      style={{ animation: "fadein 0.3s" }}
+                    >
+                      {item.answer}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </section>
+        )}
       </main>
 
       {/* Floating Chat Input Bar */}
