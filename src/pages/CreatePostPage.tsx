@@ -5,6 +5,8 @@ import { Camera, X, Loader2, Upload, ArrowLeft } from "lucide-react";
 import { ILLUSTRATIONS } from "../assets/assets";
 import api from "../api/axios";
 import toast from "react-hot-toast";
+import { BASE_URL } from "../utils/urls";
+
 
 interface Crop {
   name: string;
@@ -12,6 +14,7 @@ interface Crop {
   quantity: string;
   pricePerQuintal: string;
 }
+
 
 interface FormData {
   title: string;
@@ -22,6 +25,7 @@ interface FormData {
   videos: File[];
 }
 
+
 interface Errors {
   title: string;
   description: string;
@@ -30,6 +34,7 @@ interface Errors {
   photos: string;
   videos: string;
 }
+
 
 interface User {
   _id: string;
@@ -55,10 +60,35 @@ interface User {
   updatedAt: string;
 }
 
+interface ApiCrop {
+  _id: string;
+  name: string;
+  subCategories: Array<{
+    name: string;
+    price: number;
+  }>;
+  price?: number;
+  isVisible: boolean;
+  image: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface CropsResponse {
+  success: boolean;
+  count: number;
+  crops: ApiCrop[];
+}
+
+
 export default function CreatePostPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [kisaanId, setKisaanId] = useState<string | null>(null);
+  const [apiCrops, setApiCrops] = useState<ApiCrop[]>([]);
+  const [selectedCrop, setSelectedCrop] = useState<ApiCrop | null>(null);
+  const [selectedSubCategory, setSelectedSubCategory] = useState<{name: string; price: number} | null>(null);
+
 
   const initialFormState: FormData = {
     title: "",
@@ -69,6 +99,7 @@ export default function CreatePostPage() {
     videos: [],
   };
 
+
   const initialErrorState: Errors = {
     title: "",
     description: "",
@@ -78,8 +109,28 @@ export default function CreatePostPage() {
     videos: "",
   };
 
+
   const [formData, setFormData] = useState<FormData>(initialFormState);
   const [errors, setErrors] = useState<Errors>(initialErrorState);
+
+
+
+  // Fetch crops data from API
+useEffect(() => {
+  const fetchCrops = async () => {
+    try {
+      const response = await api.get("/api/admin/get-all-crops");
+      const data: CropsResponse = response.data;
+      setApiCrops(data.crops);
+    } catch (error) {
+      console.error('Error fetching crops:', error);
+    }
+  };
+
+  fetchCrops();
+}, []);
+
+
 
   useEffect(() => {
     const userData = localStorage.getItem("user");
@@ -98,16 +149,19 @@ export default function CreatePostPage() {
     }
   }, [navigate]);
 
+
   // Create Post Mutation using React Query
   const createPostMutation = useMutation({
     mutationFn: async (postData: FormData) => {
       if (!kisaanId) throw new Error('No user ID available');
+
 
       const formDataToSend = new FormData();
       formDataToSend.append("title", postData.title);
       formDataToSend.append("description", postData.description);
       formDataToSend.append("readyByDate", postData.readyByDate);
       formDataToSend.append("kisaanId", kisaanId);
+
 
       // Single crop data
       const { crop } = postData;
@@ -116,19 +170,23 @@ export default function CreatePostPage() {
       formDataToSend.append("crops.quantity[0]", crop.quantity);
       formDataToSend.append("crops.pricePerQuintal[0]", crop.pricePerQuintal);
 
+
       // Add photos
       postData.photos.forEach((photo) => {
         formDataToSend.append("photos", photo);
       });
+
 
       // Add videos
       postData.videos.forEach((video) => {
         formDataToSend.append("videos", video);
       });
 
+
       const response = await api.post("/api/posts/create", formDataToSend, {
         headers: { "Content-Type": "multipart/form-data" },
       });
+
 
       return response.data;
     },
@@ -165,12 +223,16 @@ export default function CreatePostPage() {
     }
   });
 
+
   const sanitizeInput = (value: string) => value.replace(/[<>"'&]/g, "");
+
 
   const resetForm = () => {
     console.log("Resetting form...");
     setFormData({ ...initialFormState });
     setErrors({ ...initialErrorState });
+    setSelectedCrop(null);
+    setSelectedSubCategory(null);
     
     // Clear file inputs
     const photoInput = document.getElementById("photo-upload") as HTMLInputElement;
@@ -181,6 +243,7 @@ export default function CreatePostPage() {
     console.log("Form reset complete");
   };
 
+
   const handleInputChange = (field: keyof FormData, value: string) => {
     const sanitizedValue = sanitizeInput(value);
     setFormData((prev) => ({ ...prev, [field]: sanitizedValue }));
@@ -190,8 +253,9 @@ export default function CreatePostPage() {
     }
   };
 
+
   const handleCropChange = (field: keyof Crop, value: string) => {
-    const sanitizedValue = field === "quantity" || field === "pricePerQuintal" 
+    const sanitizedValue = field === "quantity" 
       ? value.replace(/\D/g, "") 
       : sanitizeInput(value);
     
@@ -204,6 +268,45 @@ export default function CreatePostPage() {
       setErrors((prev) => ({ ...prev, crop: "" }));
     }
   };
+
+  const handleCropSelection = (cropId: string) => {
+    const crop = apiCrops.find(c => c._id === cropId);
+    if (crop) {
+      setSelectedCrop(crop);
+      setSelectedSubCategory(null);
+      
+      // Update form data
+      setFormData(prev => ({
+        ...prev,
+        crop: {
+          ...prev.crop,
+          name: crop.name,
+          type: "",
+          pricePerQuintal: crop.price ? crop.price.toString() : ""
+        }
+      }));
+    }
+  };
+
+  const handleSubCategorySelection = (subCategoryName: string) => {
+    if (selectedCrop) {
+      const subCategory = selectedCrop.subCategories.find(sc => sc.name === subCategoryName);
+      if (subCategory) {
+        setSelectedSubCategory(subCategory);
+        
+        // Update form data
+        setFormData(prev => ({
+          ...prev,
+          crop: {
+            ...prev.crop,
+            type: subCategory.name,
+            pricePerQuintal: subCategory.price.toString()
+          }
+        }));
+      }
+    }
+  };
+
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -219,10 +322,12 @@ export default function CreatePostPage() {
       return false;
     });
 
+
     if (formData.photos.length + validFiles.length > 3) {
       toast.error("Maximum 3 photos allowed");
       return;
     }
+
 
     setFormData(prev => ({
       ...prev,
@@ -230,12 +335,14 @@ export default function CreatePostPage() {
     }));
   };
 
+
   const removePhoto = (index: number) => {
     setFormData(prev => ({
       ...prev,
       photos: prev.photos.filter((_, i) => i !== index)
     }));
   };
+
 
 
   const validateForm = (): boolean => {
@@ -248,26 +355,32 @@ export default function CreatePostPage() {
       videos: "",
     };
 
+
     if (!formData.title.trim()) {
       newErrors.title = "Title is required";
     }
+
 
     if (!formData.description.trim()) {
       newErrors.description = "Description is required";
     }
 
+
     if (!formData.readyByDate) {
       newErrors.readyByDate = "Ready by date is required";
     }
+
 
     const { crop } = formData;
     if (!crop.name || !crop.type || !crop.quantity || !crop.pricePerQuintal) {
       newErrors.crop = "All crop fields are required";
     }
 
+
     setErrors(newErrors);
     return !Object.values(newErrors).some((error) => error !== "");
   };
+
 
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -279,8 +392,10 @@ export default function CreatePostPage() {
       return;
     }
 
+
     createPostMutation.mutate(formData);
   };
+
 
   if (!kisaanId) {
     return (
@@ -292,6 +407,7 @@ export default function CreatePostPage() {
       </div>
     );
   }
+
 
   return (
     <div className="min-h-screen bg-gray-50 py-4 lg:py-8">
@@ -313,6 +429,7 @@ export default function CreatePostPage() {
             </p>
           </div>
         </div>
+
 
         <div className="lg:grid lg:grid-cols-5 lg:gap-8">
           {/* Left Side - Illustration (Hidden on mobile) */}
@@ -344,6 +461,7 @@ export default function CreatePostPage() {
             </div>
           </div>
 
+
           {/* Right Side - Form */}
           <div className="lg:col-span-3">
             {/* Mobile Header */}
@@ -360,6 +478,7 @@ export default function CreatePostPage() {
                 Share your crops with the community
               </p>
             </div>
+
 
             <form onSubmit={handleCreatePost} className="space-y-8">
               {/* Basic Information Card */}
@@ -389,6 +508,7 @@ export default function CreatePostPage() {
                     )}
                   </div>
 
+
                   {/* Description */}
                   <div className="lg:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-3">
@@ -407,6 +527,7 @@ export default function CreatePostPage() {
                       <p className="text-red-500 text-xs mt-2">{errors.description}</p>
                     )}
                   </div>
+
 
                   {/* Ready By Date */}
                   <div>
@@ -428,6 +549,7 @@ export default function CreatePostPage() {
                 </div>
               </div>
 
+
               {/* Crop Information Card */}
               <div className="bg-white rounded-2xl border border-gray-200 p-6 lg:p-8 shadow-sm">
                 <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
@@ -435,34 +557,58 @@ export default function CreatePostPage() {
                   Crop Details
                 </h3>
 
+
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-3">
                       Crop Name *
                     </label>
-                    <input
-                      type="text"
-                      placeholder="e.g., Wheat, Rice, Corn"
-                      value={formData.crop.name}
-                      onChange={(e) => handleCropChange("name", e.target.value)}
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all rounded-xl"
+                    <select
+                      value={selectedCrop?._id || ""}
+                      onChange={(e) => handleCropSelection(e.target.value)}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all rounded-xl"
                       disabled={createPostMutation.isPending}
-                    />
+                    >
+                      <option value="">Select a crop</option>
+                      {apiCrops.map((crop) => (
+                        <option key={crop._id} value={crop._id}>
+                          {crop.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
+
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-3">
                       Crop Type/Variety *
                     </label>
-                    <input
-                      type="text"
-                      placeholder="e.g., Basmati, Organic, Hybrid"
-                      value={formData.crop.type}
-                      onChange={(e) => handleCropChange("type", e.target.value)}
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all rounded-xl"
-                      disabled={createPostMutation.isPending}
-                    />
+                    {selectedCrop && selectedCrop.subCategories.length > 0 ? (
+                      <select
+                        value={selectedSubCategory?.name || ""}
+                        onChange={(e) => handleSubCategorySelection(e.target.value)}
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all rounded-xl"
+                        disabled={createPostMutation.isPending}
+                      >
+                        <option value="">Select variety</option>
+                        {selectedCrop.subCategories.map((subCat) => (
+                          <option key={subCat.name} value={subCat.name}>
+                            {subCat.name}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        placeholder="e.g., Basmati, Organic, Hybrid"
+                        value={formData.crop.type}
+                        onChange={(e) => handleCropChange("type", e.target.value)}
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all rounded-xl"
+                        disabled={createPostMutation.isPending}
+                      />
+                    )}
                   </div>
+
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-3">
@@ -478,25 +624,32 @@ export default function CreatePostPage() {
                     />
                   </div>
 
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-3">
                       Price per Quintal (₹) *
                     </label>
                     <input
                       type="text"
-                      placeholder="e.g., 2500"
                       value={formData.crop.pricePerQuintal}
-                      onChange={(e) => handleCropChange("pricePerQuintal", e.target.value)}
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all rounded-xl"
-                      disabled={createPostMutation.isPending}
+                      readOnly
+                      className="w-full px-4 py-3 bg-gray-100 border border-gray-200 text-gray-900 focus:outline-none rounded-xl cursor-not-allowed"
+                      placeholder="Price will be set automatically"
                     />
+                    {formData.crop.pricePerQuintal && (
+                      <p className="text-sm text-green-600 mt-1">
+                        Price: ₹{formData.crop.pricePerQuintal} per quintal
+                      </p>
+                    )}
                   </div>
                 </div>
+
 
                 {errors.crop && (
                   <p className="text-red-500 text-xs mt-4">{errors.crop}</p>
                 )}
               </div>
+
 
               {/* Media Upload Card */}
               <div className="bg-white rounded-2xl border border-gray-200 p-6 lg:p-8 shadow-sm">
@@ -504,6 +657,7 @@ export default function CreatePostPage() {
                   <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                   Photos
                 </h3>
+
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   {/* Photos */}
@@ -541,6 +695,7 @@ export default function CreatePostPage() {
                       </label>
                     </div>
 
+
                     {/* Photo Preview */}
                     {formData.photos.length > 0 && (
                       <div className="mt-4 grid grid-cols-2 gap-2">
@@ -565,9 +720,11 @@ export default function CreatePostPage() {
                     )}
                   </div>
 
+
                  
                 </div>
               </div>
+
 
               {/* Submit Button */}
               <div className="lg:flex lg:justify-end">
