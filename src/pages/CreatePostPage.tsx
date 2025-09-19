@@ -5,7 +5,6 @@ import { Camera, X, Loader2, Upload, ArrowLeft } from "lucide-react";
 import { ILLUSTRATIONS } from "../assets/assets";
 import api from "../api/axios";
 import toast from "react-hot-toast";
-import { BASE_URL } from "../utils/urls";
 
 
 interface Crop {
