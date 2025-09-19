@@ -11,6 +11,19 @@ import imageCompression from 'browser-image-compression';
 const ACCOUNT_NUMBER_REGEX = /^[0-9]{9,18}$/;
 const IFSC_REGEX = /^[A-Z]{4}0[0-9A-Z]{6}$/i;
 
+interface CropsResponse {
+  success: boolean;
+  count: number;
+  crops: ApiCrop[];
+}
+
+interface ApiCrop {
+  _id: string;
+  name: string;
+  image?: string; // Optional image field
+  isVisible?: boolean;
+}
+
 export default function ProfileComplete() {
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -178,9 +191,11 @@ export default function ProfileComplete() {
     const fetchCrops = async () => {
       setCropsLoading(true);
       try {
-        const { data } = await api.get("/api/admin/get-all-crop");
+        const response = await api.get("/api/admin/get-all-crops");
+        const data: CropsResponse = response.data;
         if (data.success && data.crops) {
-          setCropsList(data.crops.filter((crop: any) => crop.isVisible));
+          // Filter visible crops, image is optional
+          setCropsList(data.crops.filter((crop: ApiCrop) => crop.isVisible !== false));
         } else {
           setCropsList([
             { _id: "wheat", name: "Wheat" },
@@ -223,7 +238,7 @@ export default function ProfileComplete() {
       if (!formData.bankBranch) errors.bankBranch = "Bank branch is required.";
       if (!formData.ifsc) errors.ifsc = "IFSC code is required.";
       else if (!IFSC_REGEX.test(formData.ifsc)) errors.ifsc = "IFSC code must be in format: AAAA0123456";
-      if (!formData.passbookPhoto) errors.passbookPhoto = "Bank passbook photo is required.";
+      // Removed passbookPhoto validation - now optional
     } else if (step === 2) {
       if (role === "kisaan") {
         if (!formData.landHoldings) errors.landHoldings = "Land holdings is required.";
@@ -233,8 +248,7 @@ export default function ProfileComplete() {
         if (!formData.seedArea) errors.seedArea = "Seed area is required.";
         if (!formData.irrigatedArea) errors.irrigatedArea = "Irrigated area is required.";
         if (!formData.rainfedArea) errors.rainfedArea = "Rainfed area is required.";
-        if (!formData.aadhaarFront) errors.aadhaarFront = "Aadhaar front image is required.";
-        if (!formData.aadhaarBack) errors.aadhaarBack = "Aadhaar back image is required.";
+        // Removed aadhaar photo validations - now optional
       } else if (role === "pos") {
         if (!formData.storageArea) errors.storageArea = "Storage area is required.";
         if (!formData.sections) errors.sections = "Number of sections is required.";
@@ -279,7 +293,7 @@ export default function ProfileComplete() {
           bankFormData.append("ifscCode", formData.ifsc);
           bankFormData.append("branch", formData.bankBranch);
           
-          // Add passbook photo to the API payload
+          // Add passbook photo to the API payload only if present
           if (formData.passbookPhoto) {
             bankFormData.append("photos", formData.passbookPhoto);
             console.log("Adding passbook photo:", {
@@ -344,6 +358,7 @@ export default function ProfileComplete() {
           formDataObj.append("irrigatedArea", formData.irrigatedArea);
           formDataObj.append("crops", JSON.stringify(formData.crops));
           
+          // Add aadhaar photos only if present
           if (formData.aadhaarFront) {
             formDataObj.append("aadhaarFront", formData.aadhaarFront);
             console.log("Adding aadhaar front:", {
@@ -433,7 +448,7 @@ export default function ProfileComplete() {
       return (
         <div>
           <label className={`block text-sm font-medium mb-2 ${hasError ? "text-red-400" : "text-black"}`}>
-            {t(placeholder)}
+            {t(placeholder)} <span className="text-gray-400 text-xs">(Optional)</span>
           </label>
           
           {/* File Input */}
@@ -509,7 +524,7 @@ export default function ProfileComplete() {
           </div>
         ) : cropsList.length > 0 ? (
           <div className="flex flex-wrap gap-3 max-h-32 overflow-y-auto bg-gray-50 p-4 rounded-lg border border-gray-300">
-            {cropsList.map((crop: any) => {
+            {cropsList.map((crop: ApiCrop) => {
               const selected = selectedCropIds.includes(crop._id);
               return (
                 <div
@@ -520,6 +535,7 @@ export default function ProfileComplete() {
                   <div className={`w-16 h-16 rounded-full bg-white border-2 flex items-center justify-center overflow-hidden transition-all ${
                     selected ? 'border-green-500' : 'border-gray-300'
                   }`}>
+                    {/* Image is optional - fallback to default logo if not provided */}
                     <img 
                       src={crop.image || GLOBLE.ucf_logo} 
                       alt={crop.name}
@@ -633,7 +649,7 @@ export default function ProfileComplete() {
                   {renderInput("bankName", "bankName")}
                   {renderInput("bankBranch", "bankBranch")}
                   {renderInput("ifsc", "ifscCode")}
-                  {/* Enhanced Bank Passbook Photo Field */}
+                  {/* Bank Passbook Photo Field - Now Optional */}
                   {renderInput("passbookPhoto", "Bank Passbook Photo", "file", true)}
                   <div className="flex justify-between pt-6">
                     <button
@@ -684,6 +700,7 @@ export default function ProfileComplete() {
                       {renderInput("irrigatedArea", "irrigatedArea", "number")}
                       {renderInput("rainfedArea", "rainfedArea", "number")}
                       <div className="grid grid-cols-1 gap-6">
+                        {/* Aadhaar Photo Fields - Now Optional */}
                         {renderInput("aadhaarFront", "aadhaarFrontImage", "file", true)}
                         {renderInput("aadhaarBack", "aadhaarBackImage", "file", true)}
                       </div>
