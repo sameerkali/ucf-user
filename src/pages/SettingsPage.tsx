@@ -7,8 +7,7 @@ import {
   Languages,
   LogOut,
   ChevronDown,
-  Check,
-  Tv,
+  Check,FileText, Gem, Package, Users
 } from "lucide-react";
 
 type LanguageCode = "en" | "hi";
@@ -72,7 +71,6 @@ const SettingsPage: React.FC = () => {
   const isFarmer = role === "kisaan";
   const isPOS = role === "pos";
 
-  const profileImgUrl = "https://randomuser.me/api/portraits/men/75.jpg";
 
   const openLanguagePopup = () => {
     setPendingLang((i18n.language as LanguageCode) || "en");
@@ -125,56 +123,58 @@ const SettingsPage: React.FC = () => {
     (opt) => opt.value === pendingLang
   );
 
-  const options = useMemo(() => {
-    const baseOptions = [
+const options = useMemo(() => {
+  const baseOptions = [
+    {
+      labelKey: "Change Language",
+      icon: Languages,
+      onClick: openLanguagePopup,
+      descriptionKey: "Select Preferred Language",
+    },
+  ];
+
+  if (isFarmer) {
+    baseOptions.push(
       {
-        labelKey: "changeLanguage",
-        icon: Languages,
-        onClick: openLanguagePopup,
-        descriptionKey: "selectPreferredLanguage",
+        labelKey: "My Posts",
+        icon: FileText,
+        onClick: handleMyPosts,
+        descriptionKey: "Select This To See All My Posts",
       },
-    ];
+      {
+        labelKey: "My Dimands",
+        icon: Gem,
+        onClick: handleMyDimands,
+        descriptionKey: "Select This To See All My Dimands",
+      },
+      {
+        labelKey: "My Fulfillments",
+        icon: Package,
+        onClick: handleMyfulfillments,
+        descriptionKey: "Select This To See My Fulfillments",
+      }
+    );
+  }
 
-    if (isFarmer) {
-      baseOptions.push(
-        {
-          labelKey: "myposts",
-          icon: Tv,
-          onClick: handleMyPosts,
-          descriptionKey: "selectthistoseeallmyposts",
-        },
-         {
-          labelKey: "mydimands",
-          icon: Tv,
-          onClick: handleMyDimands,
-          descriptionKey: "selectthistoseeallmyposts",
-        },
-        {
-          labelKey: "myfulfillments",
-          icon: Tv,
-          onClick: handleMyfulfillments,
-          descriptionKey: "selectthistoseemyfulfillments",
-        }
-      );
-    }
-    if (isPOS) {
-      baseOptions.push({
-        labelKey: "My Farmers",
-        icon: Tv,
-        onClick: handleMyFarmers,
-        descriptionKey: "selectthistoseemyfulfillments",
-      });
-    }
-
+  if (isPOS) {
     baseOptions.push({
-      labelKey: "logout",
-      icon: LogOut,
-      onClick: () => setShowLogoutPopup(true),
-      descriptionKey: "signOutAccount",
+      labelKey: "My Farmers",
+      icon: Users,
+      onClick: handleMyFarmers,
+      descriptionKey: "Select This To See My Farmers",
     });
+  }
 
-    return baseOptions;
-  }, [isFarmer, isPOS, navigate, profile]);
+  baseOptions.push({
+    labelKey: "Logout",
+    icon: LogOut,
+    onClick: () => setShowLogoutPopup(true),
+    descriptionKey: "signOutAccount",
+  });
+
+  return baseOptions;
+}, [isFarmer, isPOS, navigate, profile]);
+
 
   return (
     <div className="min-h-screen px-4 py-6">
@@ -190,11 +190,7 @@ const SettingsPage: React.FC = () => {
           }
         }}
       >
-        <img
-          src={profileImgUrl}
-          alt={t("profile")}
-          className="w-16 h-16 rounded-full object-cover border border-gray-300"
-        />
+       
 
         <div className="flex-1">
           <div className="font-semibold text-lg text-gray-900">

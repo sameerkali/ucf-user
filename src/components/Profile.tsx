@@ -12,7 +12,6 @@ import {
   XCircle,
   UserCheck,
   Mail,
-  Edit3
 } from "lucide-react";
 
 type Address = {
@@ -204,9 +203,6 @@ export default function Profile() {
               </p>
             </div>
           </div>
-          <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-            <Edit3 className="w-4 h-4 text-gray-500" />
-          </button>
         </div>
       </div>
 
