@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { FC } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
-  CheckCircle2, XCircle, Loader2, Filter, ArrowLeft, FileText, 
+  CheckCircle2, XCircle, Loader2, FileText, 
   Clock, MapPin, Package, Eye, Edit3, Check,
   Calendar, User, Scale, ChevronLeft, ChevronRight
 } from 'lucide-react';
