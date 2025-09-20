@@ -220,11 +220,7 @@ const RequestCard: FC<{
   isUpdating: boolean
   formatDate: (date: string) => string
 }> = ({ request, onUpdateStatus, isUpdating, formatDate }) => {
-  const statusStyles = {
-    pending: 'bg-yellow-100 text-yellow-800',
-    verified: 'bg-green-100 text-green-800',
-    rejected: 'bg-red-100 text-red-800',
-  }
+
 
   return (
     <div className="border-2 border-gray-200 rounded-2xl p-5 hover:shadow-md transition-shadow flex flex-col sm:flex-row sm:justify-between gap-4">
@@ -234,12 +230,7 @@ const RequestCard: FC<{
             <h3 className="text-lg font-bold text-gray-900">{request.user.name}</h3>
             <p className="text-gray-600">Mobile: {request.user.mobile}</p>
           </div>
-          <span
-            className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap select-none mt-1 sm:mt-0 ${statusStyles[request.status]}`}
-            aria-label={`Status: ${request.status}`}
-          >
-            {request.status.toUpperCase()}
-          </span>
+         
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-600">
