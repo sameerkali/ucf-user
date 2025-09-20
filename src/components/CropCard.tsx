@@ -24,7 +24,6 @@ interface CropCardProps {
 }
 
 const CropCard: React.FC<CropCardProps> = ({ post, onClick, variant = 'mobile' }) => {
-  console.log("post in crop card:", JSON.stringify(post));
   const crop = post.crops[0];
   
   if (variant === 'mobile') {

@@ -12,7 +12,6 @@ import {
   XCircle,
   UserCheck,
   Mail,
-  Edit3
 } from "lucide-react";
 
 type Address = {
