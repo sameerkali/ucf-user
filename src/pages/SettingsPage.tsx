@@ -83,6 +83,9 @@ const SettingsPage: React.FC = () => {
   const handleMyPosts = () => {
     navigate("/kisaan/posts");
   };
+  const handleMyDimands = () => {
+    navigate("/kisaan/dimand");
+  }
   const handleMyfulfillments = () => {
     navigate("/kisaan/fulfillments");
   };
@@ -138,6 +141,12 @@ const SettingsPage: React.FC = () => {
           labelKey: "myposts",
           icon: Tv,
           onClick: handleMyPosts,
+          descriptionKey: "selectthistoseeallmyposts",
+        },
+         {
+          labelKey: "mydimands",
+          icon: Tv,
+          onClick: handleMyDimands,
           descriptionKey: "selectthistoseeallmyposts",
         },
         {
