@@ -2,8 +2,8 @@ import { useState } from 'react';
 import type { FC } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
-  CheckCircle2, XCircle, Loader2, FileText, 
-  Clock, MapPin, Package, Eye, Edit3, Check,
+   XCircle, Loader2,FileText, 
+  MapPin, Package, Eye, Edit3, Check,
   Calendar, User, Scale, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -54,7 +54,7 @@ interface Fulfillment {
   _id: string;
   post: Post;
   crops: FulfillmentCrop[];
-  status: 'pending' | 'pending for verification' | 'approved' | 'rejected';
+  status: 'pending' | 'pending for verification' | 'approved' | 'rejected' | 'active' | 'done';
   createdAt: string;
   updatedAt: string;
 }
@@ -71,16 +71,15 @@ interface ApiResponse {
   };
 }
 
-type FilterStatus = 'all' | 'pending' | 'pending for verification' | 'approved' | 'rejected';
+type FilterStatus = 'all' | 'pending' | 'pending for verification' | 'approved' | 'rejected' | 'active' | 'done';
 
 interface PosFulfillmentProps {
   postId?: string;
 }
 
 const PosFulfillment: FC<PosFulfillmentProps> = () => {
-const location = useLocation(); // Add this line
-  const postId = location.state?.postId; // Get postId from location state
-  console.log("postId in fulfillment page:", postId);
+  const location = useLocation();
+  const postId = location.state?.postId;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<FilterStatus>('all');
@@ -103,7 +102,7 @@ const location = useLocation(); // Add this line
       
       // Add post filter if postId is provided
       if (postId) {
-        filters.post  = postId;
+        filters.post = postId;
       }
 
       const { data } = await api.post(
@@ -169,7 +168,7 @@ const location = useLocation(); // Add this line
 
   const statusCounts = fulfillments.reduce(
     (acc, f) => ({ ...acc, [f.status]: (acc[f.status] || 0) + 1, all: acc.all + 1 }),
-    { all: 0, pending: 0, 'pending for verification': 0, approved: 0, rejected: 0 }
+    { all: 0, pending: 0, 'pending for verification': 0, approved: 0, rejected: 0, active: 0, done: 0 }
   );
 
   const handlePageChange = (page: number) => {
@@ -183,53 +182,51 @@ const location = useLocation(); // Add this line
     <div className="min-h-screen bg-gray-50 px-4 py-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-       <div className="mb-6">
-  <nav className="flex text-sm text-gray-600">
-    <ol className="inline-flex items-center space-x-1 md:space-x-2">
-      <li>
-        <button
-          onClick={() => navigate('/pos/home')}
-          className="hover:text-blue-600 transition-colors"
-        >
-          Home
-        </button>
-      </li>
-      <li>
-        <span className="text-gray-400">/</span>
-      </li>
-      <li className="text-gray-900 font-medium">
-        Fulfillment Requests
-      </li>
-    </ol>
-  </nav>
-</div>
+        <div className="mb-6">
+          <nav className="flex text-sm text-gray-600">
+            <ol className="inline-flex items-center space-x-1 md:space-x-2">
+              <li>
+                <button
+                  onClick={() => navigate('/pos/home')}
+                  className="hover:text-blue-600 transition-colors"
+                >
+                  Home
+                </button>
+              </li>
+              <li>
+                <span className="text-gray-400">/</span>
+              </li>
+              <li className="text-gray-900 font-medium">
+                Fulfillment Requests
+              </li>
+            </ol>
+          </nav>
+        </div>
 
-
-      {/* Filters */}
-<div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-  <div className="flex items-center justify-between mb-4">
-    <h2 className="text-sm font-semibold text-gray-700">Filter by Status</h2>
-  </div>
-  <div className="flex flex-wrap gap-2">
-    {(['all', 'pending', 'pending for verification', 'approved', 'rejected'] as FilterStatus[]).map((status) => (
-      <button
-        key={status}
-        onClick={() => setFilter(status)}
-        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-          filter === status 
-            ? 'bg-blue-500 text-white shadow-sm' 
-            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-        }`}
-      >
-        {status === 'all' 
-          ? 'All' 
-          : status.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
-        } ({statusCounts[status] || 0})
-      </button>
-    ))}
-  </div>
-</div>
-
+        {/* Filters */}
+        <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold text-gray-700">Filter by Status</h2>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {(['all', 'pending', 'pending for verification', 'approved', 'rejected', 'active', 'done'] as FilterStatus[]).map((status) => (
+              <button
+                key={status}
+                onClick={() => setFilter(status)}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                  filter === status 
+                    ? 'bg-blue-500 text-white shadow-sm' 
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {status === 'all' 
+                  ? 'All' 
+                  : status.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+                } ({statusCounts[status] || 0})
+              </button>
+            ))}
+          </div>
+        </div>
 
         {/* Fulfillments */}
         <div className="space-y-6">
@@ -283,14 +280,24 @@ const location = useLocation(); // Add this line
   );
 };
 
-// Updated Progress Bar Component
-const ProgressBar: FC<{ status: Fulfillment['status'] }> = ({ status }) => {
-  const steps = [
-    { key: 'pending', label: 'Submitted', icon: Clock, color: 'blue' },
-    { key: 'pending for verification', label: 'Verification', icon: Eye, color: 'yellow' },
-    { key: 'approved', label: 'Approved', icon: CheckCircle2, color: 'green' },
-  ];
+// FIXED StatusProgressBar Component
+const StatusProgressBar: FC<{ status: Fulfillment['status'] }> = ({ status }) => {
+  // Status order: pending -> pending for verification -> approved -> done
+  const statuses = ["pending", "pending for verification", "approved", "done"];
+  
+  // Map current status to progress bar index
+  const getStatusIndex = (currentStatus: string) => {
+    switch (currentStatus) {
+      case 'pending': return 0;
+      case 'pending for verification': return 1;
+      case 'approve': return 2;
+      case 'active': return 2; // Map active to approved stage
+      case 'done': return 3;
+      default: return 0;
+    }
+  };
 
+  // If status is rejected, show as pill instead of progress bar
   if (status === 'rejected') {
     return (
       <div className="mb-6">
@@ -304,56 +311,39 @@ const ProgressBar: FC<{ status: Fulfillment['status'] }> = ({ status }) => {
     );
   }
 
-  const currentStepIndex = steps.findIndex(step => step.key === status);
-  const progressPercentage = ((currentStepIndex + 1) / steps.length) * 100;
-
+  const currentStatusIndex = getStatusIndex(status);
+  
+  // Fixed progress calculation - should work for all statuses including approved
+  const progressPercentage = currentStatusIndex === 0 
+    ? 0 
+    : ((currentStatusIndex) / (statuses.length - 1)) * 100;
+  
   return (
-    <div className="mb-6">
-      <div className="relative">
-        {/* Progress Line */}
-        <div className="absolute top-6 left-6 right-6 h-1 bg-gray-200 rounded-full">
-          <div 
-            className="h-full bg-blue-500 rounded-full transition-all duration-500 ease-in-out"
-            style={{ width: `${progressPercentage}%` }}
-          />
-        </div>
+    <div className="w-full mb-6 p-4 bg-gray-50 rounded-xl">
+      <div className="relative mb-4 pt-2">
+        {/* Background Lines - full width yellow line */}
+        <div className="absolute top-4 left-0 w-full h-1 bg-yellow-400 rounded-full"></div>
         
-        {/* Steps */}
-        <div className="flex items-center justify-between relative z-10">
-          {steps.map((step, index) => {
-            const StepIcon = step.icon;
-            const isCompleted = currentStepIndex > index;
-            const isActive = currentStepIndex === index;
-            
+        {/* Progress Line - green line showing progress */}
+        <div 
+          className="absolute top-4 left-0 h-1 bg-green-500 transition-all duration-500 ease-out rounded-full"
+          style={{ width: `${progressPercentage}%` }}
+        ></div>
+        
+        {/* Dots and Labels */}
+        <div className="flex justify-between items-start relative z-10">
+          {statuses.map((statusLabel, index) => {
+            const isCompleted = index < currentStatusIndex;
+            const isActive = index === currentStatusIndex;
+            const dotColor = isCompleted || isActive ? 'bg-green-500' : 'bg-yellow-400';
+            const textColor = isCompleted || isActive ? 'text-gray-800' : 'text-gray-500';
+
             return (
-              <div key={step.key} className="flex flex-col items-center">
-                <div className={`w-12 h-12 rounded-full border-4 flex items-center justify-center transition-all duration-300 bg-white ${
-                  isCompleted 
-                    ? 'border-green-500 text-green-600' 
-                    : isActive 
-                    ? 'border-blue-500 text-blue-600 ring-4 ring-blue-200' 
-                    : 'border-gray-300 text-gray-400'
-                }`}>
-                  {isCompleted ? (
-                    <Check className="w-5 h-5" />
-                  ) : (
-                    <StepIcon className="w-5 h-5" />
-                  )}
-                </div>
-                <div className="mt-2 text-center">
-                  <span className={`text-xs font-medium block ${
-                    isCompleted 
-                      ? 'text-green-600' 
-                      : isActive 
-                      ? 'text-blue-600' 
-                      : 'text-gray-400'
-                  }`}>
-                    {step.label}
-                  </span>
-                  {isActive && (
-                    <span className="text-xs text-gray-500 mt-1 block">Current</span>
-                  )}
-                </div>
+              <div key={statusLabel} className="flex flex-col items-center text-center w-32">
+                <div className={`w-5 h-5 rounded-full ${dotColor} transition-all duration-300 border-4 border-white shadow-sm z-10 relative`} />
+                <p className={`mt-3 text-xs sm:text-sm font-medium ${textColor} transition-colors duration-300 capitalize`}>
+                  {statusLabel === 'pending for verification' ? 'Pending For Verification' : statusLabel}
+                </p>
               </div>
             );
           })}
@@ -378,9 +368,29 @@ const FulfillmentCard: FC<{
 
   const totalFulfillmentQuantity = fulfillment.crops.reduce((sum, crop) => sum + crop.quantity, 0);
 
+  // Fixed status colors
+  const getStatusStyle = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'pending for verification':
+        return 'bg-blue-100 text-blue-800';
+      case 'approved':
+        return 'bg-green-100 text-green-800';
+      case 'active':
+        return 'bg-purple-100 text-purple-800';
+      case 'done':
+        return 'bg-gray-100 text-gray-800';
+      case 'rejected':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-sm border p-6 hover:shadow-md transition-shadow">
-      <ProgressBar status={fulfillment.status} />
+      <StatusProgressBar status={fulfillment.status} />
       
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between mb-6 gap-4">
@@ -404,12 +414,7 @@ const FulfillmentCard: FC<{
             </button>
           </div>
         </div>
-        <div className={`px-4 py-2 rounded-full text-sm font-semibold ${
-          fulfillment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-          fulfillment.status === 'pending for verification' ? 'bg-blue-100 text-blue-800' :
-          fulfillment.status === 'approved' ? 'bg-green-100 text-green-800' :
-          'bg-red-100 text-red-800'
-        }`}>
+        <div className={`px-4 py-2 rounded-full text-sm font-semibold ${getStatusStyle(fulfillment.status)}`}>
           {fulfillment.status.toUpperCase().replace('PENDING FOR VERIFICATION', 'PENDING VERIFICATION')}
         </div>
       </div>
@@ -534,9 +539,17 @@ const ActionButtons: FC<{
       );
 
     case 'approved':
+    case 'done':
       return (
         <div className="bg-green-50 p-3 rounded-lg text-green-800 text-sm font-medium">
           ✅ Fulfillment approved
+        </div>
+      );
+
+    case 'active':
+      return (
+        <div className="bg-purple-50 p-3 rounded-lg text-purple-800 text-sm font-medium">
+          🔄 Fulfillment is active
         </div>
       );
 
@@ -552,7 +565,7 @@ const ActionButtons: FC<{
   }
 };
 
-// New Pagination Component
+// Pagination Component
 const PaginationComponent: FC<{
   currentPage: number;
   totalPages: number;
@@ -594,15 +607,11 @@ const PaginationComponent: FC<{
   return (
     <div className="bg-white rounded-lg shadow-sm p-6 mt-6">
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-        {/* Items Info */}
         <div className="text-sm text-gray-700">
           Showing <span className="font-medium">{startItem}</span> to <span className="font-medium">{endItem}</span> of{' '}
           <span className="font-medium">{totalItems}</span> results
         </div>
-
-        {/* Pagination Controls */}
         <div className="flex items-center space-x-2">
-          {/* Previous Button */}
           <button
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage === 1}
@@ -611,8 +620,6 @@ const PaginationComponent: FC<{
             <ChevronLeft className="w-4 h-4 mr-1" />
             Previous
           </button>
-
-          {/* Page Numbers */}
           <div className="flex space-x-1">
             {getVisiblePages().map((page, index) => (
               <button
@@ -631,8 +638,6 @@ const PaginationComponent: FC<{
               </button>
             ))}
           </div>
-
-          {/* Next Button */}
           <button
             onClick={() => onPageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
@@ -769,10 +774,6 @@ const EmptyState: FC<{ filter: FilterStatus; onShowAll: () => void }> = ({ filte
 );
 
 export default PosFulfillment;
-
-
-
-
 
 
 
