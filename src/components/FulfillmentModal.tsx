@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Package, Loader2, CheckCircle } from 'lucide-react';
+import { X, Package, Loader2, CheckCircle, IndianRupee, Tag } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface Crop {
@@ -17,7 +17,9 @@ interface Post {
 
 interface FulfillmentCrop {
   name: string;
+  type: string;
   quantity: number;
+  pricePerQuintal: number;
 }
 
 interface FulfillmentModalProps {
@@ -41,7 +43,13 @@ const FulfillmentModal: React.FC<FulfillmentModalProps> = ({
   useEffect(() => {
     if (isOpen && post.crops.length > 0) {
       setTimeout(() => {
-        setSelectedCrops([{ name: post.crops[0].name, quantity: 0 }]);
+        const firstCrop = post.crops[0];
+        setSelectedCrops([{ 
+          name: firstCrop.name, 
+          type: firstCrop.type, 
+          quantity: 0, 
+          pricePerQuintal: firstCrop.pricePerQuintal 
+        }]);
         setIsReady(true);
       }, 50);
     } else {
@@ -54,13 +62,23 @@ const FulfillmentModal: React.FC<FulfillmentModalProps> = ({
     setIsSubmitting(fulfillmentMutation.isPending || fulfillmentMutation.isLoading);
   }, [fulfillmentMutation.isPending, fulfillmentMutation.isLoading]);
 
+  // Generate unique key for crop identification (name + type combination)
+  const getCropKey = (crop: FulfillmentCrop | Crop) => `${crop.name}|${crop.type}`;
+
   const handleAddCrop = () => {
+    // Find available crops that are not already selected
     const availableCrops = post.crops.filter(
-      crop => !selectedCrops.some(selected => selected.name === crop.name)
+      crop => !selectedCrops.some(selected => getCropKey(selected) === getCropKey(crop))
     );
     
     if (availableCrops.length > 0) {
-      setSelectedCrops([...selectedCrops, { name: availableCrops[0].name, quantity: 0 }]);
+      const newCrop = availableCrops[0];
+      setSelectedCrops([...selectedCrops, { 
+        name: newCrop.name, 
+        type: newCrop.type, 
+        quantity: 0, 
+        pricePerQuintal: newCrop.pricePerQuintal 
+      }]);
     }
   };
 
@@ -68,27 +86,39 @@ const FulfillmentModal: React.FC<FulfillmentModalProps> = ({
     setSelectedCrops(selectedCrops.filter((_, i) => i !== index));
   };
 
-  const handleCropChange = (index: number, field: keyof FulfillmentCrop, value: string | number) => {
-    const updatedCrops = [...selectedCrops];
-    if (field === 'name') {
-      updatedCrops[index][field] = value as string;
-      updatedCrops[index].quantity = 0;
-    } else {
-      updatedCrops[index][field] = value as number;
+  const handleCropChange = (index: number, selectedCropKey: string) => {
+    const [name, type] = selectedCropKey.split('|');
+    const selectedPostCrop = post.crops.find(crop => crop.name === name && crop.type === type);
+    
+    if (selectedPostCrop) {
+      const updatedCrops = [...selectedCrops];
+      updatedCrops[index] = {
+        name: selectedPostCrop.name,
+        type: selectedPostCrop.type,
+        quantity: 0,
+        pricePerQuintal: selectedPostCrop.pricePerQuintal
+      };
+      setSelectedCrops(updatedCrops);
     }
+  };
+
+  const handleQuantityChange = (index: number, quantity: number) => {
+    const updatedCrops = [...selectedCrops];
+    updatedCrops[index].quantity = quantity;
     setSelectedCrops(updatedCrops);
   };
 
-  const getMaxQuantity = (cropName: string) => {
-    const crop = post.crops.find(c => c.name === cropName);
+  const getMaxQuantity = (name: string, type: string) => {
+    const crop = post.crops.find(c => c.name === name && c.type === type);
     return crop ? crop.quantity : 1;
   };
 
   const getAvailableCrops = (currentIndex: number) => {
     return post.crops.filter(crop => {
-      const isCurrentSelection = selectedCrops[currentIndex]?.name === crop.name;
+      const currentSelection = selectedCrops[currentIndex];
+      const isCurrentSelection = currentSelection && getCropKey(currentSelection) === getCropKey(crop);
       const isAlreadySelected = selectedCrops.some((selected, index) => 
-        selected.name === crop.name && index !== currentIndex
+        getCropKey(selected) === getCropKey(crop) && index !== currentIndex
       );
       return isCurrentSelection || !isAlreadySelected;
     });
@@ -133,7 +163,15 @@ const FulfillmentModal: React.FC<FulfillmentModalProps> = ({
     }
 
     setIsSubmitting(true);
-    const payload = { postId: post._id, crops: validCrops };
+    const payload = { 
+      postId: post._id, 
+      crops: validCrops.map(crop => ({
+        name: crop.name,
+        type: crop.type,
+        quantity: crop.quantity,
+        pricePerQuintal: crop.pricePerQuintal
+      }))
+    };
     
     try {
       await fulfillmentMutation.mutateAsync(payload);
@@ -143,14 +181,16 @@ const FulfillmentModal: React.FC<FulfillmentModalProps> = ({
   };
 
   const canAddMoreCrops = selectedCrops.length < post.crops.length;
-  const hasOnlyOneCrop = post.crops.length === 1;
   const hasValidSelection = selectedCrops.some(crop => crop.quantity > 0);
+  const totalValue = selectedCrops
+    .filter(crop => crop.quantity > 0)
+    .reduce((sum, crop) => sum + (crop.quantity * crop.pricePerQuintal), 0);
 
   if (!isOpen || !isReady) return null;
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden">
         <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-6">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold">Request Fulfillment</h2>
@@ -175,16 +215,14 @@ const FulfillmentModal: React.FC<FulfillmentModalProps> = ({
               
               <div className="space-y-4">
                 {selectedCrops.map((selectedCrop, index) => {
-                  const maxQuantity = getMaxQuantity(selectedCrop.name);
+                  const maxQuantity = getMaxQuantity(selectedCrop.name, selectedCrop.type);
                   const availableCrops = getAvailableCrops(index);
                   const quantityOptions = getQuantityOptions(maxQuantity);
                   
                   return (
-                    <div key={index} className="bg-gray-50 rounded-xl p-4">
+                    <div key={index} className="bg-gray-50 rounded-xl p-4 border border-gray-200">
                       <div className="flex items-center justify-between mb-3">
-                        <span className="font-medium text-gray-700">
-                          {hasOnlyOneCrop ? 'Selected Crop' : `Crop ${index + 1}`}
-                        </span>
+                        <span className="font-medium text-gray-700">Crop Selection {index + 1}</span>
                         {selectedCrops.length > 1 && (
                           <button
                             type="button"
@@ -197,39 +235,55 @@ const FulfillmentModal: React.FC<FulfillmentModalProps> = ({
                         )}
                       </div>
                       
-                      <div className="space-y-3">
-                        {hasOnlyOneCrop ? (
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Crop Name
-                            </label>
-                            <div className="w-full p-3 bg-white border border-gray-300 rounded-lg text-gray-700 font-medium">
-                              {post.crops[0].name} ({post.crops[0].quantity} quintals available)
-                            </div>
-                          </div>
-                        ) : (
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Crop Name
-                            </label>
-                            <select
-                              value={selectedCrop.name}
-                              onChange={(e) => handleCropChange(index, 'name', e.target.value)}
-                              disabled={isSubmitting}
-                              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 disabled:opacity-50"
-                              required
-                            >
-                              {availableCrops.map((crop) => (
-                                <option key={crop.name} value={crop.name}>
-                                  {crop.name} ({crop.quantity} quintals available)
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        )}
-
+                      <div className="space-y-4">
+                        {/* Crop Selection Dropdown */}
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <div className="flex items-center gap-2">
+                              <Tag className="w-4 h-4 text-gray-500" />
+                              Crop & Type
+                            </div>
+                          </label>
+                          <select
+                            value={getCropKey(selectedCrop)}
+                            onChange={(e) => handleCropChange(index, e.target.value)}
+                            disabled={isSubmitting}
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 disabled:opacity-50 bg-white"
+                            required
+                          >
+                            {availableCrops.map((crop) => (
+                              <option key={getCropKey(crop)} value={getCropKey(crop)}>
+                                {crop.name} - {crop.type} ({crop.quantity} quintals available)
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Price Display */}
+                        <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                          <div className="flex items-center gap-2 mb-2">
+                            <IndianRupee className="w-4 h-4 text-blue-600" />
+                            <span className="text-sm font-medium text-blue-800">Price Information</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-blue-700">Per Quintal:</span>
+                            <span className="font-bold text-blue-700 text-lg">
+                              ₹{selectedCrop.pricePerQuintal.toLocaleString('en-IN')}
+                            </span>
+                          </div>
+                          {selectedCrop.quantity > 0 && (
+                            <div className="flex justify-between items-center mt-1 pt-2 border-t border-blue-200">
+                              <span className="text-blue-700">Total Value:</span>
+                              <span className="font-bold text-blue-800 text-lg">
+                                ₹{(selectedCrop.quantity * selectedCrop.pricePerQuintal).toLocaleString('en-IN')}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Quantity Selection */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
                             Quantity (Max: {maxQuantity} quintals)
                             {selectedCrop.quantity === 0 && (
                               <span className="text-red-500 text-xs ml-1">*Required</span>
@@ -240,10 +294,10 @@ const FulfillmentModal: React.FC<FulfillmentModalProps> = ({
                               {quantityOptions.map((num) => (
                                 <label
                                   key={num}
-                                  className={`flex items-center justify-center p-2 rounded-lg border cursor-pointer transition-all ${
+                                  className={`flex items-center justify-center p-3 rounded-lg border cursor-pointer transition-all ${
                                     selectedCrop.quantity === num
-                                      ? 'bg-green-500 text-white border-green-500'
-                                      : 'bg-white text-gray-700 border-gray-300 hover:border-green-500'
+                                      ? 'bg-green-500 text-white border-green-500 shadow-md'
+                                      : 'bg-white text-gray-700 border-gray-300 hover:border-green-500 hover:bg-green-50'
                                   } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 >
                                   <input
@@ -251,7 +305,7 @@ const FulfillmentModal: React.FC<FulfillmentModalProps> = ({
                                     name={`quantity-${index}`}
                                     value={num}
                                     checked={selectedCrop.quantity === num}
-                                    onChange={(e) => handleCropChange(index, 'quantity', parseInt(e.target.value))}
+                                    onChange={(e) => handleQuantityChange(index, parseInt(e.target.value))}
                                     disabled={isSubmitting}
                                     className="sr-only"
                                   />
@@ -262,9 +316,9 @@ const FulfillmentModal: React.FC<FulfillmentModalProps> = ({
                           ) : (
                             <select
                               value={selectedCrop.quantity}
-                              onChange={(e) => handleCropChange(index, 'quantity', parseInt(e.target.value))}
+                              onChange={(e) => handleQuantityChange(index, parseInt(e.target.value))}
                               disabled={isSubmitting}
-                              className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 disabled:opacity-50 ${
+                              className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 disabled:opacity-50 bg-white ${
                                 selectedCrop.quantity === 0 ? 'border-red-300 bg-red-50' : 'border-gray-300'
                               }`}
                               required
@@ -284,34 +338,56 @@ const FulfillmentModal: React.FC<FulfillmentModalProps> = ({
                 })}
               </div>
 
-              {!hasOnlyOneCrop && canAddMoreCrops && (
+              {canAddMoreCrops && (
                 <button
                   type="button"
                   onClick={handleAddCrop}
                   disabled={isSubmitting}
-                  className="mt-4 w-full bg-gray-100 text-gray-700 py-3 rounded-lg hover:bg-gray-200 transition-all border-2 border-dashed border-gray-300 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="mt-4 w-full bg-gray-100 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-200 transition-all border-2 border-dashed border-gray-300 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  + Add Another Crop
+                  <Package className="w-4 h-4" />
+                  Add Another Crop Variety
                 </button>
               )}
             </div>
 
-            <div className="bg-green-50 rounded-xl p-4">
-              <h4 className="font-semibold text-green-800 mb-2">Request Summary</h4>
+            {/* Enhanced Summary Section */}
+            <div className="bg-green-50 rounded-xl p-4 border border-green-200">
+              <h4 className="font-semibold text-green-800 mb-3 flex items-center gap-2">
+                <Package className="w-4 h-4" />
+                Fulfillment Summary
+              </h4>
               {hasValidSelection ? (
                 <>
-                  <ul className="space-y-1 text-sm">
+                  <div className="space-y-2 text-sm mb-4">
                     {selectedCrops.filter(crop => crop.quantity > 0).map((crop, index) => (
-                      <li key={index} className="flex justify-between text-green-700">
-                        <span>{crop.name}</span>
-                        <span>{crop.quantity} quintal{crop.quantity > 1 ? 's' : ''}</span>
-                      </li>
+                      <div key={index} className="flex justify-between items-center bg-white p-3 rounded-lg border border-green-100">
+                        <div className="flex-1">
+                          <div className="font-medium text-green-800">{crop.name} - {crop.type}</div>
+                          <div className="text-xs text-green-600 mt-1">
+                            {crop.quantity} quintals × ₹{crop.pricePerQuintal.toLocaleString('en-IN')}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="font-bold text-green-700">
+                            ₹{(crop.quantity * crop.pricePerQuintal).toLocaleString('en-IN')}
+                          </span>
+                        </div>
+                      </div>
                     ))}
-                  </ul>
-                  <div className="mt-2 pt-2 border-t border-green-200">
+                  </div>
+                  <div className="pt-3 border-t border-green-200 space-y-2">
                     <div className="flex justify-between font-semibold text-green-800">
-                      <span>Total Crops:</span>
+                      <span>Total Varieties:</span>
                       <span>{selectedCrops.filter(crop => crop.quantity > 0).length}</span>
+                    </div>
+                    <div className="flex justify-between font-semibold text-green-800">
+                      <span>Total Quantity:</span>
+                      <span>{selectedCrops.filter(crop => crop.quantity > 0).reduce((sum, crop) => sum + crop.quantity, 0)} quintals</span>
+                    </div>
+                    <div className="flex justify-between font-bold text-green-800 text-xl pt-2 border-t border-green-300">
+                      <span>Total Value:</span>
+                      <span>₹{totalValue.toLocaleString('en-IN')}</span>
                     </div>
                   </div>
                 </>
@@ -322,7 +398,7 @@ const FulfillmentModal: React.FC<FulfillmentModalProps> = ({
           </form>
         </div>
 
-        <div className="bg-gray-50 px-6 py-4 flex gap-3">
+        <div className="bg-gray-50 px-6 py-4 flex gap-3 border-t border-gray-200">
           <button
             type="button"
             onClick={onClose}

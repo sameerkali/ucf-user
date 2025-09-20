@@ -1,10 +1,30 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { FC, FormEvent } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { ShoppingCart, Store, Plus, Trash2, Loader2, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../api/axios';
+
+interface SubCategory {
+  name: string;
+  price: number;
+}
+
+interface ApiCrop {
+  _id: string;
+  name: string;
+  price?: number;
+  subCategories: SubCategory[];
+  isVisible: boolean;
+  image: string;
+}
+
+interface CropsResponse {
+  success: boolean;
+  count: number;
+  crops: ApiCrop[];
+}
 
 interface Crop {
   name: string;
@@ -24,6 +44,21 @@ const PosCreatePost: FC = () => {
   });
   const [crops, setCrops] = useState<Crop[]>([{ name: '', type: '', quantity: 0, pricePerQuintal: 0 }]);
   const [files, setFiles] = useState<{ photos: FileList | null; videos: FileList | null }>({ photos: null, videos: null });
+  const [apiCrops, setApiCrops] = useState<ApiCrop[]>([]);
+
+  useEffect(() => {
+    const fetchCrops = async () => {
+      try {
+        const response = await api.get("/api/admin/get-all-crops");
+        const data: CropsResponse = response.data;
+        setApiCrops(data.crops);
+      } catch (error) {
+        console.error('Error fetching crops:', error);
+      }
+    };
+
+    fetchCrops();
+  }, []);
 
   const mutation = useMutation({
     mutationFn: async (data: FormData) => {
@@ -54,6 +89,52 @@ const PosCreatePost: FC = () => {
     ));
   };
 
+  const handleCropNameChange = (index: number, cropName: string) => {
+    const selectedCrop = apiCrops.find(crop => crop.name === cropName);
+    
+    setCrops(prev => prev.map((crop, i) => {
+      if (i === index) {
+        const updatedCrop = { ...crop, name: cropName, type: '' };
+        
+        // If crop has subCategories, don't set price yet (wait for subcategory selection)
+        if (selectedCrop && selectedCrop.subCategories.length > 0) {
+          updatedCrop.pricePerQuintal = 0;
+        } 
+        // If crop has direct price, set it
+        else if (selectedCrop && selectedCrop.price) {
+          updatedCrop.pricePerQuintal = selectedCrop.price;
+        }
+        // If no price info available, keep current price
+        else {
+          updatedCrop.pricePerQuintal = crop.pricePerQuintal;
+        }
+        
+        return updatedCrop;
+      }
+      return crop;
+    }));
+  };
+
+  const handleSubCategoryChange = (index: number, subCategoryName: string) => {
+    const selectedCrop = apiCrops.find(crop => crop.name === crops[index].name);
+    const selectedSubCategory = selectedCrop?.subCategories.find(sub => sub.name === subCategoryName);
+    
+    setCrops(prev => prev.map((crop, i) => 
+      i === index 
+        ? { 
+            ...crop, 
+            type: subCategoryName,
+            pricePerQuintal: selectedSubCategory ? selectedSubCategory.price : crop.pricePerQuintal
+          }
+        : crop
+    ));
+  };
+
+  const getAvailableSubCategories = (cropName: string) => {
+    const selectedCrop = apiCrops.find(crop => crop.name === cropName);
+    return selectedCrop?.subCategories || [];
+  };
+
   const addCrop = () => setCrops(prev => [...prev, { name: '', type: '', quantity: 0, pricePerQuintal: 0 }]);
   const removeCrop = (index: number) => crops.length > 1 && setCrops(prev => prev.filter((_, i) => i !== index));
 
@@ -70,7 +151,7 @@ const PosCreatePost: FC = () => {
     if (intent === 'sell' && !formData.readyByDate) {
       return toast.error('⚠️ Ready by date is needed for sell posts');
     }
-    if (crops.some(crop => !crop.name.trim() || !crop.type.trim() || crop.quantity <= 0 || crop.pricePerQuintal <= 0)) {
+    if (crops.some(crop => !crop.name.trim() || crop.quantity <= 0 || crop.pricePerQuintal <= 0)) {
       return toast.error('⚠️ Please fill all crop details correctly');
     }
 
@@ -193,55 +274,85 @@ const PosCreatePost: FC = () => {
               </div>
 
               <div className="space-y-4">
-                {crops.map((crop, index) => (
-                  <div key={index} className="p-4 border-2 border-gray-200 rounded-xl">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                      <input
-                        type="text"
-                        placeholder="Crop Name (e.g., Wheat)"
-                        value={crop.name}
-                        onChange={(e) => handleCropChange(index, 'name', e.target.value)}
-                        className="p-3 border border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
-                        required
-                      />
-                      <input
-                        type="text"
-                        placeholder="Type (e.g., Grain)"
-                        value={crop.type}
-                        onChange={(e) => handleCropChange(index, 'type', e.target.value)}
-                        className="p-3 border border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
-                        required
-                      />
-                      <input
-                        type="number"
-                        placeholder="Quantity"
-                        min="1"
-                        value={crop.quantity || ''}
-                        onChange={(e) => handleCropChange(index, 'quantity', e.target.value)}
-                        className="p-3 border border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
-                        required
-                      />
-                      <input
-                        type="number"
-                        placeholder="Price per Quintal"
-                        min="1"
-                        value={crop.pricePerQuintal || ''}
-                        onChange={(e) => handleCropChange(index, 'pricePerQuintal', e.target.value)}
-                        className="p-3 border border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
-                        required
-                      />
+                {crops.map((crop, index) => {
+                  const availableSubCategories = getAvailableSubCategories(crop.name);
+                  const hasSubCategories = availableSubCategories.length > 0;
+
+                  return (
+                    <div key={index} className="p-4 border-2 border-gray-200 rounded-xl">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                        {/* Crop Name Dropdown */}
+                        <select
+                          value={crop.name}
+                          onChange={(e) => handleCropNameChange(index, e.target.value)}
+                          className="p-3 border border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
+                          required
+                        >
+                          <option value="">Select Crop</option>
+                          {apiCrops.map((apiCrop) => (
+                            <option key={apiCrop._id} value={apiCrop.name}>
+                              {apiCrop.name}
+                            </option>
+                          ))}
+                        </select>
+
+                        {/* Sub Category Dropdown */}
+                        <select
+                          value={crop.type}
+                          onChange={(e) => handleSubCategoryChange(index, e.target.value)}
+                          className="p-3 border border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
+                          disabled={!hasSubCategories}
+                          required={hasSubCategories}
+                        >
+                          {hasSubCategories ? (
+                            <>
+                              <option value="">Select Variety</option>
+                              {availableSubCategories.map((subCat) => (
+                                <option key={subCat.name} value={subCat.name}>
+                                  {subCat.name}
+                                </option>
+                              ))}
+                            </>
+                          ) : (
+                            <option value="">No varieties available</option>
+                          )}
+                        </select>
+
+                        {/* Quantity Input */}
+                        <input
+                          type="number"
+                          placeholder="Quantity"
+                          min="1"
+                          value={crop.quantity || ''}
+                          onChange={(e) => handleCropChange(index, 'quantity', e.target.value)}
+                          className="p-3 border border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
+                          required
+                        />
+
+                        {/* Price Input (Read-only when populated from API) */}
+                        <input
+                        disabled
+                          type="text"
+                          placeholder="Price per Quintal"
+                          min="1"
+                          value={crop.pricePerQuintal || ''}
+                          onChange={(e) => handleCropChange(index, 'pricePerQuintal', e.target.value)}
+                          className="p-3 border border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
+                          required
+                        />
+                      </div>
+                      {crops.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeCrop(index)}
+                          className="flex items-center gap-2 text-red-600 hover:text-red-800 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" /> Remove Crop
+                        </button>
+                      )}
                     </div>
-                    {crops.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeCrop(index)}
-                        className="flex items-center gap-2 text-red-600 hover:text-red-800 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" /> Remove Crop
-                      </button>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
@@ -254,16 +365,6 @@ const PosCreatePost: FC = () => {
                   multiple
                   accept="image/*"
                   onChange={(e) => setFiles(prev => ({ ...prev, photos: e.target.files }))}
-                  className="w-full p-4 border-2 border-green-200 rounded-xl focus:border-green-500 focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Videos (Optional)</label>
-                <input
-                  type="file"
-                  multiple
-                  accept="video/*"
-                  onChange={(e) => setFiles(prev => ({ ...prev, videos: e.target.files }))}
                   className="w-full p-4 border-2 border-green-200 rounded-xl focus:border-green-500 focus:outline-none"
                 />
               </div>

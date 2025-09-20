@@ -58,7 +58,9 @@ interface FulfillmentPayload {
   postId: string;
   crops: Array<{
     name: string;
+    type: string;
     quantity: number;
+    pricePerQuintal: number;
   }>;
 }
 
@@ -207,8 +209,8 @@ const CropDetailsPage: React.FC = () => {
                   {post.crops.map((crop: Crop, index: number) => (
                     <div key={index} className="border border-green-200 rounded-xl p-6 bg-gradient-to-br from-green-50 to-emerald-50">
                       <div className="text-center mb-4">
-                        <h4 className="font-bold text-green-800 text-2xl mb-2">{crop.name}</h4>
-                        <span className="bg-green-100 text-green-700 px-4 py-2 rounded-full text-sm font-medium capitalize">
+                        <h4 className="font-bold text-green-800 text-xl mb-1">{crop.name}</h4>
+                        <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium capitalize">
                           {crop.type}
                         </span>
                       </div>
@@ -254,7 +256,7 @@ const CropDetailsPage: React.FC = () => {
                 <div className="mb-6 p-4 bg-green-50 rounded-xl">
                   <div className="space-y-3 text-sm">
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Total Crops:</span>
+                      <span className="text-gray-600">Total Varieties:</span>
                       <span className="font-bold text-lg">{post.crops.length}</span>
                     </div>
                     <div className="flex justify-between items-center">

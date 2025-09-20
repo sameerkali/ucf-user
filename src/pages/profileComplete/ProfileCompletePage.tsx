@@ -8,14 +8,17 @@ import { useTranslation } from "react-i18next";
 import api from "../../api/axios";
 import imageCompression from 'browser-image-compression';
 
+
 const ACCOUNT_NUMBER_REGEX = /^[0-9]{9,18}$/;
 const IFSC_REGEX = /^[A-Z]{4}0[0-9A-Z]{6}$/i;
+
 
 interface CropsResponse {
   success: boolean;
   count: number;
   crops: ApiCrop[];
 }
+
 
 interface ApiCrop {
   _id: string;
@@ -24,10 +27,12 @@ interface ApiCrop {
   isVisible?: boolean;
 }
 
+
 export default function ProfileComplete() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
+
 
   // Get role from URL parameters
   const role = searchParams.get("role") || "kisaan";
@@ -36,13 +41,16 @@ export default function ProfileComplete() {
   const [showErrors, setShowErrors] = useState(false);
   const [showSkipModal, setShowSkipModal] = useState(false);
 
+
   // crops as array of objects [{_id, name, image, ...}]
   const [cropsList, setCropsList] = useState<any[]>([]);
   const [cropsLoading, setCropsLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+
   // selected crops by _id
   const [selectedCropIds, setSelectedCropIds] = useState<string[]>([]);
+
 
   const [formData, setFormData] = useState({
     bankAccount: "",
@@ -74,6 +82,7 @@ export default function ProfileComplete() {
     maxCropCapacity: "",
   });
 
+
   useEffect(() => {
     if (role === "kisaan") {
       setFormData(f => ({ ...f, crops: selectedCropIds }));
@@ -82,15 +91,18 @@ export default function ProfileComplete() {
     }
   }, [selectedCropIds, role]);
 
+
   const sanitize = (v: string) =>
     v.replace(/<[^>]*>/g, "")
       .replace(/["'&]/g, "")
       .replace(/\s+/g, " ")
       .trimStart();
 
+
   const handleChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: sanitize(value) }));
   };
+
 
   const handleCropChange = (cropId: string) => {
     setSelectedCropIds(prev =>
@@ -99,6 +111,7 @@ export default function ProfileComplete() {
         : [...prev, cropId]
     );
   };
+
 
   // Enhanced file handling with better error handling and preview
   const handleFile = async (field: "aadhaarFront" | "aadhaarBack" | "passbookPhoto", file: File | null) => {
@@ -112,17 +125,20 @@ export default function ProfileComplete() {
       return;
     }
 
+
     // Validate file type
     if (!file.type.startsWith("image/")) {
       toast.error("Please select a valid image file");
       return;
     }
 
+
     // Validate file size (before compression)
     if (file.size > 10 * 1024 * 1024) {
       toast.error("Image size must be less than 10MB");
       return;
     }
+
 
     try {
       // Create preview URL
@@ -135,6 +151,7 @@ export default function ProfileComplete() {
         useWebWorker: true,
         fileType: file.type,
       };
+
 
       let compressedFile = file;
       
@@ -150,12 +167,14 @@ export default function ProfileComplete() {
         }
       }
 
+
       // Final size check after compression
       if (compressedFile.size > 5 * 1024 * 1024) {
         toast.error("Image must be less than 5MB after compression");
         URL.revokeObjectURL(previewUrl);
         return;
       }
+
 
       // Update form data with file and preview
       setFormData(prev => ({ 
@@ -164,13 +183,16 @@ export default function ProfileComplete() {
         [`${field}Preview`]: previewUrl
       }));
 
+
       toast.success("Image uploaded successfully");
+
 
     } catch (error) {
       console.error("File handling error:", error);
       toast.error("Failed to process image");
     }
   };
+
 
   // Clean up preview URLs when component unmounts
   useEffect(() => {
@@ -186,6 +208,7 @@ export default function ProfileComplete() {
       }
     };
   }, []);
+
 
   useEffect(() => {
     const fetchCrops = async () => {
@@ -228,6 +251,7 @@ export default function ProfileComplete() {
     fetchCrops();
   }, []);
 
+
   const validateStep = () => {
     const errors: Record<string, string> = {};
     if (step === 1) {
@@ -259,18 +283,22 @@ export default function ProfileComplete() {
     return errors;
   };
 
+
   const errors = validateStep();
   const isStepValid = () => Object.keys(errors).length === 0;
+
 
   const handleSkipConfirm = () => {
     setShowSkipModal(false);
     navigate("/home");
   };
 
+
   const skipToNextStep = () => {
     setStep(2);
     setShowErrors(false);
   };
+
 
   function parseBankDetailError(message: string) {
     if (message.includes('accountNumber')) return "Invalid account number";
@@ -278,6 +306,7 @@ export default function ProfileComplete() {
     if (message.includes('photos')) return "Invalid passbook photo";
     return "Invalid bank details";
   }
+
 
   const nextStep = async () => {
     setShowErrors(true);
@@ -303,6 +332,7 @@ export default function ProfileComplete() {
             });
           }
 
+
           // Debug log
           console.log("Sending bank form data:");
           for (let [key, value] of bankFormData.entries()) {
@@ -313,11 +343,13 @@ export default function ProfileComplete() {
             }
           }
 
+
           const response = await api.post("/api/bank/addDetail", bankFormData, {
             headers: {
               "Content-Type": "multipart/form-data",
             },
           });
+
 
           if (response.status === 201 || response.status === 200) {
             toast.success(response.data.message || "Bank details saved successfully!");
@@ -336,10 +368,12 @@ export default function ProfileComplete() {
     }
   };
 
+
   const prevStep = () => {
     setShowErrors(false);
     setStep(s => s - 1);
   };
+
 
   const submitForm = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -356,7 +390,17 @@ export default function ProfileComplete() {
           formDataObj.append("seedArea", formData.seedArea);
           formDataObj.append("rainfedArea", formData.rainfedArea);
           formDataObj.append("irrigatedArea", formData.irrigatedArea);
-          formDataObj.append("crops", JSON.stringify(formData.crops));
+          
+          // Get crop names from selected crop IDs and append them like the curl example
+          const selectedCropNames = selectedCropIds.map(cropId => {
+            const crop = cropsList.find(c => c._id === cropId);
+            return crop ? crop.name : cropId; // fallback to cropId if not found
+          });
+          
+          // Append crops in the format crops[0], crops[1], etc. like the curl example
+          selectedCropNames.forEach((cropName, index) => {
+            formDataObj.append(`crops[${index}]`, cropName);
+          });
           
           // Add aadhaar photos only if present
           if (formData.aadhaarFront) {
@@ -378,9 +422,21 @@ export default function ProfileComplete() {
         } else if (role === "pos") {
           formDataObj.append("storageArea", formData.storageArea);
           formDataObj.append("sections", formData.sections);
-          formDataObj.append("cropsHandled", JSON.stringify(formData.cropsHandled));
+          
+          // Get crop names from selected crop IDs and append them like the curl example
+          const selectedCropNames = selectedCropIds.map(cropId => {
+            const crop = cropsList.find(c => c._id === cropId);
+            return crop ? crop.name : cropId; // fallback to cropId if not found
+          });
+          
+          // Append cropsHandled in the format cropsHandled[0], cropsHandled[1], etc.
+          selectedCropNames.forEach((cropName, index) => {
+            formDataObj.append(`cropsHandled[${index}]`, cropName);
+          });
+          
           formDataObj.append("maxCropCapacity", formData.maxCropCapacity);
         }
+
 
         // Debug log
         console.log("Sending form data:");
@@ -392,11 +448,13 @@ export default function ProfileComplete() {
           }
         }
 
+
         const response = await api.post("/api/other-details/add", formDataObj, { 
           headers: {
             "Content-Type": "multipart/form-data",
           },
         });
+
 
         if (response.status === 201 || response.status === 200) {
           toast.success(t("profileSubmitted"));
@@ -412,9 +470,11 @@ export default function ProfileComplete() {
     }
   };
 
+
   const handleBack = () => {
     navigate(-1);
   };
+
 
   const getStepTitle = () => {
     switch (step) {
@@ -431,6 +491,7 @@ export default function ProfileComplete() {
       default: return "";
     }
   };
+
 
   const renderInput = (
     name: string,
@@ -508,6 +569,7 @@ export default function ProfileComplete() {
     );
   };
 
+
   const renderCropsSelector = () => {
     const fieldName = role === "kisaan" ? "crops" : "cropsHandled";
     const labelText = role === "kisaan" ? t("cropsGrown") : "Crops Handled";
@@ -565,6 +627,7 @@ export default function ProfileComplete() {
       </div>
     );
   };
+
 
   return (
     <>
