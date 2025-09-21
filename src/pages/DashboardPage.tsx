@@ -98,7 +98,7 @@ const DashboardPage: React.FC = () => {
   const fetchDashboardData = useCallback(async (): Promise<void> => {
     try {
       setLoading(true);
-      const response = await api.get<DashboardData>('/fulfillments/statistics');
+      const response = await api.get<DashboardData>('/api/fulfillments/statistics');
       
       // With axios, the data is in response.data
       setDashboardData(response.data);
