@@ -24,6 +24,7 @@ import success from './carausal/check.png';
 
 
 export const BGS = {
+  ucf_logo,
   home_bg,
   signup_bg,
   login_bg,
