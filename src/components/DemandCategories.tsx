@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { toast } from "react-hot-toast"; // or your toast library
 import {
   X,
   Send,
@@ -9,16 +11,57 @@ import {
   Droplets,
   Shield,
   Lightbulb,
+  Leaf,
+  Bug,
+  Zap,
 } from "lucide-react";
-import toast from "react-hot-toast";
-import axios from "axios";
-import { BASE_URL } from "../utils/urls";
+import api from "../api/axios";
 
+// API Data Interfaces
+interface SubCategory {
+  name: string;
+  productId: string;
+}
+
+interface ApiCategory {
+  category: string;
+  subCategories: SubCategory[];
+}
+
+interface ApiResponse {
+  status_code: number;
+  data: ApiCategory[];
+}
+
+// Order API interfaces
+interface OrderRequest {
+  productId: string;
+  quantity: number;
+}
+
+interface OrderResponse {
+  status_code: number;
+  data: {
+    _id: string;
+    createdBy: string;
+    createdByModel: string;
+    product: string;
+    quantity: number;
+    status: string;
+    createdAt: string;
+    updatedAt: string;
+    __v: number;
+  };
+}
+
+// Component Interfaces
 interface Category {
   id: string;
   name: string;
   image: string;
   icon: React.ReactNode;
+  subCategories: SubCategory[];
+  originalCategory: string;
 }
 
 interface DemandCategoriesProps {
@@ -26,10 +69,12 @@ interface DemandCategoriesProps {
 }
 
 interface FormData {
-  itemType: string;
+  subCategory: string;
+  productId: string;
   quantity: string;
   unit: string;
-  customRequest: string;
+  category: string;
+  originalCategory: string;
 }
 
 const CategoryImageWithFallback: React.FC<{
@@ -67,367 +112,339 @@ const DemandCategories: React.FC<DemandCategoriesProps> = ({
   onCategoryClick,
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(
-    null
-  );
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [orderData, setOrderData] = useState<any>(null);
   const [formData, setFormData] = useState<FormData>({
-    itemType: "",
+    subCategory: "",
+    productId: "",
     quantity: "",
-    unit: "kg",
-    customRequest: "",
+    unit: "kg", // Fixed to kg
+    category: "",
+    originalCategory: "",
   });
 
-  const unitOptions = [
-    { value: "gm", label: "Grams (gm)" },
-    { value: "kg", label: "Kilograms (kg)" },
-    { value: "quintal", label: "Quintals (quintal)" },
-    { value: "liter", label: "Liters (liter)" },
-    { value: "ml", label: "Milliliters (ml)" },
-    { value: "piece", label: "Pieces (piece)" }
-  ];
+  // Dynamic icon mapping based on category names
+  const getCategoryIcon = (categoryName: string): React.ReactNode => {
+    const name = categoryName.toLowerCase();
+    
+    if (name.includes('seed')) {
+      return <Sprout className="w-8 h-8" />;
+    } else if (name.includes('fertilizer')) {
+      return <Package className="w-8 h-8" />;
+    } else if (name.includes('pesticide') || name.includes('insecticide')) {
+      return <Shield className="w-8 h-8" />;
+    } else if (name.includes('hardware') || name.includes('equipment')) {
+      return <Wrench className="w-8 h-8" />;
+    } else if (name.includes('irrigation') || name.includes('water')) {
+      return <Droplets className="w-8 h-8" />;
+    } else if (name.includes('transport')) {
+      return <Truck className="w-8 h-8" />;
+    } else if (name.includes('organic') || name.includes('bio')) {
+      return <Leaf className="w-8 h-8" />;
+    } else if (name.includes('pest') || name.includes('bug')) {
+      return <Bug className="w-8 h-8" />;
+    } else if (name.includes('energy') || name.includes('power')) {
+      return <Zap className="w-8 h-8" />;
+    } else {
+      return <Lightbulb className="w-8 h-8" />;
+    }
+  };
 
-  const categories: Category[] = [
-    {
-      id: "seeds",
-      name: "Seeds",
-      image: "https://picsum.photos/120/120?random=10",
-      icon: <Sprout className="w-8 h-8" />,
-    },
-    {
-      id: "fertilizers",
-      name: "Fertilizers",
-      image: "https://picsum.photos/120/120?random=11",
-      icon: <Package className="w-8 h-8" />,
-    },
-    {
-      id: "pesticides",
-      name: "Pesticides",
-      image: "https://picsum.photos/120/120?random=12",
-      icon: <Shield className="w-8 h-8" />,
-    },
-    {
-      id: "hardware",
-      name: "Hardware Equipments",
-      image: "https://picsum.photos/120/120?random=13",
-      icon: <Wrench className="w-8 h-8" />,
-    },
-    {
-      id: "irrigation",
-      name: "Irrigation Systems",
-      image: "https://picsum.photos/120/120?random=15",
-      icon: <Droplets className="w-8 h-8" />,
-    },
-    {
-      id: "transport",
-      name: "Transportation",
-      image: "https://picsum.photos/120/120?random=16",
-      icon: <Truck className="w-8 h-8" />,
-    },
-    {
-      id: "other",
-      name: "Other",
-      image: "https://picsum.photos/120/120?random=14",
-      icon: <Lightbulb className="w-8 h-8" />,
-    },
-  ];
+  // Generate category ID from name
+  const generateCategoryId = (categoryName: string): string => {
+    return categoryName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+  };
 
-  // Get user data from localStorage
-  const getUserData = () => {
-    try {
-      const userStr = localStorage.getItem("user");
-      if (userStr) {
-        return JSON.parse(userStr);
+  // Get relevant image URL based on category
+  const getCategoryImage = (categoryName: string): string => {
+    const name = categoryName.toLowerCase();
+    
+    if (name.includes('seed')) {
+      return "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&h=400&fit=crop&crop=center"; // Seeds in hands
+    } else if (name.includes('fertilizer')) {
+      return "https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=400&h=400&fit=crop&crop=center"; // Fertilizer/soil
+    } else if (name.includes('pesticide') || name.includes('insecticide')) {
+      return "https://images.unsplash.com/photo-1464207687429-7505649dae38?w=400&h=400&fit=crop&crop=center"; // Plant protection
+    } else if (name.includes('hardware') || name.includes('equipment')) {
+      return "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400&h=400&fit=crop&crop=center"; // Farm equipment
+    } else if (name.includes('irrigation') || name.includes('water')) {
+      return "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&h=400&fit=crop&crop=center"; // Irrigation system
+    } else if (name.includes('transport')) {
+      return "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=400&fit=crop&crop=center"; // Transportation
+    } else if (name.includes('organic') || name.includes('bio')) {
+      return "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&h=400&fit=crop&crop=center"; // Organic farming
+    } else {
+      return "https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=400&h=400&fit=crop&crop=center"; // Default farming image
+    }
+  };
+
+  // Convert API categories to UI categories
+  const convertApiCategoriesToUICategories = (apiData: ApiCategory[]): Category[] => {
+    return apiData.map((apiCategory) => ({
+      id: generateCategoryId(apiCategory.category),
+      name: apiCategory.category,
+      originalCategory: apiCategory.category,
+      image: getCategoryImage(apiCategory.category),
+      icon: getCategoryIcon(apiCategory.category),
+      subCategories: apiCategory.subCategories,
+    }));
+  };
+
+  // API mutation for creating orders
+  const orderMutation = useMutation({
+    mutationFn: async (orderData: OrderRequest) => {
+      const response = await api.post("/api/order/create", orderData);
+      return response.data as OrderResponse;
+    },
+    onSuccess: (data) => {
+      toast.success("Order created successfully!");
+      setOrderData(data.data);
+      setShowSuccessMessage(true);
+      
+      // Auto close after 3 seconds and reset form
+      setTimeout(() => {
+        setFormData({
+          subCategory: "",
+          productId: "",
+          quantity: "",
+          unit: "kg",
+          category: "",
+          originalCategory: "",
+        });
+        setIsModalOpen(false);
+        setSelectedCategory(null);
+        setShowSuccessMessage(false);
+        setOrderData(null);
+
+        // Call callback if provided
+        if (onCategoryClick && selectedCategory) {
+          onCategoryClick(selectedCategory);
+        }
+      }, 3000);
+    },
+    onError: (error: any) => {
+      console.error("Error creating order:", error);
+      toast.error(
+        error.response?.data?.message || 
+        error.message || 
+        "Failed to create order. Please try again."
+      );
+    },
+  });
+
+  // Fetch categories data from API
+  useEffect(() => {
+    const fetchCategoriesData = async () => {
+      try {
+        setIsLoading(true);
+        setApiError(null);
+        const response = await api.get("/api/products/dropdown");
+        const data: ApiResponse = response.data;
+        
+        if (data.status_code === 200) {
+          const uiCategories = convertApiCategoriesToUICategories(data.data);
+          setCategories(uiCategories);
+        } else {
+          throw new Error(`API error! status_code: ${data.status_code}`);
+        }
+      } catch (error: any) {
+        console.error('Error fetching categories:', error);
+        setApiError(
+          error.response?.data?.message || 
+          error.message || 
+          'Failed to load categories'
+        );
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error("Error parsing user from localStorage:", error);
-    }
-    return null;
-  };
+    };
 
-  // Get auth token from localStorage
-  const getAuthToken = (): string | null => {
-    try {
-      // Try different possible token storage keys
-      const token =
-        localStorage.getItem("authToken") ||
-        localStorage.getItem("token") ||
-        localStorage.getItem("accessToken") ||
-        localStorage.getItem("jwt");
-      return token;
-    } catch (error) {
-      console.error("Error getting auth token:", error);
-    }
-    return null;
-  };
-
-  // Generate ready by date (3 days from now)
-  const getReadyByDate = (): string => {
-    const date = new Date();
-    date.setDate(date.getDate() + 3); // 3 days from now
-    return date.toISOString().split("T")[0]; // Format: YYYY-MM-DD
-  };
-
-  // Map category ID to API name format
-  const getCategoryApiName = (categoryId: string): string => {
-    switch (categoryId) {
-      case "seeds":
-        return "seed";
-      case "fertilizers":
-        return "fertilizer";
-      case "pesticides":
-        return "pesticide";
-      case "hardware":
-        return "equipment";
-      case "irrigation":
-        return "irrigation";
-      case "transport":
-        return "transport";
-      default:
-        return categoryId;
-    }
-  };
-
-  const getItemTypePlaceholder = (categoryId: string): string => {
-    switch (categoryId) {
-      case "seeds":
-        return "e.g., Wheat seeds, Rice seeds, Mustard seeds";
-      case "fertilizers":
-        return "e.g., Organic compost, NPK fertilizer, Urea";
-      case "pesticides":
-        return "e.g., Insecticide, Herbicide, Fungicide";
-      case "hardware":
-        return "e.g., Tractor, Plough, Harvester";
-      case "irrigation":
-        return "e.g., Drip irrigation kit, Sprinkler system";
-      case "transport":
-        return "e.g., Truck rental, Tractor transport";
-      default:
-        return "Specify what you need";
-    }
-  };
-
-  const getItemTypeLabel = (categoryId: string): string => {
-    switch (categoryId) {
-      case "seeds":
-        return "What kind of seeds do you need?";
-      case "fertilizers":
-        return "What type of fertilizer do you need?";
-      case "pesticides":
-        return "What type of pesticide do you need?";
-      case "hardware":
-        return "What equipment do you need?";
-      case "irrigation":
-        return "What irrigation system do you need?";
-      case "transport":
-        return "What transportation service do you need?";
-      default:
-        return "Item specification";
-    }
-  };
+    fetchCategoriesData();
+  }, []);
 
   const handleCategoryClick = (category: Category) => {
-    console.log("Category clicked:", category); // Debug log
+    console.log("Category clicked:", category);
     setSelectedCategory(category);
     setFormData({
-      itemType: "",
+      subCategory: "",
+      productId: "",
       quantity: "",
       unit: "kg",
-      customRequest: "",
+      category: category.name,
+      originalCategory: category.originalCategory,
     });
+    setShowSuccessMessage(false);
+    setOrderData(null);
     setIsModalOpen(true);
   };
 
   const handleInputChange = (field: keyof FormData, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+    setFormData((prev) => {
+      const newData = {
+        ...prev,
+        [field]: value,
+      };
+
+      // If subcategory changes, update productId
+      if (field === 'subCategory' && selectedCategory?.subCategories) {
+        const selectedSubCat = selectedCategory.subCategories.find(sub => sub.name === value);
+        newData.productId = selectedSubCat?.productId || '';
+      }
+
+      return newData;
+    });
   };
 
-  const handleSubmitRequest = async () => {
-    console.log("Submit request called"); // Debug log
-    console.log("Selected category:", selectedCategory); // Debug log
-
-    // Better error checking with specific messages
+  const handleSubmitRequest = () => {
     if (!selectedCategory) {
       console.error("No category selected");
-      toast.error("Please select a category first");
       return;
     }
 
-    const userData = getUserData();
-    console.log("User data:", userData); // Debug log
-
-    if (!userData || !userData._id) {
-      toast.error("Please login to submit request");
+    if (!formData.quantity.trim()) {
+      toast.error("Please enter the quantity needed");
       return;
     }
 
-    const authToken = getAuthToken();
-    console.log("Auth token found:", !!authToken); // Debug log (don't log actual token)
-
-    if (!authToken) {
-      toast.error("Authentication token not found. Please login again.");
+    const qty = parseFloat(formData.quantity);
+    if (isNaN(qty) || qty <= 0) {
+      toast.error("Please enter a valid quantity greater than 0");
       return;
     }
 
-    // Validate form data based on category
-    if (selectedCategory.id === "other") {
-      if (!formData.customRequest.trim()) {
-        toast.error("Please describe your custom request");
-        return;
-      }
-    } else {
-      if (!formData.itemType.trim()) {
-        toast.error(
-          "Please specify what type of " +
-            selectedCategory.name.toLowerCase() +
-            " you need"
-        );
-        return;
-      }
-
-      if (!formData.quantity.trim()) {
-        toast.error("Please enter the quantity needed");
-        return;
-      }
-
-      const qty = parseFloat(formData.quantity);
-      if (isNaN(qty) || qty <= 0) {
-        toast.error("Please enter a valid quantity greater than 0");
-        return;
-      }
+    // Validate subcategory if available
+    if (selectedCategory.subCategories && selectedCategory.subCategories.length > 0 && !formData.subCategory) {
+      toast.error("Please select a subcategory");
+      return;
     }
 
-    setIsSubmitting(true);
-    try {
-      // Create FormData for multipart/form-data request
-      const submitFormData = new FormData();
-
-      // Add common fields
-      submitFormData.append("readyByDate", getReadyByDate());
-      submitFormData.append("intent", "help");
-      submitFormData.append("title", "NA");
-
-      if (selectedCategory.id === "other") {
-        submitFormData.append("help[name]", "other");
-        submitFormData.append("help[demand]", formData.customRequest);
-        submitFormData.append("help[quantity]", "0");
-        submitFormData.append("help[unit]", "unit");
-      } else {
-        submitFormData.append(
-          "help[name]",
-          getCategoryApiName(selectedCategory.id)
-        );
-        submitFormData.append("help[demand]", formData.itemType);
-        submitFormData.append("help[quantity]", formData.quantity);
-        submitFormData.append("help[unit]", formData.unit);
-      }
-
-      // Debug log the form data
-      console.log("Form data being sent:");
-      for (let pair of submitFormData.entries()) {
-        console.log(pair[0] + ": " + pair[1]);
-      }
-
-      // Use normal axios.post instead of api.post
-      const response = await axios.post(
-        `${BASE_URL}api/posts/create`,
-        submitFormData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${authToken}`,
-          },
-        }
-      );
-
-      console.log("API Response:", response); // Debug log
-
-      // Check for successful response
-      if (
-        response.data &&
-        response.data.message === "Post created successfully"
-      ) {
-        toast.success("Request submitted successfully!");
-        console.log("Request submitted successfully:", response.data);
-
-        // Reset form
-        setFormData({
-          itemType: "",
-          quantity: "",
-          unit: "kg",
-          customRequest: "",
-        });
-        setIsModalOpen(false);
-        setSelectedCategory(null);
-
-        // Call callback if provided
-        if (onCategoryClick) {
-          onCategoryClick(selectedCategory);
-        }
-      } else {
-        throw new Error(response.data?.message || "Failed to submit request");
-      }
-    } catch (error: any) {
-      console.error("Failed to submit request:", error);
-      console.error("Error response:", error.response); // Debug log
-
-      let errorMessage = "Failed to submit request. Please try again.";
-
-      if (error.response?.status === 401) {
-        errorMessage = "Authentication failed. Please login again.";
-      } else if (error.response?.status === 403) {
-        errorMessage =
-          "Permission denied. Please check your account permissions.";
-      } else if (error.response?.status === 400) {
-        errorMessage =
-          error.response?.data?.message ||
-          "Invalid request data. Please check your inputs.";
-      } else if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-
-      toast.error(errorMessage);
-    } finally {
-      setIsSubmitting(false);
+    if (!formData.productId) {
+      toast.error("Product ID is required. Please select a subcategory.");
+      return;
     }
+
+    // Prepare order data
+    const orderData: OrderRequest = {
+      productId: formData.productId,
+      quantity: qty
+    };
+
+    // Submit the order using mutation
+    orderMutation.mutate(orderData);
   };
 
   const closeModal = () => {
     setIsModalOpen(false);
     setSelectedCategory(null);
+    setShowSuccessMessage(false);
+    setOrderData(null);
     setFormData({
-      itemType: "",
+      subCategory: "",
+      productId: "",
       quantity: "",
       unit: "kg",
-      customRequest: "",
+      category: "",
+      originalCategory: "",
     });
+  };
+
+  const retryFetchCategories = async () => {
+    try {
+      setIsLoading(true);
+      setApiError(null);
+      const response = await api.get("/api/products/dropdown");
+      const data: ApiResponse = response.data;
+      
+      if (data.status_code === 200) {
+        const uiCategories = convertApiCategoriesToUICategories(data.data);
+        setCategories(uiCategories);
+      } else {
+        throw new Error(`API error! status_code: ${data.status_code}`);
+      }
+    } catch (error: any) {
+      console.error('Error fetching categories:', error);
+      setApiError(
+        error.response?.data?.message || 
+        error.message || 
+        'Failed to load categories'
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const isFormValid = (): boolean => {
     if (!selectedCategory) return false;
 
-    if (selectedCategory.id === "other") {
-      return formData.customRequest.trim().length > 0;
-    } else {
-      return (
-        formData.itemType.trim().length > 0 &&
-        formData.quantity.trim().length > 0 &&
-        !isNaN(parseFloat(formData.quantity)) &&
-        parseFloat(formData.quantity) > 0
-      );
-    }
+    const hasSubCategories = selectedCategory.subCategories && selectedCategory.subCategories.length > 0;
+    const isSubCategoryValid = !hasSubCategories || (formData.subCategory.trim().length > 0 && formData.productId.trim().length > 0);
+    
+    return (
+      formData.quantity.trim().length > 0 &&
+      !isNaN(parseFloat(formData.quantity)) &&
+      parseFloat(formData.quantity) > 0 &&
+      isSubCategoryValid
+    );
   };
 
-  // Debug: Show component mount status
-  React.useEffect(() => {
-    console.log("DemandCategories component mounted");
-    console.log("API Base URL:", BASE_URL);
-  }, []);
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="bg-green-800 rounded-3xl p-8 shadow-lg border border-green-100 relative overflow-hidden">
+        <div className="text-center">
+          <div className="animate-spin w-12 h-12 border-4 border-white border-t-transparent rounded-full mx-auto mb-4"></div>
+          <h2 className="text-2xl font-bold text-white mb-2">Loading Categories...</h2>
+          <p className="text-green-100">Please wait while we fetch the latest categories</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (apiError) {
+    return (
+      <div className="bg-red-600 rounded-3xl p-8 shadow-lg border border-red-100 relative overflow-hidden">
+        <div className="text-center">
+          <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <X className="w-6 h-6 text-white" />
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-2">Unable to Load Categories</h2>
+          <p className="text-red-100 mb-4">{apiError}</p>
+          <button
+            onClick={retryFetchCategories}
+            className="bg-white text-red-600 px-6 py-2 rounded-full font-semibold hover:bg-red-50 transition-colors duration-200"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // No categories state
+  if (categories.length === 0) {
+    return (
+      <div className="bg-yellow-600 rounded-3xl p-8 shadow-lg border border-yellow-100 relative overflow-hidden">
+        <div className="text-center">
+          <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Package className="w-6 h-6 text-white" />
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-2">No Categories Available</h2>
+          <p className="text-yellow-100 mb-4">No product categories found in the system</p>
+          <button
+            onClick={retryFetchCategories}
+            className="bg-white text-yellow-600 px-6 py-2 rounded-full font-semibold hover:bg-yellow-50 transition-colors duration-200"
+          >
+            Refresh
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -442,6 +459,9 @@ const DemandCategories: React.FC<DemandCategoriesProps> = ({
             </h2>
             <p className="text-gray-100">
               Browse categories or tell us your specific requirements
+            </p>
+            <p className="text-green-200 text-sm mt-2">
+              {categories.length} categories available
             </p>
           </div>
 
@@ -462,6 +482,12 @@ const DemandCategories: React.FC<DemandCategoriesProps> = ({
                         className="w-full h-full"
                       />
                     </div>
+                    {/* Show indicator if category has subcategories */}
+                    {category.subCategories && category.subCategories.length > 0 && (
+                      <div className="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
+                        {category.subCategories.length}
+                      </div>
+                    )}
                   </div>
 
                   <span className="text-xs font-semibold text-gray-100 text-center group-hover:text-green-100 transition-colors duration-300 leading-tight px-1 max-w-full">
@@ -496,6 +522,12 @@ const DemandCategories: React.FC<DemandCategoriesProps> = ({
                       className="w-full h-full"
                     />
                   </div>
+                  {/* Show indicator if category has subcategories */}
+                  {category.subCategories && category.subCategories.length > 0 && (
+                    <div className="absolute -top-1 -right-1 w-6 h-6 bg-emerald-500 text-white text-sm rounded-full flex items-center justify-center font-bold">
+                      {category.subCategories.length}
+                    </div>
+                  )}
                 </div>
 
                 <span className="text-sm md:text-base font-semibold text-gray-100 text-center group-hover:text-green-100 transition-colors duration-300 leading-tight px-2 max-w-full">
@@ -509,8 +541,7 @@ const DemandCategories: React.FC<DemandCategoriesProps> = ({
 
           <div className="text-center mt-8">
             <p className="text-sm text-gray-200">
-              Can't find what you're looking for? Click on "Other" to send us a
-              custom request!
+              Need something specific? Select a category to get started!
             </p>
           </div>
         </div>
@@ -518,20 +549,21 @@ const DemandCategories: React.FC<DemandCategoriesProps> = ({
 
       {isModalOpen && selectedCategory && (
         <div className="fixed inset-0 bg-black/50 bg-opacity-60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-3xl max-w-lg w-full mx-4 shadow-2xl transform transition-all duration-300">
+          <div className="bg-white rounded-3xl max-w-lg w-full mx-4 shadow-2xl transform transition-all duration-300 max-h-[90vh] overflow-y-auto">
             <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6 rounded-t-3xl text-white">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-2xl font-bold">
-                    {selectedCategory.id === "other"
-                      ? "Custom Request"
-                      : selectedCategory.name}
+                    {selectedCategory.name}
                   </h3>
                   <p className="text-green-100 text-sm mt-1">
-                    {selectedCategory.id === "other"
-                      ? "Tell us exactly what you need"
-                      : `Specify your ${selectedCategory.name.toLowerCase()} requirements`}
+                    Place your order for {selectedCategory.name.toLowerCase()}
                   </p>
+                  {selectedCategory.subCategories && selectedCategory.subCategories.length > 0 && (
+                    <p className="text-green-100 text-xs mt-1">
+                      {selectedCategory.subCategories.length} options available
+                    </p>
+                  )}
                 </div>
                 <button
                   onClick={closeModal}
@@ -542,58 +574,60 @@ const DemandCategories: React.FC<DemandCategoriesProps> = ({
               </div>
             </div>
 
-            <div className="p-6">
-              {selectedCategory.id === "other" ? (
-                <div className="mb-4">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Describe your requirements
-                  </label>
-                  <textarea
-                    value={formData.customRequest}
-                    onChange={(e) =>
-                      handleInputChange("customRequest", e.target.value)
-                    }
-                    placeholder="e.g., Looking for organic wheat seeds for 10 acres, need drip irrigation system for vegetable farming, require pest control consultation..."
-                    className="w-full h-36 p-4 border-2 border-gray-200 rounded-2xl resize-none focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all duration-200 text-gray-700"
-                    maxLength={500}
-                  />
-                  <div className="flex justify-between items-center text-sm mt-2">
-                    <span className="text-gray-500">
-                      💡 Be as specific as possible for better results
-                    </span>
-                    <span
-                      className={`${
-                        formData.customRequest.length > 450
-                          ? "text-red-500"
-                          : "text-gray-400"
-                      }`}
-                    >
-                      {formData.customRequest.length}/500
-                    </span>
-                  </div>
+            {showSuccessMessage ? (
+              <div className="p-8 text-center">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      {getItemTypeLabel(selectedCategory.id)} *
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.itemType}
-                      onChange={(e) =>
-                        handleInputChange("itemType", e.target.value)
-                      }
-                      placeholder={getItemTypePlaceholder(selectedCategory.id)}
-                      className="w-full p-3 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all duration-200 text-gray-700"
-                      maxLength={150}
-                    />
+                <h4 className="text-xl font-bold text-gray-800 mb-2">Order Created Successfully!</h4>
+                <p className="text-gray-600 mb-4">Your order has been placed and is now being processed.</p>
+                {orderData && (
+                  <div className="bg-gray-50 rounded-lg p-4 text-left space-y-2">
+                    <p className="text-sm"><strong>Order ID:</strong> {orderData._id}</p>
+                    <p className="text-sm"><strong>Status:</strong> <span className="capitalize bg-yellow-100 text-yellow-800 px-2 py-1 rounded">{orderData.status}</span></p>
+                    <p className="text-sm"><strong>Quantity:</strong> {orderData.quantity} kg</p>
+                    <p className="text-sm"><strong>Created:</strong> {new Date(orderData.createdAt).toLocaleDateString()}</p>
                   </div>
+                )}
+              </div>
+            ) : (
+              <>
+                <div className="p-6">
+                  <div className="space-y-4">
+                    {/* Subcategory dropdown - only show if subcategories exist */}
+                    {selectedCategory.subCategories && selectedCategory.subCategories.length > 0 && (
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Select Specific Type *
+                        </label>
+                        <select
+                          value={formData.subCategory}
+                          onChange={(e) =>
+                            handleInputChange("subCategory", e.target.value)
+                          }
+                          className="w-full p-3 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all duration-200 text-gray-700 bg-white"
+                        >
+                          <option value="">Select an option</option>
+                          {selectedCategory.subCategories.map((subCat) => (
+                            <option key={subCat.productId} value={subCat.name}>
+                              {subCat.name}
+                            </option>
+                          ))}
+                        </select>
+                        {formData.productId && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            Product ID: {formData.productId}
+                          </p>
+                        )}
+                      </div>
+                    )}
 
-                  <div className="grid grid-cols-2 gap-3">
+                    {/* Quantity input - now full width */}
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Quantity *
+                        Quantity (kg) *
                       </label>
                       <input
                         type="number"
@@ -601,58 +635,40 @@ const DemandCategories: React.FC<DemandCategoriesProps> = ({
                         onChange={(e) =>
                           handleInputChange("quantity", e.target.value)
                         }
-                        placeholder="0"
+                        placeholder="Enter quantity in kg"
                         min="0"
                         step="0.01"
                         className="w-full p-3 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all duration-200 text-gray-700"
                       />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Unit *
-                      </label>
-                      <select
-                        value={formData.unit}
-                        onChange={(e) =>
-                          handleInputChange("unit", e.target.value)
-                        }
-                        className="w-full p-3 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all duration-200 text-gray-700 bg-white"
-                      >
-                        {unitOptions.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
+                      <p className="text-xs text-gray-500 mt-1">
+                        💡 Enter the quantity you need in kilograms
+                      </p>
                     </div>
                   </div>
-
-                 
                 </div>
-              )}
-            </div>
 
-            <div className="p-6 bg-gray-50 rounded-b-3xl flex gap-3">
-              <button
-                onClick={closeModal}
-                className="flex-1 px-6 py-3 text-gray-700 bg-white hover:bg-gray-100 border border-gray-200 rounded-2xl font-semibold transition-colors duration-200"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSubmitRequest}
-                disabled={!isFormValid() || isSubmitting}
-                className="flex-1 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed text-white rounded-2xl font-semibold transition-all duration-200 flex items-center justify-center gap-2 shadow-lg"
-              >
-                {isSubmitting ? (
-                  <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full" />
-                ) : (
-                  <Send className="w-5 h-5" />
-                )}
-                {isSubmitting ? "Sending..." : "Send Request"}
-              </button>
-            </div>
+                <div className="p-6 bg-gray-50 rounded-b-3xl flex gap-3">
+                  <button
+                    onClick={closeModal}
+                    className="flex-1 px-6 py-3 text-gray-700 bg-white hover:bg-gray-100 border border-gray-200 rounded-2xl font-semibold transition-colors duration-200"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSubmitRequest}
+                    disabled={!isFormValid() || orderMutation.isPending}
+                    className="flex-1 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed text-white rounded-2xl font-semibold transition-all duration-200 flex items-center justify-center gap-2 shadow-lg"
+                  >
+                    {orderMutation.isPending ? (
+                      <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full" />
+                    ) : (
+                      <Send className="w-5 h-5" />
+                    )}
+                    {orderMutation.isPending ? "Creating Order..." : "Place Order"}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
