@@ -21,6 +21,7 @@ import api from "../api/axios";
 interface SubCategory {
   name: string;
   productId: string;
+  price: number;
 }
 
 interface ApiCategory {
@@ -75,6 +76,8 @@ interface FormData {
   unit: string;
   category: string;
   originalCategory: string;
+  pricePerUnit: number;
+  totalPrice: number;
 }
 
 const CategoryImageWithFallback: React.FC<{
@@ -125,6 +128,8 @@ const DemandCategories: React.FC<DemandCategoriesProps> = ({
     unit: "kg", // Fixed to kg
     category: "",
     originalCategory: "",
+    pricePerUnit: 0,
+    totalPrice: 0,
   });
 
   // Dynamic icon mapping based on category names
@@ -194,6 +199,13 @@ const DemandCategories: React.FC<DemandCategoriesProps> = ({
     }));
   };
 
+  // Calculate total price based on quantity and price per unit
+  const calculateTotalPrice = (quantity: string, pricePerUnit: number): number => {
+    const qty = parseFloat(quantity);
+    if (isNaN(qty) || qty <= 0) return 0;
+    return qty * pricePerUnit;
+  };
+
   // API mutation for creating orders
   const orderMutation = useMutation({
     mutationFn: async (orderData: OrderRequest) => {
@@ -214,6 +226,8 @@ const DemandCategories: React.FC<DemandCategoriesProps> = ({
           unit: "kg",
           category: "",
           originalCategory: "",
+          pricePerUnit: 0,
+          totalPrice: 0,
         });
         setIsModalOpen(false);
         setSelectedCategory(null);
@@ -276,6 +290,8 @@ const DemandCategories: React.FC<DemandCategoriesProps> = ({
       unit: "kg",
       category: category.name,
       originalCategory: category.originalCategory,
+      pricePerUnit: 0,
+      totalPrice: 0,
     });
     setShowSuccessMessage(false);
     setOrderData(null);
@@ -284,15 +300,22 @@ const DemandCategories: React.FC<DemandCategoriesProps> = ({
 
   const handleInputChange = (field: keyof FormData, value: string) => {
     setFormData((prev) => {
-      const newData = {
+      let newData = {
         ...prev,
         [field]: value,
       };
 
-      // If subcategory changes, update productId
+      // If subcategory changes, update productId and price
       if (field === 'subCategory' && selectedCategory?.subCategories) {
         const selectedSubCat = selectedCategory.subCategories.find(sub => sub.name === value);
         newData.productId = selectedSubCat?.productId || '';
+        newData.pricePerUnit = selectedSubCat?.price || 0;
+        newData.totalPrice = calculateTotalPrice(newData.quantity, newData.pricePerUnit);
+      }
+
+      // If quantity changes, recalculate total price
+      if (field === 'quantity') {
+        newData.totalPrice = calculateTotalPrice(value, newData.pricePerUnit);
       }
 
       return newData;
@@ -349,6 +372,8 @@ const DemandCategories: React.FC<DemandCategoriesProps> = ({
       unit: "kg",
       category: "",
       originalCategory: "",
+      pricePerUnit: 0,
+      totalPrice: 0,
     });
   };
 
@@ -482,12 +507,6 @@ const DemandCategories: React.FC<DemandCategoriesProps> = ({
                         className="w-full h-full"
                       />
                     </div>
-                    {/* Show indicator if category has subcategories */}
-                    {category.subCategories && category.subCategories.length > 0 && (
-                      <div className="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
-                        {category.subCategories.length}
-                      </div>
-                    )}
                   </div>
 
                   <span className="text-xs font-semibold text-gray-100 text-center group-hover:text-green-100 transition-colors duration-300 leading-tight px-1 max-w-full">
@@ -522,12 +541,6 @@ const DemandCategories: React.FC<DemandCategoriesProps> = ({
                       className="w-full h-full"
                     />
                   </div>
-                  {/* Show indicator if category has subcategories */}
-                  {category.subCategories && category.subCategories.length > 0 && (
-                    <div className="absolute -top-1 -right-1 w-6 h-6 bg-emerald-500 text-white text-sm rounded-full flex items-center justify-center font-bold">
-                      {category.subCategories.length}
-                    </div>
-                  )}
                 </div>
 
                 <span className="text-sm md:text-base font-semibold text-gray-100 text-center group-hover:text-green-100 transition-colors duration-300 leading-tight px-2 max-w-full">
@@ -588,6 +601,7 @@ const DemandCategories: React.FC<DemandCategoriesProps> = ({
                     <p className="text-sm"><strong>Order ID:</strong> {orderData._id}</p>
                     <p className="text-sm"><strong>Status:</strong> <span className="capitalize bg-yellow-100 text-yellow-800 px-2 py-1 rounded">{orderData.status}</span></p>
                     <p className="text-sm"><strong>Quantity:</strong> {orderData.quantity} kg</p>
+                    <p className="text-sm"><strong>Total Price:</strong> ₹{formData.totalPrice.toFixed(2)}</p>
                     <p className="text-sm"><strong>Created:</strong> {new Date(orderData.createdAt).toLocaleDateString()}</p>
                   </div>
                 )}
@@ -612,14 +626,15 @@ const DemandCategories: React.FC<DemandCategoriesProps> = ({
                           <option value="">Select an option</option>
                           {selectedCategory.subCategories.map((subCat) => (
                             <option key={subCat.productId} value={subCat.name}>
-                              {subCat.name}
+                              {subCat.name} - ₹{subCat.price}/kg
                             </option>
                           ))}
                         </select>
                         {formData.productId && (
-                          <p className="text-xs text-gray-500 mt-1">
-                            Product ID: {formData.productId}
-                          </p>
+                          <div className="mt-2 text-xs text-gray-500 space-y-1">
+                            <p>Product ID: {formData.productId}</p>
+                            <p>Price per kg: ₹{formData.pricePerUnit}</p>
+                          </div>
                         )}
                       </div>
                     )}
@@ -644,6 +659,27 @@ const DemandCategories: React.FC<DemandCategoriesProps> = ({
                         💡 Enter the quantity you need in kilograms
                       </p>
                     </div>
+
+                    {/* Price Summary */}
+                    {formData.pricePerUnit > 0 && (
+                      <div className="bg-green-50 border border-green-200 rounded-2xl p-4">
+                        <h4 className="text-sm font-semibold text-green-800 mb-2">Price Summary</h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Price per kg:</span>
+                            <span className="font-medium">₹{formData.pricePerUnit}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Quantity:</span>
+                            <span className="font-medium">{formData.quantity || 0} kg</span>
+                          </div>
+                          <div className="border-t border-green-200 pt-2 flex justify-between">
+                            <span className="font-semibold text-green-800">Total Price:</span>
+                            <span className="font-bold text-green-800">₹{formData.totalPrice.toFixed(2)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
