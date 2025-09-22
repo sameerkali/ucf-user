@@ -63,11 +63,6 @@ const { data: posts = [], isLoading: postsLoading, error, refetch, isFetching } 
     navigate(`/kisaan/crop-details/${post._id}`, { state: { post } });
   };
 
-  const handleCategoryClick = (category: any): void => {
-    console.log('Category selected:', category);
-    toast.success(`Selected: ${category.name}`);
-  };
-
   const handleRefresh = async (): Promise<void> => {
     try {
       await refetch();
@@ -167,7 +162,7 @@ const { data: posts = [], isLoading: postsLoading, error, refetch, isFetching } 
           {!categoriesLoaded ? (
             <CategoriesSkeleton />
           ) : (
-            <DemandCategories onCategoryClick={handleCategoryClick} />
+            <DemandCategories  />
           )}
         </div>
       </div>
