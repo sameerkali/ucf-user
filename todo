@@ -1,1 +1,27 @@
-1. delete crop in admin :  delete ki api me subId, catId body me deni hai 
+curl --location 'http://localhost:5000/api/products/dropdown' \
+--header 'Authorization: Bearer <token>'
+
+
+
+
+{
+    "status_code": 200,
+    "data": [
+        {
+            "subCategories": [
+                {"name":"AFEEM", "productId": "asdfasdfasdfasd45645dfghsdsfg"},
+                {"name":"GEHU", "productId": "asdfasdfasdfsdfgdfgdfgdfgdfg"},
+                {"name":"MAIZE", "productId": "asdfasdfsadfsadfsadfsadfsadf"},
+            ],
+            "category": "SEED"
+        },
+        {
+            "subCategories": [
+               {"name":"sdf", "productId": "asdfasdfsadfsadfsadfsadfsadf"},
+               {"name":"dfgh", "productId": "asdfasdfsadfsadfsadfsadfsadf"},
+               {"name":"dfgh", "productId": "asdfasdfsadfsadfsadfsadfsadf"},
+            ],
+            "category": "PESTICIDES"
+        }
+    ]
+}
