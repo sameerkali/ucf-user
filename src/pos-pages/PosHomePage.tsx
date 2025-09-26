@@ -6,6 +6,7 @@ import {
   BarChart2,
   PieChart,
   Leaf,
+  Crop,
 } from "lucide-react";
 import {
   Chart as ChartJS,
@@ -62,6 +63,7 @@ const PosHomePage = () => {
   const handleFulfillment = () => navigate("/pos/fulfillment-requests");
   const handleMyPosts = () => navigate("/pos/posts");
   const handleFarmersPosts = () => navigate("/pos/farmers-posts");
+  const handleFarmersDimands = () => navigate("/pos/farmers-dimands");
 
   // fetch stats
   const { data, isLoading, isError, error } = useQuery<
@@ -91,6 +93,7 @@ const PosHomePage = () => {
     { title: "Fulfillment", icon: <BarChart2 />, onClick: handleFulfillment },
     { title: "My Posts", icon: <PieChart />, onClick: handleMyPosts },
     { title: "Farmers Posts", icon: <Leaf />, onClick: handleFarmersPosts },
+    { title: "Farmers Dimands", icon: <Crop />, onClick: handleFarmersDimands },
   ];
 
   if (isLoading) {
