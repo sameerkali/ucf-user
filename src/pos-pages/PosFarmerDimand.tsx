@@ -87,6 +87,8 @@ type ListFilter = '' | 'accepted' | 'rejected' | 'delivered';
 
 async function fetchIncomingOrders(page: number, limit: number): Promise<PendingResponse> {
   const { data } = await api.post<PendingResponse>('/api/order/incoming-order', { page, limit });
+  const res = await api.get("api/bulkOrder/auto");
+  console.log("res of auto", res);
   if (data.status_code !== 200) throw new Error('Failed to fetch incoming orders');
   return data;
 }
