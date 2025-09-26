@@ -57,14 +57,23 @@ export default function SignupPage() {
     handleOtpSubmit,
   } = useSignupForm({ role, navigate });
 
+  // Local setters for dropdown controlled fields in Farmer form
+  const setFarmerDistrict = (value: string) => {
+    handleAddressFieldChange("district", value);
+  };
+  const setFarmerTehsil = (value: string) => {
+    handleAddressFieldChange("tehsil", value);
+  };
+  const setFarmerBlock = (value: string) => {
+    handleAddressFieldChange("block", value);
+  };
+
   const handlePosPersonalNext = (data: any) => {
-    console.log("POS Personal Data:", data);
     setPosFormData(prev => ({ ...prev, ...data }));
     setPosStep('address');
   };
 
   const handlePosAddressSubmit = async (addressData: any): Promise<void> => {
-    console.log("POS Address Data:", addressData);
     setIsApiLoading(true);
 
     try {
@@ -74,32 +83,22 @@ export default function SignupPage() {
         password: posFormData.password || "",
         mobile: posFormData.mobile || "",
         address: {
-          state: addressData.state,
+          state: "Uttarakhand",
           district: addressData.district,
           tehsil: addressData.tehsil,
           block: addressData.block,
-          village: addressData.village,
           pincode: addressData.pincode,
         }
       };
 
-      console.log("API Request Payload:", payload);
-
       const { data } = await api.post('/api/pos/register', payload);
-      
-      console.log('Registration successful:', data);
-      
-      // Show success message
+console.log("data: ", data);
       toast.success('POS registration successful!');
-      
-      // Navigate to login
       navigate('/login?role=pos');
-      
+
     } catch (error: any) {
-      console.error('Registration failed:', error);
-      
       let errorMessage = 'Registration failed. Please try again.';
-      
+
       if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       } else if (error.response?.data?.error) {
@@ -107,8 +106,7 @@ export default function SignupPage() {
       } else if (error.message) {
         errorMessage = error.message;
       }
-      
-      // Handle specific validation errors
+
       if (error.response?.status === 400) {
         if (error.response.data?.field) {
           errorMessage = `${error.response.data.field}: ${error.response.data.message}`;
@@ -118,7 +116,7 @@ export default function SignupPage() {
       } else if (error.response?.status === 500) {
         errorMessage = 'Server error. Please try again later.';
       }
-      
+
       toast.error(errorMessage);
     } finally {
       setIsApiLoading(false);
@@ -165,14 +163,14 @@ export default function SignupPage() {
                 ? "Enter your business details"
                 : "Enter your address details"}
           </p>
-          
+
           {role === "kisaan" && (
             <div className="flex mt-4">
               <div className={`w-1/2 h-1 rounded-full ${farmerStep === "personal" ? "bg-green-500" : "bg-green-300"}`}></div>
               <div className={`w-1/2 h-1 rounded-full ml-2 ${farmerStep === "address" ? "bg-green-500" : "bg-gray-300"}`}></div>
             </div>
           )}
-          
+
           {role === "pos" && (
             <div className="flex mt-4">
               <div className={`w-1/2 h-1 rounded-full ${posStep === "personal" ? "bg-green-500" : "bg-green-300"}`}></div>
@@ -203,6 +201,9 @@ export default function SignupPage() {
               onAddressFieldChange={handleAddressFieldChange}
               onPincodeChange={handlePincodeChange}
               onAgreeToTermsChange={setAgreeToTerms}
+              onDistrictChange={setFarmerDistrict}
+              onTehsilChange={setFarmerTehsil}
+              onBlockChange={setFarmerBlock}
             />
           )
         ) : (
@@ -213,7 +214,12 @@ export default function SignupPage() {
             />
           ) : (
             <PosAddressForm
-              defaultValues={posFormData.address}
+              defaultValues={{
+                district: posFormData.address?.district || "",
+                tehsil: posFormData.address?.tehsil || "",
+                block: posFormData.address?.block || "",
+                pincode: posFormData.address?.pincode || "",
+              }}
               agreeToTerms={agreeToTerms}
               isLoading={isApiLoading}
               onSubmit={handlePosAddressSubmit}
@@ -239,7 +245,7 @@ export default function SignupPage() {
             {renderSignupContent()}
             <div className="mt-8 text-center">
               <p className="text-gray-600 text-sm">
-                {t("alreadyHaveAccount")}{" "}
+                {t("alreadyHaveAccount")}{""}
                 <button
                   onClick={() => navigate(`/login?role=${role}`)}
                   className="text-green-600 hover:text-green-500 font-medium transition-colors"
@@ -259,7 +265,7 @@ export default function SignupPage() {
           {renderSignupContent()}
           <div className="mt-8 text-center">
             <p className="text-gray-600 text-sm">
-              {t("alreadyHaveAccount")}{" "}
+              {t("alreadyHaveAccount")}{""}
               <button
                 onClick={() => navigate(`/login?role=${role}`)}
                 className="text-green-600 hover:text-green-500 font-medium transition-colors"
@@ -270,7 +276,7 @@ export default function SignupPage() {
           </div>
         </div>
       </div>
-      
+
       <div className="absolute top-4 left-4 z-50">
         <img src={GLOBLE.ucf_logo} alt="Brand Logo" className="h-30 w-auto" />
       </div>

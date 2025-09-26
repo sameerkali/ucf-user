@@ -2,13 +2,14 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import { Loader2 } from "lucide-react";
+import CustomDropdown from "../../components/CustomDropdown";
+import { uttarakhandData } from "../../utils/uttarakhandData";
 
 interface PosAddressFormData {
-  state: string;
+  // state removed from UI; fixed in parent payload
   district: string;
   tehsil: string;
   block: string;
-  village: string;
   pincode: string;
 }
 
@@ -35,6 +36,7 @@ export const PosAddressForm: React.FC<PosAddressFormProps> = ({
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors, isValid },
   } = useForm<PosAddressFormData>({
     mode: "onChange",
@@ -43,7 +45,8 @@ export const PosAddressForm: React.FC<PosAddressFormProps> = ({
 
   const watchedFields = watch();
 
-  const isFormComplete = isValid && 
+  const isFormComplete =
+    isValid &&
     agreeToTerms &&
     Object.values(watchedFields).every(value => value && value.toString().trim().length > 0);
 
@@ -55,126 +58,60 @@ export const PosAddressForm: React.FC<PosAddressFormProps> = ({
     await onSubmit(data);
   };
 
+  const districtOptions = uttarakhandData.districts;
+  const tehsilOptions = watchedFields.district ? (uttarakhandData.tehsils[watchedFields.district] || []) : [];
+  const blockOptions = watchedFields.district ? (uttarakhandData.blocks[watchedFields.district] || []) : [];
+
+  const setDistrict = (val: string) => {
+    setValue("district", val, { shouldValidate: true, shouldDirty: true });
+    // reset dependents
+    setValue("tehsil", "", { shouldValidate: true, shouldDirty: true });
+    setValue("block", "", { shouldValidate: true, shouldDirty: true });
+  };
+
+  const setTehsil = (val: string) => {
+    setValue("tehsil", val, { shouldValidate: true, shouldDirty: true });
+  };
+
+  const setBlock = (val: string) => {
+    setValue("block", val, { shouldValidate: true, shouldDirty: true });
+  };
+
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4" noValidate>
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <input
-            {...register("state", {
-              required: "State is required",
-              minLength: {
-                value: 2,
-                message: "State must be at least 2 characters long",
-              },
-              maxLength: {
-                value: 50,
-                message: "State cannot exceed 50 characters",
-              },
-            })}
-            type="text"
-            placeholder="State"
-            className="w-full px-4 py-3 bg-gray-100 border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 transition-colors"
-            style={{ borderRadius: "0.75rem" }}
+          <CustomDropdown
+            options={districtOptions}
+            value={watchedFields.district || ""}
+            onChange={setDistrict}
+            placeholder="Select district"
+            error={errors.district?.message}
           />
-          {errors.state && (
-            <p className="text-red-500 text-xs mt-1">{errors.state.message}</p>
-          )}
         </div>
 
         <div>
-          <input
-            {...register("district", {
-              required: "District is required",
-              minLength: {
-                value: 2,
-                message: "District must be at least 2 characters long",
-              },
-              maxLength: {
-                value: 50,
-                message: "District cannot exceed 50 characters",
-              },
-            })}
-            type="text"
-            placeholder="District"
-            className="w-full px-4 py-3 bg-gray-100 border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 transition-colors"
-            style={{ borderRadius: "0.75rem" }}
+          <CustomDropdown
+            options={tehsilOptions}
+            value={watchedFields.tehsil || ""}
+            onChange={setTehsil}
+            placeholder="Select tehsil"
+            error={errors.tehsil?.message}
+            disabled={!watchedFields.district}
           />
-          {errors.district && (
-            <p className="text-red-500 text-xs mt-1">{errors.district.message}</p>
-          )}
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <input
-            {...register("tehsil", {
-              required: "Tehsil is required",
-              minLength: {
-                value: 2,
-                message: "Tehsil must be at least 2 characters long",
-              },
-              maxLength: {
-                value: 50,
-                message: "Tehsil cannot exceed 50 characters",
-              },
-            })}
-            type="text"
-            placeholder="Tehsil"
-            className="w-full px-4 py-3 bg-gray-100 border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 transition-colors"
-            style={{ borderRadius: "0.75rem" }}
+          <CustomDropdown
+            options={blockOptions}
+            value={watchedFields.block || ""}
+            onChange={setBlock}
+            placeholder="Select block"
+            error={errors.block?.message}
+            disabled={!watchedFields.district}
           />
-          {errors.tehsil && (
-            <p className="text-red-500 text-xs mt-1">{errors.tehsil.message}</p>
-          )}
-        </div>
-
-        <div>
-          <input
-            {...register("block", {
-              required: "Block is required",
-              minLength: {
-                value: 2,
-                message: "Block must be at least 2 characters long",
-              },
-              maxLength: {
-                value: 50,
-                message: "Block cannot exceed 50 characters",
-              },
-            })}
-            type="text"
-            placeholder="Block"
-            className="w-full px-4 py-3 bg-gray-100 border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 transition-colors"
-            style={{ borderRadius: "0.75rem" }}
-          />
-          {errors.block && (
-            <p className="text-red-500 text-xs mt-1">{errors.block.message}</p>
-          )}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <input
-            {...register("village", {
-              required: "Village is required",
-              minLength: {
-                value: 2,
-                message: "Village must be at least 2 characters long",
-              },
-              maxLength: {
-                value: 50,
-                message: "Village cannot exceed 50 characters",
-              },
-            })}
-            type="text"
-            placeholder="Village"
-            className="w-full px-4 py-3 bg-gray-100 border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 transition-colors"
-            style={{ borderRadius: "0.75rem" }}
-          />
-          {errors.village && (
-            <p className="text-red-500 text-xs mt-1">{errors.village.message}</p>
-          )}
         </div>
 
         <div>

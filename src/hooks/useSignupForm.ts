@@ -10,7 +10,6 @@ import type {
 import { toast } from "react-hot-toast";
 import api from "../api/axios";
 
-
 export const useSignupForm = ({ role, navigate }: UseSignupFormProps) => {
   const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
@@ -26,10 +25,12 @@ export const useSignupForm = ({ role, navigate }: UseSignupFormProps) => {
     password: "",
     confirmPassword: "",
     address: "",
+    // state removed from UI, keep error key unused
     state: "",
     district: "",
     tehsil: "",
     block: "",
+    // village removed completely
     village: "",
     pincode: "",
     name: "",
@@ -47,10 +48,12 @@ export const useSignupForm = ({ role, navigate }: UseSignupFormProps) => {
     password: "",
     confirmPassword: "",
     address: "",
+    // state not taken from UI; always fixed to Uttarakhand in payload
     state: "",
     district: "",
     tehsil: "",
     block: "",
+    // village removed
     village: "",
     pincode: "",
     name: "",
@@ -111,6 +114,7 @@ export const useSignupForm = ({ role, navigate }: UseSignupFormProps) => {
     }
   };
 
+  // General text fields used earlier for state/district/tehsil/block; keep only for address textarea or names where needed
   const handleAddressFieldChange = (field: string, value: string) => {
     const sanitizedValue = sanitizeInput(value);
     setFormData(prev => ({ ...prev, [field]: sanitizedValue }));
@@ -237,11 +241,9 @@ export const useSignupForm = ({ role, navigate }: UseSignupFormProps) => {
       terms: "",
     };
 
-    if (!formData.state || formData.state.length < 2) addressErrors.state = "State is required";
     if (!formData.district || formData.district.length < 2) addressErrors.district = "District is required";
     if (!formData.tehsil || formData.tehsil.length < 2) addressErrors.tehsil = "Tehsil is required";
     if (!formData.block || formData.block.length < 2) addressErrors.block = "Block is required";
-    if (!formData.village || formData.village.length < 2) addressErrors.village = "Village is required";
     if (formData.pincode.length !== 6) addressErrors.pincode = "Pincode must be 6 digits";
 
     setErrors(prev => ({ ...prev, ...addressErrors }));
@@ -258,11 +260,10 @@ export const useSignupForm = ({ role, navigate }: UseSignupFormProps) => {
           mobile: formData.phone,
           adharNo: formData.aadhar,
           address: {
-            state: formData.state,
+            state: "Uttarakhand",
             district: formData.district,
             tehsil: formData.tehsil,
             block: formData.block,
-            village: formData.village,
             pincode: formData.pincode,
           },
           role: "farmer",
@@ -270,7 +271,7 @@ export const useSignupForm = ({ role, navigate }: UseSignupFormProps) => {
 
         if (data.success) {
           toast.success(data.message || "Registration successful!");
-          navigate(`/login?role=${role}`);  // Navigate directly on success
+          navigate(`/login?role=${role}`);
         } else {
           toast.error(data.message || "Registration failed");
         }
@@ -283,7 +284,7 @@ export const useSignupForm = ({ role, navigate }: UseSignupFormProps) => {
     }
   };
 
-  const handlePosSignupSubmit = async (e: React.FormEvent) => {
+  const handlePosSignupSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!agreeToTerms) {
@@ -336,7 +337,7 @@ export const useSignupForm = ({ role, navigate }: UseSignupFormProps) => {
     handlePasswordChange,
     handleConfirmPasswordChange,
     handlePincodeChange,
-    handleAddressFieldChange,
+    handleAddressFieldChange, // still used for textarea or any text fields
     handleEmailChange,
     handleGstChange,
     handleNameChange,

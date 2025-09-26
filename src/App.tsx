@@ -45,6 +45,7 @@ import PosFarmersUnderMe from "./pos-pages/PosFarmersUnderMe";
 import PosFarmersPost from "./pos-pages/PosFarmersPost";
 import DimandPage from "./pages/DimandPage";
 import PosFarmerDimand from "./pos-pages/PosFarmerDimand";
+import Inventory from "./pos-pages/PosInventory";
 
 // Authentication guard for protected routes
 function RequireAuth() {
@@ -195,6 +196,7 @@ export default function App() {
               <Route path="/pos/all-farmers-under-me" element={<PosFarmersUnderMe />} />
               <Route path="/pos/farmers-posts" element={<PosFarmersPost />} />
               <Route path="/pos/farmers-dimands" element={<PosFarmerDimand />} />
+              <Route path="/pos/inventory" element={<Inventory />} />
             </Route>
 
             {/* Shared routes with role-based layout */}
