@@ -468,7 +468,7 @@ export default function LoginPage() {
         onClick={() => navigate("/")}
         className="absolute top-4 left-4 z-50 cursor-pointer p-2 rounded-full   flex items-center gap-3"
       >
-        <ArrowLeft className="h-6 w-6 text-gray-700 hover:text-gray-900" />
+        <ArrowLeft className="h-6 w-6  hover:text-gray-900" />
         <img src={GLOBLE.ucf_logo} alt="Brand Logo" className="h-15 w-auto" />
       </div>
     </div>

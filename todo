@@ -1,27 +1,7 @@
-curl --location 'http://localhost:5000/api/products/dropdown' \
---header 'Authorization: Bearer <token>'
+I am building a React/TypeScript application using React Query and Axios (api). I want to see how to properly import my api instance, and then use useQuery for GET requests and useMutation for POST/PUT/DELETE requests. The example should show how to:
 
+Fetch data with useQuery (GET) including error handling, retries, and caching options.
 
+Mutate data with useMutation (POST/PUT/DELETE) including success and error handling.
 
-
-{
-    "status_code": 200,
-    "data": [
-        {
-            "subCategories": [
-                {"name":"AFEEM", "productId": "asdfasdfasdfasd45645dfghsdsfg"},
-                {"name":"GEHU", "productId": "asdfasdfasdfsdfgdfgdfgdfgdfg"},
-                {"name":"MAIZE", "productId": "asdfasdfsadfsadfsadfsadfsadf"},
-            ],
-            "category": "SEED"
-        },
-        {
-            "subCategories": [
-               {"name":"sdf", "productId": "asdfasdfsadfsadfsadfsadfsadf"},
-               {"name":"dfgh", "productId": "asdfasdfsadfsadfsadfsadfsadf"},
-               {"name":"dfgh", "productId": "asdfasdfsadfsadfsadfsadfsadf"},
-            ],
-            "category": "PESTICIDES"
-        }
-    ]
-}
+Show where to import api and how to use its .get(), .post(), .put(), .delete() methods.
