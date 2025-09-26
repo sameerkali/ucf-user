@@ -8,6 +8,7 @@ import {
   Leaf,
   Crop,
   ChartBarIncreasingIcon,
+  RefrigeratorIcon,
 } from "lucide-react";
 import {
   Chart as ChartJS,
@@ -66,6 +67,7 @@ const PosHomePage = () => {
   const handleFarmersPosts = () => navigate("/pos/farmers-posts");
   const handleFarmersDimands = () => navigate("/pos/farmers-dimands");
   const handleFarmersInventory = () => navigate("/pos/inventory");
+  const handleStockRefill = () => navigate("/pos/stock-refill");
 
   // fetch stats
   const { data, isLoading, isError, error } = useQuery<
@@ -97,6 +99,7 @@ const PosHomePage = () => {
     { title: "Farmers Posts", icon: <Leaf />, onClick: handleFarmersPosts },
     { title: "Farmers Dimands", icon: <Crop />, onClick: handleFarmersDimands },
     { title: "Inventory & Stock", icon: <ChartBarIncreasingIcon />, onClick: handleFarmersInventory },
+    { title: "Stock Refill", icon: <RefrigeratorIcon />, onClick: handleStockRefill },
   ];
 
   if (isLoading) {
