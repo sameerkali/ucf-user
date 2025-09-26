@@ -2,6 +2,8 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { Loader2 } from "lucide-react";
 import type { FormData, FormErrors } from "./signup.type";
+import CustomDropdown from "../../components/CustomDropdown";
+import { uttarakhandData } from "../../utils/uttarakhandData";
 
 interface FarmerAddressFormProps {
   formData: FormData;
@@ -12,6 +14,10 @@ interface FarmerAddressFormProps {
   onAddressFieldChange: (field: string, value: string) => void;
   onPincodeChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onAgreeToTermsChange: (checked: boolean) => void;
+  // For controlled updates of district/tehsil/block since now dropdowns
+  onDistrictChange: (value: string) => void;
+  onTehsilChange: (value: string) => void;
+  onBlockChange: (value: string) => void;
 }
 
 export const FarmerAddressForm: React.FC<FarmerAddressFormProps> = ({
@@ -20,92 +26,62 @@ export const FarmerAddressForm: React.FC<FarmerAddressFormProps> = ({
   agreeToTerms,
   isLoading,
   onSubmit,
-  onAddressFieldChange,
   onPincodeChange,
   onAgreeToTermsChange,
+  onDistrictChange,
+  onTehsilChange,
+  onBlockChange,
 }) => {
   const { t } = useTranslation();
 
+  const districtOptions = uttarakhandData.districts;
+  const tehsilOptions = formData.district ? (uttarakhandData.tehsils[formData.district] || []) : [];
+  const blockOptions = formData.district ? (uttarakhandData.blocks[formData.district] || []) : [];
+
+  const handleDistrictSelect = (value: string) => {
+    onDistrictChange(value);
+    // Reset dependent fields when district changes
+    onTehsilChange("");
+    onBlockChange("");
+  };
+
   return (
     <form onSubmit={onSubmit} className="space-y-4">
+      {/* State hidden: always Uttarakhand in payload */}
+
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <input
-            type="text"
-            placeholder="State"
-            value={formData.state}
-            onChange={(e) => onAddressFieldChange("state", e.target.value)}
-            className="w-full px-4 py-3 bg-gray-100 border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 transition-colors"
-            style={{ borderRadius: "0.75rem" }}
-            required
-          />
-          {errors.state && (
-            <p className="text-red-500 text-xs mt-1">{errors.state}</p>
-          )}
-        </div>
-
-        <div>
-          <input
-            type="text"
-            placeholder="District"
+          <CustomDropdown
+            options={districtOptions}
             value={formData.district}
-            onChange={(e) => onAddressFieldChange("district", e.target.value)}
-            className="w-full px-4 py-3 bg-gray-100 border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 transition-colors"
-            style={{ borderRadius: "0.75rem" }}
-            required
+            onChange={handleDistrictSelect}
+            placeholder="Select district"
+            error={errors.district}
           />
-          {errors.district && (
-            <p className="text-red-500 text-xs mt-1">{errors.district}</p>
-          )}
         </div>
-      </div>
 
-      <div className="grid grid-cols-2 gap-4">
         <div>
-          <input
-            type="text"
-            placeholder="Tehsil"
+          <CustomDropdown
+            options={tehsilOptions}
             value={formData.tehsil}
-            onChange={(e) => onAddressFieldChange("tehsil", e.target.value)}
-            className="w-full px-4 py-3 bg-gray-100 border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 transition-colors"
-            style={{ borderRadius: "0.75rem" }}
-            required
+            onChange={onTehsilChange}
+            placeholder="Select tehsil"
+            error={errors.tehsil}
+            disabled={!formData.district}
           />
-          {errors.tehsil && (
-            <p className="text-red-500 text-xs mt-1">{errors.tehsil}</p>
-          )}
-        </div>
-
-        <div>
-          <input
-            type="text"
-            placeholder="Block"
-            value={formData.block}
-            onChange={(e) => onAddressFieldChange("block", e.target.value)}
-            className="w-full px-4 py-3 bg-gray-100 border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 transition-colors"
-            style={{ borderRadius: "0.75rem" }}
-            required
-          />
-          {errors.block && (
-            <p className="text-red-500 text-xs mt-1">{errors.block}</p>
-          )}
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <input
-            type="text"
-            placeholder="Village"
-            value={formData.village}
-            onChange={(e) => onAddressFieldChange("village", e.target.value)}
-            className="w-full px-4 py-3 bg-gray-100 border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 transition-colors"
-            style={{ borderRadius: "0.75rem" }}
-            required
+          <CustomDropdown
+            options={blockOptions}
+            value={formData.block}
+            onChange={onBlockChange}
+            placeholder="Select block"
+            error={errors.block}
+            disabled={!formData.district}
           />
-          {errors.village && (
-            <p className="text-red-500 text-xs mt-1">{errors.village}</p>
-          )}
         </div>
 
         <div>

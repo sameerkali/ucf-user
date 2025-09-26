@@ -61,7 +61,6 @@ export interface PosRegistrationData {
     district: string;
     tehsil: string;
     block: string;
-    village: string;
     pincode: string;
   };
 }
