@@ -90,6 +90,12 @@ async function deleteProduct(productId: string) {
   if (res.status >= 400) throw new Error(`Delete failed: ${res.status}`);
   return res.data;
 }
+// NEW: add stock
+async function addStock(payload: { productId: string; quantity: number; source: "manual" | string }) {
+  const res = await api.post("api/inventory/add", payload, { headers: { "Content-Type": "application/json" } });
+  if (res.status >= 400) throw new Error(`Add stock failed: ${res.status}`);
+  return res.data;
+}
 
 // Page
 const Inventory: React.FC = () => {
@@ -109,6 +115,12 @@ const Inventory: React.FC = () => {
   const [resetBusy, setResetBusy] = useState(false);
   const [refreshBusy, setRefreshBusy] = useState(false);
   const [exportBusy, setExportBusy] = useState(false);
+
+  // Add stock dialog state
+  const [addOpen, setAddOpen] = useState(false);
+  const [addCategory, setAddCategory] = useState<string>("");
+  const [addProductId, setAddProductId] = useState<string>("");
+  const [addQty, setAddQty] = useState<number | "">("");
 
   // Queries
   const { data: dropdownData, error: dropdownError } = useQuery({ queryKey: QK.dropdown, queryFn: getDropdown, staleTime: 5 * 60 * 1000 });
@@ -158,6 +170,16 @@ const Inventory: React.FC = () => {
       await queryClient.invalidateQueries({ queryKey: ["inventory"] });
     },
   });
+  const addMutation = useMutation({
+    mutationFn: (p: { productId: string; quantity: number }) => addStock({ ...p, source: "manual" }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["inventory"] });
+      setAddOpen(false);
+      setAddCategory("");
+      setAddProductId("");
+      setAddQty("");
+    },
+  });
 
   // UI state
   const [selected, setSelected] = useState<InventoryItem | null>(null);
@@ -201,6 +223,12 @@ const Inventory: React.FC = () => {
     }
   };
 
+  // Derived: subcategories for "add stock"
+  const addSubs = useMemo(
+    () => categoriesUI.find((c) => c.category === addCategory)?.subCategories ?? [],
+    [categoriesUI, addCategory]
+  );
+
   return (
     <main className="mx-auto max-w-7xl space-y-4 p-4">
       <header className="flex items-center justify-between">
@@ -210,11 +238,12 @@ const Inventory: React.FC = () => {
         </div>
         <div className="flex items-center gap-2">
           <Button variant="secondary" onClick={onExport} loading={exportBusy}>Export CSV</Button>
+          <Button onClick={() => setAddOpen(true)}>Add stock</Button>
           <Button onClick={onRefresh} loading={refreshBusy}>Refresh</Button>
         </div>
       </header>
 
-      {/* Compact filters (no search/sort) */}
+      {/* Compact filters */}
       <section aria-label="Inventory filters" className="rounded-lg border bg-white p-3">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           <div>
@@ -365,6 +394,48 @@ const Inventory: React.FC = () => {
                 loading={removeMutation.isPending}
               >
                 Remove
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* Add stock dialog */}
+      {addOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setAddOpen(false)} />
+          <div className="relative z-10 w-full max-w-md rounded-lg bg-white p-4">
+            <h2 className="text-base font-semibold text-gray-900 mb-2">Add stock</h2>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-xs font-medium text-gray-700">Category</label>
+                <Select value={addCategory} onChange={(e) => { setAddCategory(e.target.value); setAddProductId(""); }}>
+                  <option value="">Select</option>
+                  {categoriesUI.map((c) => <option key={c.category} value={c.category}>{c.category}</option>)}
+                </Select>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-gray-700">Product</label>
+                <Select value={addProductId} onChange={(e) => setAddProductId(e.target.value)} disabled={!addCategory}>
+                  <option value="">Select</option>
+                  {addSubs.map((s) => <option key={s.productId} value={s.productId}>{s.name}</option>)}
+                </Select>
+              </div>
+              <div className="sm:col-span-2">
+                <label className="mb-1 block text-xs font-medium text-gray-700">Quantity</label>
+                <Input type="number" min={1} value={addQty} onChange={(e) => setAddQty(e.target.value === "" ? "" : Number(e.target.value))} placeholder="e.g. 20" />
+              </div>
+            </div>
+            <div className="mt-4 flex items-center justify-end gap-2">
+              <Button variant="ghost" onClick={() => setAddOpen(false)}>Cancel</Button>
+              <Button
+                onClick={() => {
+                  if (!addProductId || !addQty || Number(addQty) <= 0) return;
+                  addMutation.mutate({ productId: addProductId, quantity: Number(addQty) });
+                }}
+                loading={addMutation.isPending}
+              >
+                Add
               </Button>
             </div>
           </div>
