@@ -1,14 +1,11 @@
 // src/pages/StockRefill.tsx
 import React, { useEffect, useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 import api from "../api/axios";
 
-// Types
-type ApiEnvelope<T> = {
-  status_code: number;
-  data: T;
-  message?: string;
-};
+// ===== Types =====
+type ApiEnvelope<T> = { status_code: number; data: T; message?: string };
 
 type Pagination = {
   totalItems: number;
@@ -17,11 +14,7 @@ type Pagination = {
   limit: number;
 };
 
-type CreatedBy = {
-  _id: string;
-  name: string;
-  mobile?: string;
-};
+type CreatedBy = { _id: string; name: string; mobile?: string };
 
 type ProductInOrder = {
   quantity: number;
@@ -38,65 +31,99 @@ type ProductInOrder = {
 type BulkOrder = {
   _id: string;
   createdBy: CreatedBy;
-  type: string;
+  type: "auto" | "manual" | string;
   products: ProductInOrder[];
   totalBuyingValue?: number;
   totalSellingValue?: number;
-  status: "draft" | "pending" | "approved" | "rejected" | "received" | "delivered";
+  status:
+    | "draft"
+    | "pending"
+    | "approved"
+    | "rejected"
+    | "received"
+    | "delivered";
   createdAt: string;
   updatedAt: string;
 };
 
-type BulkOrderList = {
-  pagination: Pagination;
-  bulkOrders: BulkOrder[];
-};
+type BulkOrderList = { pagination: Pagination; bulkOrders: BulkOrder[] };
 
 type DropdownCategory = {
   category: string;
   subCategories: { name: string; productId: string; price: number }[];
 };
 
-type EditOrderProduct = {
-  product: string; // productId
-  quantity: number;
-};
+type EditOrderProduct = { product: string; quantity: number };
 
-// API
-async function fetchBulkOrders(page: number, limit: number): Promise<BulkOrderList> {
-  const res = await api.post<ApiEnvelope<BulkOrderList>>("api/bulkOrder", { page, limit });
+type ManualCreatePayload = { products: EditOrderProduct[] };
+
+// ===== API =====
+async function fetchBulkOrders(
+  page: number,
+  limit: number
+): Promise<BulkOrderList> {
+  const res = await api.post<ApiEnvelope<BulkOrderList>>("api/bulkOrder", {
+    page,
+    limit,
+  });
   if (res.data.status_code === 200) return res.data.data;
   throw new Error(`API error! status_code: ${res.data.status_code}`);
 }
 
 async function fetchProductsDropdown(): Promise<DropdownCategory[]> {
-  const res = await api.get<ApiEnvelope<DropdownCategory[]>>("api/products/dropdown");
+  const res = await api.get<ApiEnvelope<DropdownCategory[]>>(
+    "api/products/dropdown"
+  );
   if (res.data.status_code === 200) return res.data.data;
   throw new Error(`API error! status_code: ${res.data.status_code}`);
 }
 
 async function editBulkOrder(orderId: string, products: EditOrderProduct[]) {
-  const res = await api.patch<ApiEnvelope<unknown>>("api/bulkOrder/edit", { orderId, products });
+  const res = await api.patch<ApiEnvelope<unknown>>("api/bulkOrder/edit", {
+    orderId,
+    products,
+  });
   if (res.data.status_code === 200) return res.data.data;
   throw new Error(`API error! status_code: ${res.data.status_code}`);
 }
 
-async function updateBulkOrderStatus(orderId: string, status: "pending" | "received" | "delivered") {
-  const res = await api.patch<ApiEnvelope<unknown>>("api/bulkOrder/update-status", { orderId, status });
+async function updateBulkOrderStatus(
+  orderId: string,
+  status: "pending" | "received" | "delivered"
+) {
+  const res = await api.patch<ApiEnvelope<unknown>>(
+    "api/bulkOrder/update-status",
+    { orderId, status }
+  );
   if (res.data.status_code === 200) return res.data.data;
   throw new Error(`API error! status_code: ${res.data.status_code}`);
 }
 
 async function deleteBulkOrder(orderId: string) {
-  const res = await api.patch<ApiEnvelope<unknown>>("api/bulkOrder/delete", { orderId });
+  const res = await api.patch<ApiEnvelope<unknown>>("api/bulkOrder/delete", {
+    orderId,
+  });
   if (res.data.status_code === 200) return res.data.data;
   throw new Error(`API error! status_code: ${res.data.status_code}`);
 }
 
-// Helpers
+async function manualCreateBulkOrder(payload: ManualCreatePayload) {
+  const res = await api.post<ApiEnvelope<BulkOrder>>(
+    "api/bulkOrder/manual-create",
+    payload
+  );
+  if (res.data.status_code === 200 || res.data.status_code === 201) return res.data.data;
+  throw new Error(`API error! status_code: ${res.data.status_code}`);
+}
+
+// ===== Helpers =====
 function formatCurrency(n?: number) {
   if (typeof n !== "number") return "—";
-  return new Intl.NumberFormat(undefined, { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
+  return new Intl.NumberFormat(undefined, {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(n);
 }
 
 function shortId(id: string) {
@@ -104,22 +131,40 @@ function shortId(id: string) {
 }
 
 const qk = {
-  bulkOrders: (page: number, limit: number) => ["bulkOrders", page, limit] as const,
+  bulkOrders: (page: number, limit: number) =>
+    ["bulkOrders", page, limit] as const,
   productsDropdown: ["productsDropdown"] as const,
 };
 
-// UI atoms
-const Badge: React.FC<{ color?: "green" | "gray" | "blue"; children: React.ReactNode }> = ({ color = "gray", children }) => {
+// ===== UI atoms =====
+const Badge: React.FC<{
+  color?: "green" | "gray" | "blue" | "orange";
+  children: React.ReactNode;
+}> = ({ color = "gray", children }) => {
   const c =
     color === "green"
       ? "bg-green-50 text-green-700 ring-green-200"
       : color === "blue"
       ? "bg-blue-50 text-blue-700 ring-blue-200"
+      : color === "orange"
+      ? "bg-orange-50 text-orange-700 ring-orange-200"
       : "bg-gray-50 text-gray-700 ring-gray-200";
-  return <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${c}`}>{children}</span>;
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${c}`}
+    >
+      {children}
+    </span>
+  );
 };
 
-const Button: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "solid" | "outline"; tone?: "green" | "gray" | "danger"; size?: "sm" | "md" }> = ({
+const Button: React.FC<
+  React.ButtonHTMLAttributes<HTMLButtonElement> & {
+    variant?: "solid" | "outline";
+    tone?: "green" | "gray" | "danger";
+    size?: "sm" | "md";
+  }
+> = ({
   className = "",
   variant = "solid",
   tone = "green",
@@ -127,33 +172,47 @@ const Button: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement> & { variant
   disabled,
   ...props
 }) => {
-  const base = "inline-flex items-center justify-center rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
-  const sizes = {
-    sm: "h-9 px-3 text-sm",
-    md: "h-10 px-4 text-sm",
-  }[size];
+  const base =
+    "inline-flex items-center justify-center rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
+  const sizes = { sm: "h-9 px-3 text-sm", md: "h-10 px-4 text-sm" }[size];
   const tones = {
-    green: variant === "solid"
-      ? "bg-green-600 hover:bg-green-700 text-white focus-visible:ring-green-600"
-      : "border border-green-600 text-green-700 hover:bg-green-50 focus-visible:ring-green-600",
-    gray: variant === "solid"
-      ? "bg-gray-800 hover:bg-gray-900 text-white focus-visible:ring-gray-800"
-      : "border border-gray-300 text-gray-700 hover:bg-gray-50 focus-visible:ring-gray-400",
-    danger: variant === "solid"
-      ? "bg-red-600 hover:bg-red-700 text-white focus-visible:ring-red-600"
-      : "border border-red-600 text-red-700 hover:bg-red-50 focus-visible:ring-red-600",
+    green:
+      variant === "solid"
+        ? "bg-green-600 hover:bg-green-700 text-white focus-visible:ring-green-600"
+        : "border border-green-600 text-green-700 hover:bg-green-50 focus-visible:ring-green-600",
+    gray:
+      variant === "solid"
+        ? "bg-gray-800 hover:bg-gray-900 text-white focus-visible:ring-gray-800"
+        : "border border-gray-300 text-gray-700 hover:bg-gray-50 focus-visible:ring-gray-400",
+    danger:
+      variant === "solid"
+        ? "bg-red-600 hover:bg-red-700 text-white focus-visible:ring-red-600"
+        : "border border-red-600 text-red-700 hover:bg-red-50 focus-visible:ring-red-600",
   }[tone];
-  return <button className={`${base} ${sizes} ${tones} ${className}`} disabled={disabled} {...props} />;
+  return (
+    <button
+      className={`${base} ${sizes} ${tones} ${className}`}
+      disabled={disabled}
+      {...props}
+    />
+  );
 };
 
-const Input: React.FC<React.InputHTMLAttributes<HTMLInputElement>> = ({ className = "", ...props }) => (
+const Input: React.FC<React.InputHTMLAttributes<HTMLInputElement>> = ({
+  className = "",
+  ...props
+}) => (
   <input
     className={`block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:border-green-600 focus:ring-2 focus:ring-green-600/30 ${className}`}
     {...props}
   />
 );
 
-const SelectEl: React.FC<React.SelectHTMLAttributes<HTMLSelectElement>> = ({ className = "", children, ...props }) => (
+const SelectEl: React.FC<React.SelectHTMLAttributes<HTMLSelectElement>> = ({
+  className = "",
+  children,
+  ...props
+}) => (
   <select
     className={`block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-green-600 focus:ring-2 focus:ring-green-600/30 ${className}`}
     {...props}
@@ -162,7 +221,54 @@ const SelectEl: React.FC<React.SelectHTMLAttributes<HTMLSelectElement>> = ({ cla
   </select>
 );
 
-// Edit modal types
+// ===== Shared Modals =====
+const ConfirmModal: React.FC<{
+  open: boolean;
+  title: string;
+  message: string;
+  confirmText?: string;
+  cancelText?: string;
+  onConfirm: () => void;
+  onClose: () => void;
+  loading?: boolean;
+}> = ({
+  open,
+  title,
+  message,
+  confirmText = "Okay",
+  onConfirm,
+  onClose,
+  loading,
+}) => {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/30 p-4">
+      <div className="w-full max-w-md rounded-xl bg-white shadow-xl">
+        <div className="border-b p-4">
+          <h3 className="text-base font-semibold text-gray-900">{title}</h3>
+        </div>
+        <div className="p-4">
+          <p className="text-sm text-gray-700">{message}</p>
+        </div>
+        <div className="flex items-center justify-end gap-3 border-t p-4">
+          <Button
+            variant="outline"
+            tone="gray"
+            onClick={onClose}
+            disabled={loading}
+          >
+            Cancel
+          </Button>
+          <Button onClick={onConfirm} disabled={loading}>
+            {loading ? "Processing…" : confirmText}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ===== Add Product Popup for Edit =====
 type EditableRow = {
   productId: string;
   category: string;
@@ -171,7 +277,6 @@ type EditableRow = {
   price?: number;
 };
 
-// Add product popup
 const AddProductPopup: React.FC<{
   open: boolean;
   onClose: () => void;
@@ -182,11 +287,10 @@ const AddProductPopup: React.FC<{
   const [subCategory, setSubCategory] = useState("");
   const [quantity, setQuantity] = useState<number>(1);
 
-  const subs = useMemo(() => {
-    const cat = catalog.find((c) => c.category === category);
-    return cat?.subCategories ?? [];
-  }, [catalog, category]);
-
+  const subs = useMemo(
+    () => catalog.find((c) => c.category === category)?.subCategories ?? [],
+    [catalog, category]
+  );
   const selected = subs.find((s) => s.name === subCategory);
 
   function reset() {
@@ -194,7 +298,6 @@ const AddProductPopup: React.FC<{
     setSubCategory("");
     setQuantity(1);
   }
-
   function handleConfirm() {
     if (!category || !selected || quantity <= 0) return;
     onAdd({
@@ -217,28 +320,50 @@ const AddProductPopup: React.FC<{
         </div>
         <div className="p-4 space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Category</label>
-            <SelectEl value={category} onChange={(e) => { setCategory(e.target.value); setSubCategory(""); }}>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              Category
+            </label>
+            <SelectEl
+              value={category}
+              onChange={(e) => {
+                setCategory(e.target.value);
+                setSubCategory("");
+              }}
+            >
               <option value="">Select</option>
               {catalog.map((c) => (
-                <option key={c.category} value={c.category}>{c.category}</option>
+                <option key={c.category} value={c.category}>
+                  {c.category}
+                </option>
               ))}
             </SelectEl>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Subcategory</label>
-            <SelectEl value={subCategory} onChange={(e) => setSubCategory(e.target.value)} disabled={!category}>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              Subcategory
+            </label>
+            <SelectEl
+              value={subCategory}
+              onChange={(e) => setSubCategory(e.target.value)}
+              disabled={!category}
+            >
               <option value="">Select</option>
               {subs.map((s) => (
-                <option key={s.productId} value={s.name}>{s.name}</option>
+                <option key={s.productId} value={s.name}>
+                  {s.name}
+                </option>
               ))}
             </SelectEl>
             {selected && (
-              <p className="mt-1 text-xs text-gray-500">Price: {formatCurrency(selected.price)}</p>
+              <p className="mt-1 text-xs text-gray-500">
+                Price: {formatCurrency(selected.price)}
+              </p>
             )}
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Quantity</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              Quantity
+            </label>
             <Input
               type="number"
               min={1}
@@ -248,7 +373,16 @@ const AddProductPopup: React.FC<{
           </div>
         </div>
         <div className="flex items-center justify-end gap-3 border-t p-4">
-          <Button variant="outline" tone="gray" onClick={() => { reset(); onClose(); }}>Cancel</Button>
+          <Button
+            variant="outline"
+            tone="gray"
+            onClick={() => {
+              reset();
+              onClose();
+            }}
+          >
+            Cancel
+          </Button>
           <Button onClick={handleConfirm}>Add</Button>
         </div>
       </div>
@@ -256,7 +390,7 @@ const AddProductPopup: React.FC<{
   );
 };
 
-// Edit modal
+// ===== Edit Modal =====
 const EditOrderModal: React.FC<{
   open: boolean;
   onClose: () => void;
@@ -282,18 +416,31 @@ const EditOrderModal: React.FC<{
   }, [open, order]);
 
   const priceIndex = useMemo(() => {
-    const index: Record<string, { price: number; category: string; subCategory: string }> = {};
-    (catalog ?? []).forEach((c) => {
+    const index: Record<
+      string,
+      { price: number; category: string; subCategory: string }
+    > = {};
+    (catalog ?? []).forEach((c) =>
       c.subCategories.forEach((s) => {
-        index[s.productId] = { price: s.price, category: c.category, subCategory: s.name };
-      });
-    });
+        index[s.productId] = {
+          price: s.price,
+          category: c.category,
+          subCategory: s.name,
+        };
+      })
+    );
     return index;
   }, [catalog]);
 
-  const total = useMemo(() => {
-    return rows.reduce((sum, r) => sum + (r.price ?? priceIndex[r.productId]?.price ?? 0) * r.quantity, 0);
-  }, [rows, priceIndex]);
+  const total = useMemo(
+    () =>
+      rows.reduce(
+        (sum, r) =>
+          sum + (r.price ?? priceIndex[r.productId]?.price ?? 0) * r.quantity,
+        0
+      ),
+    [rows, priceIndex]
+  );
 
   function updateRow(idx: number, patch: Partial<EditableRow>) {
     setRows((prev) => {
@@ -312,7 +459,13 @@ const EditOrderModal: React.FC<{
       const existingIdx = prev.findIndex((r) => r.productId === row.productId);
       if (existingIdx >= 0) {
         const merged = [...prev];
-        merged[existingIdx] = { ...merged[existingIdx], quantity: merged[existingIdx].quantity + row.quantity, category: row.category, subCategory: row.subCategory, price: row.price ?? merged[existingIdx].price };
+        merged[existingIdx] = {
+          ...merged[existingIdx],
+          quantity: merged[existingIdx].quantity + row.quantity,
+          category: row.category,
+          subCategory: row.subCategory,
+          price: row.price ?? merged[existingIdx].price,
+        };
         return merged;
       }
       return [...prev, row];
@@ -334,8 +487,13 @@ const EditOrderModal: React.FC<{
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/30 p-4">
       <div className="w-full max-w-3xl rounded-xl bg-white shadow-2xl">
         <div className="flex items-center justify-between border-b p-4">
-          <h3 className="text-base font-semibold text-gray-900">Edit order {shortId(order._id)}</h3>
-          <button onClick={onClose} className="p-2 rounded-md hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-600">
+          <h3 className="text-base font-semibold text-gray-900">
+            Edit order {shortId(order._id)}
+          </h3>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-md hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-600"
+          >
             <span className="sr-only">Close</span>✕
           </button>
         </div>
@@ -343,21 +501,41 @@ const EditOrderModal: React.FC<{
         <div className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Badge color={order.status === "draft" || order.status === "pending" ? "green" : "gray"}>{order.status}</Badge>
-              <span className="text-sm text-gray-500">Created by {order.createdBy?.name || "—"}</span>
+              <Badge
+                color={
+                  ["draft", "pending"].includes(order.status) ? "green" : "gray"
+                }
+              >
+                {order.status}
+              </Badge>
+              <span className="text-sm text-gray-500">
+                Created by {order.createdBy?.name || "—"}
+              </span>
             </div>
-            <Button variant="outline" onClick={() => setShowAdd(true)}>Add another product</Button>
+            <Button variant="outline" onClick={() => setShowAdd(true)}>
+              Add another product
+            </Button>
           </div>
 
           <div className="mt-4 overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-green-50">
                 <tr>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-green-800">Category</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-green-800">Subcategory</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-green-800">Price</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-green-800">Quantity</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-green-800">Line Total</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-green-800">
+                    Category
+                  </th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-green-800">
+                    Subcategory
+                  </th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-green-800">
+                    Price
+                  </th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-green-800">
+                    Quantity
+                  </th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-green-800">
+                    Line Total
+                  </th>
                   <th className="px-3 py-2" />
                 </tr>
               </thead>
@@ -366,29 +544,56 @@ const EditOrderModal: React.FC<{
                   const resolved = priceIndex[r.productId];
                   const price = r.price ?? resolved?.price ?? 0;
                   return (
-                    <tr key={`${r.productId}-${idx}`} className="hover:bg-gray-50">
-                      <td className="px-3 py-2 text-sm text-gray-900">{r.category || resolved?.category || "—"}</td>
-                      <td className="px-3 py-2 text-sm text-gray-900">{r.subCategory || resolved?.subCategory || "—"}</td>
-                      <td className="px-3 py-2 text-sm text-gray-700">{formatCurrency(price)}</td>
+                    <tr
+                      key={`${r.productId}-${idx}`}
+                      className="hover:bg-gray-50"
+                    >
+                      <td className="px-3 py-2 text-sm text-gray-900">
+                        {r.category || resolved?.category || "—"}
+                      </td>
+                      <td className="px-3 py-2 text-sm text-gray-900">
+                        {r.subCategory || resolved?.subCategory || "—"}
+                      </td>
+                      <td className="px-3 py-2 text-sm text-gray-700">
+                        {formatCurrency(price)}
+                      </td>
                       <td className="px-3 py-2">
                         <Input
                           type="number"
                           min={1}
                           value={r.quantity}
-                          onChange={(e) => updateRow(idx, { quantity: Math.max(1, Number(e.target.value)) })}
+                          onChange={(e) =>
+                            updateRow(idx, {
+                              quantity: Math.max(1, Number(e.target.value)),
+                            })
+                          }
                           className="w-24"
                         />
                       </td>
-                      <td className="px-3 py-2 text-right text-sm text-gray-900">{formatCurrency(price * r.quantity)}</td>
+                      <td className="px-3 py-2 text-right text-sm text-gray-900">
+                        {formatCurrency(price * r.quantity)}
+                      </td>
                       <td className="px-3 py-2 text-right">
-                        <Button variant="outline" tone="danger" size="sm" onClick={() => removeRow(idx)}>Remove</Button>
+                        <Button
+                          variant="outline"
+                          tone="danger"
+                          size="sm"
+                          onClick={() => removeRow(idx)}
+                        >
+                          Remove
+                        </Button>
                       </td>
                     </tr>
                   );
                 })}
                 {rows.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-3 py-6 text-center text-sm text-gray-500">No products. Add one to begin.</td>
+                    <td
+                      colSpan={6}
+                      className="px-3 py-6 text-center text-sm text-gray-500"
+                    >
+                      No products. Add one to begin.
+                    </td>
                   </tr>
                 )}
               </tbody>
@@ -397,13 +602,19 @@ const EditOrderModal: React.FC<{
 
           <div className="mt-4 flex items-center justify-end gap-6">
             <div className="text-sm text-gray-700">Total preview</div>
-            <div className="text-lg font-semibold text-gray-900">{formatCurrency(total)}</div>
+            <div className="text-lg font-semibold text-gray-900">
+              {formatCurrency(total)}
+            </div>
           </div>
         </div>
 
         <div className="flex items-center justify-end gap-3 border-t p-4">
-          <Button variant="outline" tone="gray" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSave} disabled={saving}>{saving ? "Saving..." : "Save changes"}</Button>
+          <Button variant="outline" tone="gray" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave} disabled={saving}>
+            {saving ? "Saving..." : "Save changes"}
+          </Button>
         </div>
       </div>
 
@@ -417,19 +628,228 @@ const EditOrderModal: React.FC<{
   );
 };
 
-// Main Page
+// ===== Manual Create Modal =====
+const ManualCreateModal: React.FC<{
+  open: boolean;
+  onClose: () => void;
+  catalog: DropdownCategory[] | undefined;
+  onSubmit: (products: EditOrderProduct[]) => void;
+  submitting: boolean;
+}> = ({ open, onClose, catalog, onSubmit, submitting }) => {
+  const [items, setItems] = useState<EditOrderProduct[]>([]);
+  const [category, setCategory] = useState("");
+  const [subCategory, setSubCategory] = useState("");
+  const [quantity, setQuantity] = useState<number>(1);
+
+  const subs = useMemo(
+    () => catalog?.find((c) => c.category === category)?.subCategories ?? [],
+    [catalog, category]
+  );
+  const selected = subs.find((s) => s.name === subCategory);
+
+  function addItem() {
+    if (!selected || quantity <= 0) return;
+    setItems((prev) => {
+      const idx = prev.findIndex((p) => p.product === selected.productId);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = { ...next[idx], quantity: next[idx].quantity + quantity };
+        return next;
+      }
+      return [...prev, { product: selected.productId, quantity }];
+    });
+    setQuantity(1);
+    setSubCategory("");
+  }
+
+  function removeItem(pid: string) {
+    setItems((prev) => prev.filter((i) => i.product !== pid));
+  }
+
+  function submit() {
+    if (items.length === 0) return;
+    onSubmit(items);
+  }
+
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/30 p-4">
+      <div className="w-full max-w-2xl rounded-xl bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b p-4">
+          <h3 className="text-base font-semibold text-gray-900">
+            Add bulk order manually
+          </h3>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-md hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-600"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="p-4 grid gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Category
+              </label>
+              <SelectEl
+                value={category}
+                onChange={(e) => {
+                  setCategory(e.target.value);
+                  setSubCategory("");
+                }}
+              >
+                <option value="">Select</option>
+                {(catalog ?? []).map((c) => (
+                  <option key={c.category} value={c.category}>
+                    {c.category}
+                  </option>
+                ))}
+              </SelectEl>
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Subcategory
+              </label>
+              <SelectEl
+                value={subCategory}
+                onChange={(e) => setSubCategory(e.target.value)}
+                disabled={!category}
+              >
+                <option value="">Select</option>
+                {subs.map((s) => (
+                  <option key={s.productId} value={s.name}>
+                    {s.name}
+                  </option>
+                ))}
+              </SelectEl>
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Quantity
+              </label>
+              <Input
+                type="number"
+                min={1}
+                value={quantity}
+                onChange={(e) =>
+                  setQuantity(Math.max(1, Number(e.target.value)))
+                }
+              />
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <Button
+              variant="outline"
+              onClick={addItem}
+              disabled={!selected || quantity <= 0}
+            >
+              Add item
+            </Button>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-green-50">
+                <tr>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-green-800">
+                    Product
+                  </th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-green-800">
+                    Quantity
+                  </th>
+                  <th className="px-3 py-2" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {items.map((it) => (
+                  <tr key={it.product}>
+                    <td className="px-3 py-2 text-sm text-gray-900">
+                      {it.product}
+                    </td>
+                    <td className="px-3 py-2 text-sm text-gray-900">
+                      {it.quantity}
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      <Button
+                        variant="outline"
+                        tone="danger"
+                        size="sm"
+                        onClick={() => removeItem(it.product)}
+                      >
+                        Remove
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+                {items.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={3}
+                      className="px-3 py-6 text-center text-sm text-gray-500"
+                    >
+                      No items added.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-end gap-3 border-t p-4">
+          <Button
+            variant="outline"
+            tone="gray"
+            onClick={onClose}
+            disabled={submitting}
+          >
+            Cancel
+          </Button>
+          <Button onClick={submit} disabled={submitting || !items.length}>
+            {submitting ? "Creating…" : "Create order"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ===== Page =====
 const StockRefill: React.FC = () => {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
+
   const [selected, setSelected] = useState<BulkOrder | null>(null);
   const [editOpen, setEditOpen] = useState(false);
 
+  const [manualOpen, setManualOpen] = useState(false);
+
+  // Mark as delivered confirmation
+  const [deliverConfirm, setDeliverConfirm] = useState<{
+    open: boolean;
+    order?: BulkOrder;
+  }>({ open: false });
+
+  // Mark as received confirmation
+  const [receiveConfirm, setReceiveConfirm] = useState<{
+    open: boolean;
+    order?: BulkOrder;
+  }>({ open: false });
+
+  // Delete confirmation
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    open: boolean;
+    order?: BulkOrder;
+  }>({ open: false });
+
   const qc = useQueryClient();
 
-  const ordersQ = useQuery({
+  const ordersQ = useQuery<BulkOrderList, Error>({
     queryKey: qk.bulkOrders(page, limit),
     queryFn: () => fetchBulkOrders(page, limit),
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
     refetchOnWindowFocus: false,
   });
 
@@ -442,7 +862,10 @@ const StockRefill: React.FC = () => {
   const editMut = useMutation({
     mutationFn: async (rows: EditableRow[]) => {
       if (!selected) throw new Error("No order selected");
-      const payload = rows.map((r) => ({ product: r.productId, quantity: r.quantity }));
+      const payload = rows.map((r) => ({
+        product: r.productId,
+        quantity: r.quantity,
+      }));
       return editBulkOrder(selected._id, payload);
     },
     onSuccess: () => {
@@ -452,15 +875,21 @@ const StockRefill: React.FC = () => {
   });
 
   const sendMut = useMutation({
-    mutationFn: async (orderId: string) => updateBulkOrderStatus(orderId, "pending"),
+    mutationFn: async (orderId: string) =>
+      updateBulkOrderStatus(orderId, "pending"),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.bulkOrders(page, limit) });
     },
   });
 
   const transitionMut = useMutation({
-    mutationFn: async ({ orderId, status }: { orderId: string; status: "received" | "delivered" }) =>
-      updateBulkOrderStatus(orderId, status),
+    mutationFn: async ({
+      orderId,
+      status,
+    }: {
+      orderId: string;
+      status: "received" | "delivered";
+    }) => updateBulkOrderStatus(orderId, status),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.bulkOrders(page, limit) });
     },
@@ -470,6 +899,16 @@ const StockRefill: React.FC = () => {
     mutationFn: async (orderId: string) => deleteBulkOrder(orderId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.bulkOrders(page, limit) });
+    },
+  });
+
+  const manualCreateMut = useMutation({
+    mutationFn: async (payload: ManualCreatePayload) =>
+      manualCreateBulkOrder(payload),
+    onSuccess: () => {
+      toast.success("Bulk order created successfully!");
+      qc.invalidateQueries({ queryKey: qk.bulkOrders(page, limit) });
+      setManualOpen(false);
     },
   });
 
@@ -492,14 +931,43 @@ const StockRefill: React.FC = () => {
     return ["draft", "pending"].includes(status);
   }
 
-  function onStatusTransition(order: BulkOrder, next: "received" | "delivered") {
-    transitionMut.mutate({ orderId: order._id, status: next });
+  function onStatusTransition(
+    order: BulkOrder,
+    next: "received" | "delivered"
+  ) {
+    if (next === "delivered") {
+      // Ask confirmation before calling API
+      setDeliverConfirm({ open: true, order });
+    } else if (next === "received") {
+      // Ask confirmation before calling API
+      setReceiveConfirm({ open: true, order });
+    }
+  }
+
+  function confirmDeliver() {
+    const order = deliverConfirm.order;
+    if (!order) return;
+    transitionMut.mutate({ orderId: order._id, status: "delivered" });
+    setDeliverConfirm({ open: false });
+  }
+
+  function confirmReceive() {
+    const order = receiveConfirm.order;
+    if (!order) return;
+    transitionMut.mutate({ orderId: order._id, status: "received" });
+    setReceiveConfirm({ open: false });
   }
 
   function onDelete(order: BulkOrder) {
     if (!["draft", "pending"].includes(order.status)) return;
-    if (!confirm("Delete this order? This action cannot be undone.")) return;
+    setDeleteConfirm({ open: true, order });
+  }
+
+  function confirmDelete() {
+    const order = deleteConfirm.order;
+    if (!order) return;
     deleteMut.mutate(order._id);
+    setDeleteConfirm({ open: false });
   }
 
   return (
@@ -511,11 +979,24 @@ const StockRefill: React.FC = () => {
             <div className="flex items-center gap-3">
               <div className="hidden sm:flex items-center gap-2">
                 <span className="text-sm text-gray-600">Per page</span>
-                <SelectEl value={String(limit)} onChange={(e) => { setPage(1); setLimit(Number(e.target.value)); }}>
-                  {[4, 10, 20, 50].map((n) => <option key={n} value={n}>{n}</option>)}
+                <SelectEl
+                  value={String(limit)}
+                  onChange={(e) => {
+                    setPage(1);
+                    setLimit(Number(e.target.value));
+                  }}
+                >
+                  {[4, 10, 20, 50].map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
+                  ))}
                 </SelectEl>
               </div>
-              <Badge color="green">Green & white</Badge>
+
+              <Button variant="outline" onClick={() => setManualOpen(true)}>
+                Add bulk order manually
+              </Button>
             </div>
           </div>
         </div>
@@ -526,11 +1007,24 @@ const StockRefill: React.FC = () => {
           <div className="flex items-center justify-between border-b bg-green-50/60 px-4 py-3">
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium text-green-800">Orders</span>
-              {ordersQ.isFetching && <span className="text-xs text-green-700">Refreshing…</span>}
+              {ordersQ.isFetching && (
+                <span className="text-xs text-green-700">Refreshing…</span>
+              )}
             </div>
+
             <div className="sm:hidden">
-              <SelectEl value={String(limit)} onChange={(e) => { setPage(1); setLimit(Number(e.target.value)); }}>
-                {[4, 10, 20, 50].map((n) => <option key={n} value={n}>{n} / page</option>)}
+              <SelectEl
+                value={String(limit)}
+                onChange={(e) => {
+                  setPage(1);
+                  setLimit(Number(e.target.value));
+                }}
+              >
+                {[4, 10, 20, 50].map((n) => (
+                  <option key={n} value={n}>
+                    {n} / page
+                  </option>
+                ))}
               </SelectEl>
             </div>
           </div>
@@ -540,72 +1034,126 @@ const StockRefill: React.FC = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-white">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Order</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Created By</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Status</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Type</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Total</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Updated</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wide text-gray-500">Actions</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                    Order
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                    Created By
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                    Status
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                    Type
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                    Total
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                    Updated
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wide text-gray-500">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 bg-white">
-                {orders.map((o) => {
+                {orders.map((o: any) => {
                   const disabledActions = !canEditOrSend(o.status);
-                  const showReceivedDropdown = o.status === "approved";
-                  const showDeliveredDropdown = o.status === "received";
+                  const showApproveToReceived = o.status === "approved";
+                  const showReceivedToDelivered =
+                    o.status === "received" && o.type === "auto";
+
                   return (
                     <tr key={o._id} className="hover:bg-green-50/40">
-                      <td className="px-4 py-3 text-sm font-medium text-gray-900">{shortId(o._id)}</td>
-                      <td className="px-4 py-3 text-sm text-gray-700">{o.createdBy?.name || "—"}</td>
+                      <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                        {shortId(o._id)}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-700">
+                        {o.createdBy?.name || "—"}
+                      </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <Badge color={["draft", "pending"].includes(o.status) ? "green" : "gray"}>{o.status}</Badge>
-                          {showReceivedDropdown && (
+                          <Badge
+                            color={
+                              ["draft", "pending"].includes(o.status)
+                                ? "green"
+                                : "gray"
+                            }
+                          >
+                            {o.status}
+                          </Badge>
+
+                          {showApproveToReceived && (
                             <SelectEl
-                              className="w-36"
+                              className="w-40"
                               onChange={(e) => {
-                                if (e.target.value === "received") onStatusTransition(o, "received");
+                                if (e.target.value === "received") {
+                                  onStatusTransition(o, "received");
+                                }
                                 e.currentTarget.selectedIndex = 0;
                               }}
                               defaultValue=""
                             >
-                              <option value="" disabled>Actions</option>
+                              <option value="" disabled>
+                                Actions
+                              </option>
                               <option value="received">Mark as received</option>
                             </SelectEl>
                           )}
-                          {showDeliveredDropdown && (
+
+                          {showReceivedToDelivered && (
                             <SelectEl
-                              className="w-36"
+                              className="w-44"
                               onChange={(e) => {
-                                if (e.target.value === "delivered") onStatusTransition(o, "delivered");
+                                if (e.target.value === "delivered") {
+                                  onStatusTransition(o, "delivered");
+                                }
                                 e.currentTarget.selectedIndex = 0;
                               }}
                               defaultValue=""
                             >
-                              <option value="" disabled>Actions</option>
-                              <option value="delivered">Mark as delivered</option>
+                              <option value="" disabled>
+                                Actions
+                              </option>
+                              <option value="delivered">
+                                Mark as delivered
+                              </option>
                             </SelectEl>
                           )}
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-700">{o.type}</td>
-                      <td className="px-4 py-3 text-sm text-gray-900">{formatCurrency(o.totalSellingValue)}</td>
-                      <td className="px-4 py-3 text-sm text-gray-500">{new Date(o.updatedAt).toLocaleString()}</td>
+                      <td className="px-4 py-3 text-sm text-gray-700">
+                        {o.type}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-900">
+                        {formatCurrency(o.totalSellingValue)}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-500">
+                        {new Date(o.updatedAt).toLocaleString()}
+                      </td>
                       <td className="px-4 py-3">
                         <div className="flex justify-end gap-2">
                           <Button
                             variant="outline"
                             onClick={() => openEdit(o)}
                             disabled={disabledActions}
-                            title={disabledActions ? "Edit disabled for this status" : "Edit order"}
+                            title={
+                              disabledActions
+                                ? "Edit disabled for this status"
+                                : "Edit order"
+                            }
                           >
                             Edit
                           </Button>
                           <Button
                             onClick={() => sendOrder(o)}
                             disabled={disabledActions || sendMut.isPending}
-                            title={disabledActions ? "Send disabled for this status" : "Send order"}
+                            title={
+                              disabledActions
+                                ? "Send disabled for this status"
+                                : "Send order"
+                            }
                           >
                             {sendMut.isPending ? "Sending…" : "Send"}
                           </Button>
@@ -613,8 +1161,15 @@ const StockRefill: React.FC = () => {
                             variant="outline"
                             tone="danger"
                             onClick={() => onDelete(o)}
-                            disabled={!["draft", "pending"].includes(o.status) || deleteMut.isPending}
-                            title={["draft", "pending"].includes(o.status) ? "Delete order" : "Delete disabled for this status"}
+                            disabled={
+                              !["draft", "pending"].includes(o.status) ||
+                              deleteMut.isPending
+                            }
+                            title={
+                              ["draft", "pending"].includes(o.status)
+                                ? "Delete order"
+                                : "Delete disabled for this status"
+                            }
                           >
                             {deleteMut.isPending ? "Deleting…" : "Delete"}
                           </Button>
@@ -625,7 +1180,12 @@ const StockRefill: React.FC = () => {
                 })}
                 {orders.length === 0 && !ordersQ.isLoading && (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-sm text-gray-500">No orders found.</td>
+                    <td
+                      colSpan={7}
+                      className="px-4 py-8 text-center text-sm text-gray-500"
+                    >
+                      No orders found.
+                    </td>
                   </tr>
                 )}
               </tbody>
@@ -634,40 +1194,75 @@ const StockRefill: React.FC = () => {
 
           {/* Mobile cards */}
           <div className="grid grid-cols-1 gap-3 p-3 md:hidden">
-            {orders.map((o) => {
+            {orders.map((o: any) => {
               const disabledActions = !canEditOrSend(o.status);
-              const showReceivedDropdown = o.status === "approved";
-              const showDeliveredDropdown = o.status === "received";
+              const showApproveToReceived = o.status === "approved";
+              const showReceivedToDelivered =
+                o.status === "received" && o.type === "auto";
+
               return (
                 <div key={o._id} className="rounded-lg border p-4 shadow-sm">
                   <div className="flex items-center justify-between">
-                    <div className="text-sm font-semibold text-gray-900">Order {shortId(o._id)}</div>
-                    <Badge color={["draft", "pending"].includes(o.status) ? "green" : "gray"}>{o.status}</Badge>
+                    <div className="text-sm font-semibold text-gray-900">
+                      Order {shortId(o._id)}
+                    </div>
+                    <Badge
+                      color={
+                        ["draft", "pending"].includes(o.status)
+                          ? "green"
+                          : "gray"
+                      }
+                    >
+                      {o.status}
+                    </Badge>
                   </div>
+
                   <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
                     <div className="text-gray-500">Created by</div>
-                    <div className="text-gray-900">{o.createdBy?.name || "—"}</div>
+                    <div className="text-gray-900">
+                      {o.createdBy?.name || "—"}
+                    </div>
                     <div className="text-gray-500">Type</div>
                     <div className="text-gray-900">{o.type}</div>
                     <div className="text-gray-500">Total</div>
-                    <div className="text-gray-900">{formatCurrency(o.totalSellingValue)}</div>
+                    <div className="text-gray-900">
+                      {formatCurrency(o.totalSellingValue)}
+                    </div>
                     <div className="text-gray-500">Updated</div>
-                    <div className="text-gray-900">{new Date(o.updatedAt).toLocaleString()}</div>
+                    <div className="text-gray-900">
+                      {new Date(o.updatedAt).toLocaleString()}
+                    </div>
                   </div>
 
-                  {(o.status === "approved" || o.status === "received") && (
+                  {(showApproveToReceived || showReceivedToDelivered) && (
                     <div className="mt-3">
                       <SelectEl
                         onChange={(e) => {
-                          if (o.status === "approved" && e.target.value === "received") onStatusTransition(o, "received");
-                          if (o.status === "received" && e.target.value === "delivered") onStatusTransition(o, "delivered");
+                          if (
+                            showApproveToReceived &&
+                            e.target.value === "received"
+                          ) {
+                            onStatusTransition(o, "received");
+                          }
+                          if (
+                            showReceivedToDelivered &&
+                            e.target.value === "delivered"
+                          ) {
+                            onStatusTransition(o, "delivered");
+                          }
                           e.currentTarget.selectedIndex = 0;
                         }}
                         defaultValue=""
                       >
-                        <option value="" disabled>Actions</option>
-                        {o.status === "approved" && <option value="received">Mark as received</option>}
-                        {o.status === "received" && <option value="delivered">Mark as delivered</option>}
+                        <option value="" disabled>
+                          Actions
+                        </option>
+                        {showApproveToReceived && (
+                          <option value="received">Mark as received</option>
+                        )}
+                        {showReceivedToDelivered && (
+                          <option value="delivered">Mark as delivered</option>
+                        )}
                       </SelectEl>
                     </div>
                   )}
@@ -678,7 +1273,11 @@ const StockRefill: React.FC = () => {
                       className="flex-1"
                       onClick={() => openEdit(o)}
                       disabled={disabledActions}
-                      title={disabledActions ? "Edit disabled for this status" : "Edit order"}
+                      title={
+                        disabledActions
+                          ? "Edit disabled for this status"
+                          : "Edit order"
+                      }
                     >
                       Edit
                     </Button>
@@ -686,7 +1285,11 @@ const StockRefill: React.FC = () => {
                       className="flex-1"
                       onClick={() => sendOrder(o)}
                       disabled={disabledActions || sendMut.isPending}
-                      title={disabledActions ? "Send disabled for this status" : "Send order"}
+                      title={
+                        disabledActions
+                          ? "Send disabled for this status"
+                          : "Send order"
+                      }
                     >
                       {sendMut.isPending ? "Sending…" : "Send"}
                     </Button>
@@ -695,8 +1298,15 @@ const StockRefill: React.FC = () => {
                       tone="danger"
                       className="flex-1"
                       onClick={() => onDelete(o)}
-                      disabled={!["draft", "pending"].includes(o.status) || deleteMut.isPending}
-                      title={["draft", "pending"].includes(o.status) ? "Delete order" : "Delete disabled for this status"}
+                      disabled={
+                        !["draft", "pending"].includes(o.status) ||
+                        deleteMut.isPending
+                      }
+                      title={
+                        ["draft", "pending"].includes(o.status)
+                          ? "Delete order"
+                          : "Delete disabled for this status"
+                      }
                     >
                       {deleteMut.isPending ? "Deleting…" : "Delete"}
                     </Button>
@@ -704,21 +1314,31 @@ const StockRefill: React.FC = () => {
                 </div>
               );
             })}
+
             {orders.length === 0 && !ordersQ.isLoading && (
-              <div className="rounded-lg border p-6 text-center text-sm text-gray-500">No orders found.</div>
+              <div className="rounded-lg border p-6 text-center text-sm text-gray-500">
+                No orders found.
+              </div>
             )}
           </div>
 
           {/* Loading and error states */}
-          {ordersQ.isLoading && <div className="p-6 text-sm text-gray-600">Loading orders…</div>}
-          {ordersQ.isError && <div className="p-4 text-sm text-red-600">Failed to load orders.</div>}
+          {ordersQ.isLoading && (
+            <div className="p-6 text-sm text-gray-600">Loading orders…</div>
+          )}
+          {ordersQ.isError && (
+            <div className="p-4 text-sm text-red-600">
+              Failed to load orders.
+            </div>
+          )}
         </div>
 
         {/* Pagination */}
         {pagination && (
           <div className="mt-4 flex flex-col items-center justify-between gap-3 sm:flex-row">
             <div className="text-sm text-gray-600">
-              Page {pagination.currentPage} of {pagination.totalPages} • {pagination.totalItems} items
+              Page {pagination.currentPage} of {pagination.totalPages} •{" "}
+              {pagination.totalItems} items
             </div>
             <div className="flex items-center gap-2">
               <Button
@@ -732,8 +1352,16 @@ const StockRefill: React.FC = () => {
               <Button
                 variant="outline"
                 tone="gray"
-                onClick={() => setPage((p) => (pagination ? Math.min(pagination.totalPages, p + 1) : p + 1))}
-                disabled={!pagination || page >= pagination.totalPages || ordersQ.isFetching}
+                onClick={() =>
+                  setPage((p) =>
+                    pagination ? Math.min(pagination.totalPages, p + 1) : p + 1
+                  )
+                }
+                disabled={
+                  !pagination ||
+                  page >= pagination.totalPages ||
+                  ordersQ.isFetching
+                }
               >
                 Next
               </Button>
@@ -750,6 +1378,48 @@ const StockRefill: React.FC = () => {
         catalog={catalogQ.data}
         onSave={(rows) => editMut.mutate(rows)}
         saving={editMut.isPending}
+      />
+
+      {/* Manual Create Modal */}
+      <ManualCreateModal
+        open={manualOpen}
+        onClose={() => setManualOpen(false)}
+        catalog={catalogQ.data}
+        onSubmit={(products) => manualCreateMut.mutate({ products })}
+        submitting={manualCreateMut.isPending}
+      />
+
+      {/* Confirm Mark as Delivered */}
+      <ConfirmModal
+        open={deliverConfirm.open}
+        title="Mark as delivered"
+        message="Are you sure you want to mark this order as delivered?"
+        confirmText="Okay"
+        onConfirm={confirmDeliver}
+        onClose={() => setDeliverConfirm({ open: false })}
+        loading={transitionMut.isPending}
+      />
+
+      {/* Confirm Mark as Received */}
+      <ConfirmModal
+        open={receiveConfirm.open}
+        title="Mark as received"
+        message="Are you sure you want to mark this order as received?"
+        confirmText="Okay"
+        onConfirm={confirmReceive}
+        onClose={() => setReceiveConfirm({ open: false })}
+        loading={transitionMut.isPending}
+      />
+
+      {/* Confirm Delete */}
+      <ConfirmModal
+        open={deleteConfirm.open}
+        title="Delete Order"
+        message={`Are you sure you want to delete order ${shortId(deleteConfirm.order?._id ?? "")}? This action cannot be undone.`}
+        confirmText="Delete"
+        onConfirm={confirmDelete}
+        onClose={() => setDeleteConfirm({ open: false })}
+        loading={deleteMut.isPending}
       />
     </div>
   );
